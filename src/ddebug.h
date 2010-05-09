@@ -7,9 +7,11 @@
 
 #   if (NGX_HAVE_VARIADIC_MACROS)
 
-#       define dd(...) fprintf(stderr, "rds-json *** " __func__ ": "); \
+#       define dd(...) fprintf(stderr, "srcache *** %s: ", __func__); \
             fprintf(stderr, __VA_ARGS__); \
             fprintf(stderr, " at %s line %d.\n", __FILE__, __LINE__)
+
+#       define dd_enter() dd("enter %.*s", (int) r->uri.len, r->uri.data)
 
 #   else
 
@@ -21,6 +23,9 @@
 static void dd(const char * fmt, ...) {
 }
 
+static void dd_enter() {
+}
+
 #    endif
 
 #else
@@ -29,11 +34,16 @@ static void dd(const char * fmt, ...) {
 
 #       define dd(...)
 
+#       define dd_enter()
+
 #   else
 
 #include <stdarg.h>
 
 static void dd(const char * fmt, ...) {
+}
+
+static void dd_enter() {
 }
 
 #   endif

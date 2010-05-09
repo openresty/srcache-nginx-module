@@ -69,6 +69,8 @@ ngx_int_t ngx_http_srcache_parse_method_name(ngx_str_t **method_name_ptr);
 void ngx_http_srcache_discard_bufs(ngx_pool_t *pool, ngx_chain_t *in);
 ngx_int_t ngx_http_srcache_adjust_subrequest(ngx_http_request_t *sr,
         ngx_http_srcache_parsed_request_t *parsed_sr);
+ngx_int_t ngx_http_srcache_add_copy_chain(ngx_pool_t *pool,
+        ngx_chain_t **chain, ngx_chain_t *in);
 
 
 #endif /* NGX_HTTP_SRCACHE_UTIL_H */

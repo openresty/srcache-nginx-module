@@ -28,11 +28,6 @@ ngx_http_srcache_discard_bufs(ngx_pool_t *pool, ngx_chain_t *in)
     ngx_chain_t         *cl;
 
     for (cl = in; cl; cl = cl->next) {
-        if (cl->buf->temporary && cl->buf->memory
-                && ngx_buf_size(cl->buf) > 0) {
-            ngx_pfree(pool, cl->buf->start);
-        }
-
         cl->buf->pos = cl->buf->last;
     }
 }
@@ -215,6 +210,45 @@ ngx_http_srcache_adjust_subrequest(ngx_http_request_t *sr,
 
         dd("sr content length: %s", sr->headers_in.content_length->value.data);
     }
+
+    return NGX_OK;
+}
+
+
+ngx_int_t
+ngx_http_srcache_add_copy_chain(ngx_pool_t *pool, ngx_chain_t **chain, ngx_chain_t *in)
+{
+    ngx_chain_t  *cl, **ll;
+
+    ll = chain;
+
+    for (cl = *chain; cl; cl = cl->next) {
+        ll = &cl->next;
+    }
+
+    while (in) {
+        cl = ngx_alloc_chain_link(pool);
+        if (cl == NULL) {
+            return NGX_ERROR;
+        }
+
+        if (ngx_buf_special(in->buf)) {
+            cl->buf = in->buf;
+        } else {
+            if (ngx_buf_in_memory(in->buf)) {
+                cl->buf = ngx_create_temp_buf(pool, ngx_buf_size(in->buf));
+                *cl->buf = *in->buf;
+            } else {
+                return NGX_ERROR;
+            }
+        }
+
+        *ll = cl;
+        ll = &cl->next;
+        in = in->next;
+    }
+
+    *ll = NULL;
 
     return NGX_OK;
 }

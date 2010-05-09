@@ -39,6 +39,7 @@ typedef struct {
     ngx_flag_t      ignore_body:1;
     ngx_flag_t      parsing_cached_headers:1;
     ngx_flag_t      postponed_to_phase_end:1;
+    ngx_chain_t    *body_from_cache;
 } ngx_http_srcache_ctx_t;
 
 

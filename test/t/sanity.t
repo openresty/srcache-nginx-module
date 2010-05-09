@@ -11,7 +11,31 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: simple fetch
+=== TEST 1: basic fetch
+--- config
+    location /foo {
+        srcache_fetch GET /memc $uri;
+        srcache_store PUT /memc $uri;
+
+        echo $echo_incr;
+    }
+
+    location /memc {
+        internal;
+
+        set $memc_key $query_string;
+        set $memc_exptime 300;
+        memc_pass 127.0.0.1:11984;
+    }
+--- request
+GET /foo
+--- response_body
+1
+--- ONLY
+
+
+
+=== TEST 2: simple fetch
 --- config
     location /main {
         echo_location /foo;
