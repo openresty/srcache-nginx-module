@@ -31,8 +31,7 @@ __DATA__
 GET /foo
 --- response_body
 1
---- ONLY
-
+--- SKIP
 
 
 === TEST 2: simple fetch
