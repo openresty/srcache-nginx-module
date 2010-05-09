@@ -3,13 +3,25 @@
 
 
 #include <ngx_core.h>
+#include <ngx_http.h>
+#include <nginx.h>
 
 
 typedef struct {
-    ngx_int_t                   method;
+    ngx_uint_t                  method;
+    ngx_str_t                   method_name;
     ngx_http_complex_value_t    location;
     ngx_http_complex_value_t    args;
 } ngx_http_srcache_request_t;
+
+typedef struct {
+    ngx_uint_t                  method;
+    ngx_str_t                   method_name;
+    ngx_str_t                   location;
+    ngx_str_t                   args;
+    ngx_http_request_body_t    *request_body;
+    ssize_t                     content_length_n;
+} ngx_http_srcache_parsed_request_t;
 
 typedef struct {
     ngx_http_srcache_request_t      *fetch;

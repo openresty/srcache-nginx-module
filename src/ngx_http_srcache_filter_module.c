@@ -9,12 +9,11 @@
 #include <ngx_http.h>
 
 #include "ngx_http_srcache_filter_module.h"
+#include "ngx_http_srcache_util.h"
 
 
 ngx_flag_t  ngx_http_srcache_used = 0;
 
-
-static void ngx_http_srcache_discard_bufs(ngx_pool_t *pool, ngx_chain_t *in);
 static void *ngx_http_srcache_create_conf(ngx_conf_t *cf);
 static char *ngx_http_srcache_merge_conf(ngx_conf_t *cf, void *parent,
     void *child);
@@ -231,6 +230,7 @@ ngx_http_srcache_merge_conf(ngx_conf_t *cf, void *parent, void *child)
 
     ngx_conf_merge_ptr_value(conf->fetch, prev->fetch, NULL);
     ngx_conf_merge_ptr_value(conf->store, prev->store, NULL);
+
     ngx_conf_merge_size_value(conf->buf_size, prev->buf_size,
             (size_t) ngx_pagesize);
 
@@ -247,9 +247,11 @@ ngx_http_srcache_conf_set_request(ngx_conf_t *cf, ngx_command_t *cmd,
     ngx_http_srcache_request_t      **rpp;
     ngx_http_srcache_request_t       *rp;
     ngx_str_t                        *value;
+    ngx_str_t                        *method_name;
+    ngx_http_compile_complex_value_t  ccv;
 
     rpp = (ngx_http_srcache_request_t **) (p + cmd->offset);
-    if (*rpp != NULL) {
+    if (*rpp != NGX_CONF_UNSET_PTR) {
         return "is duplicate";
     }
 
@@ -262,24 +264,49 @@ ngx_http_srcache_conf_set_request(ngx_conf_t *cf, ngx_command_t *cmd,
 
     rp = *rpp;
 
-    /* TODO */
+    method_name = &value[1];
+
+    rp->method = ngx_http_srcache_parse_method_name(&method_name);
+    rp->method_name = *method_name;
+
+    /* compile the location arg */
+
+    if (value[2].len == 0) {
+        ngx_memzero(&rp->location, sizeof(ngx_http_complex_value_t));
+
+    } else {
+        ngx_memzero(&ccv, sizeof(ngx_http_compile_complex_value_t));
+
+        ccv.cf = cf;
+        ccv.value = &value[2];
+        ccv.complex_value = &rp->location;
+
+        if (ngx_http_compile_complex_value(&ccv) != NGX_OK) {
+            return NGX_CONF_ERROR;
+        }
+    }
+
+    if (cf->args->nelts == 2 + 1) {
+        return NGX_CONF_OK;
+    }
+
+    /* compile the args arg */
+
+    if (value[3].len == 0) {
+        ngx_memzero(&rp->location, sizeof(ngx_http_complex_value_t));
+        return NGX_CONF_OK;
+    }
+
+    ngx_memzero(&ccv, sizeof(ngx_http_compile_complex_value_t));
+
+    ccv.cf = cf;
+    ccv.value = &value[3];
+    ccv.complex_value = &rp->args;
+
+    if (ngx_http_compile_complex_value(&ccv) != NGX_OK) {
+        return NGX_CONF_ERROR;
+    }
 
     return NGX_CONF_OK;
-}
-
-
-static void
-ngx_http_srcache_discard_bufs(ngx_pool_t *pool, ngx_chain_t *in)
-{
-    ngx_chain_t         *cl;
-
-    for (cl = in; cl; cl = cl->next) {
-        if (cl->buf->temporary && cl->buf->memory
-                && ngx_buf_size(cl->buf) > 0) {
-            ngx_pfree(pool, cl->buf->start);
-        }
-
-        cl->buf->pos = cl->buf->last;
-    }
 }
 
