@@ -13,6 +13,7 @@ cd nginx-$version/
 if [[ "$BUILD_CLEAN" -eq 1 || ! -f Makefile || "$root/config" -nt Makefile || "$root/util/build.sh" -nt Makefile ]]; then
     ./configure --prefix=/opt/nginx \
           --add-module=$root/../echo-nginx-module \
+          --add-module=$root/../memc-nginx-module \
           --add-module=$root $opts \
           --with-debug
           #--add-module=$home/work/ngx_http_auth_request-0.1 #\
