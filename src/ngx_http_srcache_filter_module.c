@@ -14,6 +14,7 @@
 ngx_flag_t  ngx_http_srcache_used = 0;
 
 
+static void ngx_http_srcache_discard_bufs(ngx_pool_t *pool, ngx_chain_t *in);
 static void *ngx_http_srcache_create_conf(ngx_conf_t *cf);
 static char *ngx_http_srcache_merge_conf(ngx_conf_t *cf, void *parent,
     void *child);
@@ -43,7 +44,7 @@ static ngx_command_t  ngx_http_srcache_commands[] = {
     { ngx_string("srcache_store"),
       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_HTTP_LIF_CONF
           |NGX_CONF_TAKE23,
-      ngx_http_srache_conf_set_request,
+      ngx_http_srcache_conf_set_request,
       NGX_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_srcache_conf_t, store),
       NULL },
@@ -90,112 +91,114 @@ static ngx_http_output_body_filter_pt    ngx_http_next_body_filter;
 static ngx_int_t
 ngx_http_srcache_header_filter(ngx_http_request_t *r)
 {
-    ngx_http_srcache_ctx_t   *ctx;
+    ngx_http_srcache_ctx_t   *ctx, *parent_ctx;
     ngx_http_srcache_conf_t  *conf;
 
-    if (r->headers_out.status != NGX_HTTP_OK || r != r->main) {
+    ctx = ngx_http_get_module_ctx(r, ngx_http_srcache_filter_module);
+
+    if (ctx == NULL || ctx->from_cache) {
+        return ngx_http_next_header_filter(r);
+    }
+
+    if (ctx->in_fetch_subrequest) {
+        parent_ctx = ngx_http_get_module_ctx(r->parent,
+                ngx_http_srcache_filter_module);
+
+        if (parent_ctx == NULL) {
+            ctx->ignore_body = 1;
+
+            return NGX_ERROR;
+        }
+
+        if (r->headers_out.status != NGX_HTTP_OK
+                || r->headers_out.status != NGX_HTTP_CREATED) {
+            ctx->ignore_body = 1;
+
+            parent_ctx->waiting_subrequest = 0;
+
+            return NGX_OK;
+        }
+
+        /* srache's subrequest succeeds */
+
+        r->filter_need_in_memory = 1;
+
+        parent_ctx->from_cache = 1;
+
+        ctx->parsing_cached_headers = 1;
+
+        return NGX_OK;
+    }
+
+    if (r->headers_out.status != NGX_HTTP_OK
+            && r->headers_out.status != NGX_HTTP_CREATED)
+    {
         return ngx_http_next_header_filter(r);
     }
 
     conf = ngx_http_get_module_loc_conf(r, ngx_http_srcache_filter_module);
 
-    if (conf->before_body.len == 0 && conf->after_body.len == 0) {
+    if (conf->store == NULL) {
         return ngx_http_next_header_filter(r);
     }
 
-    if (ngx_http_test_content_type(r, &conf->types) == NULL) {
-        return ngx_http_next_header_filter(r);
+    /* save the response header */
+
+    if (r == r->main) {
+        /* being the main request */
+    } else {
+        /* being a subrequest */
     }
 
-    ctx = ngx_pcalloc(r->pool, sizeof(ngx_http_srcache_ctx_t));
-    if (ctx == NULL) {
-        return NGX_ERROR;
-    }
-
-    ngx_http_set_ctx(r, ctx, ngx_http_srcache_filter_module);
-
-    ngx_http_clear_content_length(r);
-    ngx_http_clear_accept_ranges(r);
-
-    return ngx_http_next_header_filter(r);
+    return NGX_OK;
 }
 
 
 static ngx_int_t
 ngx_http_srcache_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
 {
-    ngx_int_t                  rc;
-    ngx_uint_t                 last;
-    ngx_chain_t               *cl;
-    ngx_http_request_t        *sr;
-    ngx_http_srcache_ctx_t   *ctx;
-    ngx_http_srcache_conf_t  *conf;
-
-    if (in == NULL || r->header_only) {
-        return ngx_http_next_body_filter(r, in);
-    }
+    ngx_http_srcache_ctx_t   *ctx; /*, *parent_ctx; */
+    /* ngx_http_srcache_conf_t  *conf; */
 
     ctx = ngx_http_get_module_ctx(r, ngx_http_srcache_filter_module);
 
-    if (ctx == NULL) {
+    if (ctx == NULL || ctx->from_cache) {
         return ngx_http_next_body_filter(r, in);
     }
 
-    conf = ngx_http_get_module_loc_conf(r, ngx_http_srcache_filter_module);
+    if (ctx->ignore_body) {
+        ngx_http_srcache_discard_bufs(r->pool, in);
+        return NGX_OK;
+    }
 
-    if (!ctx->before_body_sent) {
-        ctx->before_body_sent = 1;
+    if (ctx->in_fetch_subrequest) {
+        if (ctx->parsing_cached_headers) {
+            /* parse the cached response's headers and
+             * set r->parent->headers_out */
 
-        if (conf->before_body.len) {
-            if (ngx_http_subrequest(r, &conf->before_body, NULL, &sr, NULL, 0)
-                != NGX_OK)
-            {
-                return NGX_ERROR;
-            }
+            (void) ngx_http_send_header(r->parent);
         }
+
+        /* pass along the cached response body */
+
+        return ngx_http_next_body_filter(r->parent, in);
     }
 
-    if (conf->after_body.len == 0) {
-        ngx_http_set_ctx(r, NULL, ngx_http_srcache_filter_module);
-        return ngx_http_next_body_filter(r, in);
-    }
-
-    last = 0;
-
-    for (cl = in; cl; cl = cl->next) {
-        if (cl->buf->last_buf) {
-            cl->buf->last_buf = 0;
-            cl->buf->sync = 1;
-            last = 1;
-        }
-    }
-
-    rc = ngx_http_next_body_filter(r, in);
-
-    if (rc == NGX_ERROR || !last || conf->after_body.len == 0) {
-        return rc;
-    }
-
-    if (ngx_http_subrequest(r, &conf->after_body, NULL, &sr, NULL, 0)
-        != NGX_OK)
-    {
-        return NGX_ERROR;
-    }
-
-    ngx_http_set_ctx(r, NULL, ngx_http_srcache_filter_module);
-
-    return ngx_http_send_special(r, NGX_HTTP_LAST);
+    /* TODO */
+    return NGX_OK;
 }
 
 
 static ngx_int_t
 ngx_http_srcache_filter_init(ngx_conf_t *cf)
 {
-    ngx_http_next_header_filter = ngx_http_top_header_filter;
-    ngx_http_top_header_filter = ngx_http_srcache_header_filter;
+    if (ngx_http_srcache_used) {
+        ngx_http_next_header_filter = ngx_http_top_header_filter;
+        ngx_http_top_header_filter = ngx_http_srcache_header_filter;
 
-    ngx_http_next_body_filter = ngx_http_top_body_filter;
-    ngx_http_top_body_filter = ngx_http_srcache_body_filter;
+        ngx_http_next_body_filter = ngx_http_top_body_filter;
+        ngx_http_top_body_filter = ngx_http_srcache_body_filter;
+    }
 
     return NGX_OK;
 }
@@ -206,19 +209,15 @@ ngx_http_srcache_create_conf(ngx_conf_t *cf)
 {
     ngx_http_srcache_conf_t  *conf;
 
-    conf = ngx_pcalloc(cf->pool, sizeof(ngx_http_srcache_conf_t));
+    conf = ngx_palloc(cf->pool, sizeof(ngx_http_srcache_conf_t));
     if (conf == NULL) {
         return NULL;
     }
 
-    /*
-     * set by ngx_pcalloc():
-     *
-     *     conf->before_body = { 0, NULL };
-     *     conf->after_body = { 0, NULL };
-     *     conf->types = { NULL };
-     *     conf->types_keys = NULL;
-     */
+    conf->fetch = NGX_CONF_UNSET_PTR;
+    conf->store = NGX_CONF_UNSET_PTR;
+
+    conf->buf_size = NGX_CONF_UNSET_SIZE;
 
     return conf;
 }
@@ -230,16 +229,10 @@ ngx_http_srcache_merge_conf(ngx_conf_t *cf, void *parent, void *child)
     ngx_http_srcache_conf_t *prev = parent;
     ngx_http_srcache_conf_t *conf = child;
 
-    ngx_conf_merge_str_value(conf->before_body, prev->before_body, "");
-    ngx_conf_merge_str_value(conf->after_body, prev->after_body, "");
-
-    if (ngx_http_merge_types(cf, &conf->types_keys, &conf->types,
-                             &prev->types_keys, &prev->types,
-                             ngx_http_html_default_types)
-        != NGX_OK)
-    {
-        return NGX_CONF_ERROR;
-    }
+    ngx_conf_merge_ptr_value(conf->fetch, prev->fetch, NULL);
+    ngx_conf_merge_ptr_value(conf->store, prev->store, NULL);
+    ngx_conf_merge_size_value(conf->buf_size, prev->buf_size,
+            (size_t) ngx_pagesize);
 
     return NGX_CONF_OK;
 }
@@ -262,13 +255,31 @@ ngx_http_srcache_conf_set_request(ngx_conf_t *cf, ngx_command_t *cmd,
 
     value = cf->args->elts;
 
-    *rpp = ngx_pcalloc(r->pool, sizeof(ngx_http_srcache_request_t));
+    *rpp = ngx_pcalloc(cf->pool, sizeof(ngx_http_srcache_request_t));
     if (*rpp == NULL) {
         return NGX_CONF_ERROR;
     }
 
     rp = *rpp;
 
+    /* TODO */
+
     return NGX_CONF_OK;
+}
+
+
+static void
+ngx_http_srcache_discard_bufs(ngx_pool_t *pool, ngx_chain_t *in)
+{
+    ngx_chain_t         *cl;
+
+    for (cl = in; cl; cl = cl->next) {
+        if (cl->buf->temporary && cl->buf->memory
+                && ngx_buf_size(cl->buf) > 0) {
+            ngx_pfree(pool, cl->buf->start);
+        }
+
+        cl->buf->pos = cl->buf->last;
+    }
 }
 

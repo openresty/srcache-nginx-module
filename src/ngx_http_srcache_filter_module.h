@@ -22,8 +22,9 @@ typedef struct {
     ngx_flag_t      waiting_subrequest:1;
     ngx_flag_t      request_done:1;
     ngx_flag_t      from_cache:1;
-    ngx_flag_t      in_subrequest:1;
+    ngx_flag_t      in_fetch_subrequest:1;
     ngx_flag_t      ignore_body:1;
+    ngx_flag_t      parsing_cached_headers:1;
 } ngx_http_srcache_ctx_t;
 
 
