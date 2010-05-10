@@ -30,7 +30,12 @@ typedef struct {
     size_t        buf_size;
 } ngx_http_srcache_conf_t;
 
-typedef struct {
+typedef struct ngx_http_srcache_ctx_s ngx_http_srcache_ctx_t;
+
+typedef struct ngx_http_srcache_postponed_request_s
+    ngx_http_srcache_postponed_request_t;
+
+struct ngx_http_srcache_ctx_s {
     ngx_flag_t      waiting_subrequest:1;
     ngx_flag_t      request_done:1;
     ngx_flag_t      from_cache:1;
@@ -40,7 +45,18 @@ typedef struct {
     ngx_flag_t      parsing_cached_headers:1;
     ngx_flag_t      postponed_to_phase_end:1;
     ngx_chain_t    *body_from_cache;
-} ngx_http_srcache_ctx_t;
+    ngx_chain_t    *body_to_cache;
+
+    ngx_http_srcache_postponed_request_t  *postponed_requests;
+
+};
+
+struct ngx_http_srcache_postponed_request_s {
+    ngx_http_request_t               *request;
+    ngx_http_srcache_ctx_t           *out;
+
+    ngx_http_srcache_postponed_request_t     *next;
+};
 
 
 #endif
