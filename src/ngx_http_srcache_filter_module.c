@@ -526,7 +526,9 @@ ngx_http_srcache_handler(ngx_http_request_t *r)
     parsed_sr->request_body = NULL;
     parsed_sr->content_length_n = -1;
 
-    if (ngx_http_complex_value(r, &conf->fetch->location, &parsed_sr->location) != NGX_OK) {
+    if (ngx_http_complex_value(r, &conf->fetch->location,
+                &parsed_sr->location) != NGX_OK)
+    {
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
@@ -534,7 +536,9 @@ ngx_http_srcache_handler(ngx_http_request_t *r)
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
-    if (ngx_http_complex_value(r, &conf->fetch->args, &parsed_sr->args) != NGX_OK) {
+    if (ngx_http_complex_value(r, &conf->fetch->args, &parsed_sr->args)
+            != NGX_OK)
+    {
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
@@ -566,7 +570,8 @@ ngx_http_srcache_handler(ngx_http_request_t *r)
     dd("fetch args: %.*s", (int) parsed_sr->args.len,
             parsed_sr->args.data);
 
-    rc = ngx_http_subrequest(r, &parsed_sr->location, &parsed_sr->args, &sr, psr, flags);
+    rc = ngx_http_subrequest(r, &parsed_sr->location, &parsed_sr->args,
+            &sr, psr, flags);
 
     if (rc != NGX_OK) {
         return NGX_ERROR;
