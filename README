@@ -44,7 +44,7 @@ Directives
     srcache_store_max_size
 
 Installation
-    1. Grab the nginx source code from nginx.net (<http://nginx.net/>), for
+    1. Grab the nginx source code from nginx.net (< http://nginx.net/ >), for
         example, the version 0.8.29 (see nginx compatibility), 
     2. and then build the source with this module:
 
