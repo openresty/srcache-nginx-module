@@ -1,0 +1,165 @@
+Name
+    srcache-nginx-module - Transparent subrequest-based caching layout for arbitrary nginx locations
+
+    *This module is not distributed with the Nginx source.* See the
+    installation instructions.
+
+Status
+    This module is still under development and NOT USABLE YET.
+
+Synopsis
+
+    location /foo {
+        set $key $uri;
+        srcache_fetch GET /memc $key;
+        srcache_store PUT /memc $key;
+
+        # proxy_pass/fastcgi_pass/drizzle_pass/echo/etc...
+        # or even static files on the disk
+    }
+
+    location /memc {
+        set $memc_key $query_string;
+        set $memc_exptime 300;
+        memc_pass 127.0.0.1:11984;
+    }
+
+Description
+    This module provides a transparent caching layer for
+    arbitrary nginx locations (like those use an upstream
+    or even serve static disk files).
+
+    Usually, the ngx_memc module is used together with
+    this module to provide a concrete caching storage backend.
+    But technically, any modules that provide a REST
+    interface can be used as the fetching and storage subrequests
+    used by ngx_srcache.
+
+Directives
+    srcache_fetch
+
+    srcache_store
+
+    srcache_store_max_size
+
+Installation
+    1. Grab the nginx source code from nginx.net (<http://nginx.net/>), for
+        example, the version 0.8.29 (see nginx compatibility),
+
+    2. and then build the source with this module:
+
+        $ wget 'http://sysoev.ru/nginx/nginx-0.8.29.tar.gz'
+        $ tar -xzvf nginx-0.8.29.tar.gz
+        $ cd nginx-0.8.29/
+
+        # Here we assume you would install you nginx under /opt/nginx/.
+        $ ./configure --prefix=/opt/nginx \
+            --add-module=/path/to/srcache-nginx-module
+
+        $ make -j2
+        $ make install
+
+    Download the latest version of the release tarball of this module from
+    srcache-nginx-module file list
+    (<http://github.com/agentzh/srcache-nginx-module/downloads>).
+
+Compatibility
+    The following versions of Nginx should work with this module:
+
+    *   0.8.x (last tested version is 0.8.36)
+
+    *   0.7.x >= 0.7.46 (last tested version is 0.7.65)
+
+    Earlier versions of Nginx like 0.6.x and 0.5.x will *not* work.
+
+    If you find that any particular version of Nginx above 0.7.44 does not
+    work with this module, please consider reporting a bug.
+
+Report Bugs
+    Although a lot of effort has been put into testing and code tuning,
+    there must be some serious bugs lurking somewhere in this module. So
+    whenever you are bitten by any quirks, please don't hesitate to
+
+    1.  send a bug report or even patches to <agentzh@gmail.com>,
+
+    2.  or create a ticket on the issue tracking interface
+        (<http://github.com/agentzh/srcache-nginx-module/issues>)
+        provided by GitHub.
+
+Source Repository
+    Available on github at agentzh/srcache-nginx-module
+    (<http://github.com/agentzh/srcache-nginx-module>).
+
+ChangeLog
+
+Test Suite
+    This module comes with a Perl-driven test suite. The test cases
+    (<http://github.com/agentzh/srcache-nginx-module/tree/master/test/t
+    />) are declarative
+    (<http://github.com/agentzh/srcache-nginx-module/blob/master/test/t
+    /sanity.t>) too. Thanks to the Test::Base
+    (<http://search.cpan.org/perldoc?Test::Base>) module in the Perl world.
+
+    To run it on your side:
+
+        $ cd test
+        $ PATH=/path/to/your/nginx-with-srcache-module:$PATH prove -r t
+
+    You need to terminate any Nginx processes before running the test suite
+    if you have changed the Nginx server binary.
+
+    Because a single nginx server (by default, "localhost:1984") is used
+    across all the test scripts (".t" files), it's meaningless to run the
+    test suite in parallel by specifying "-jN" when invoking the "prove"
+    utility.
+
+    Some parts of the test suite requires modules rewrite, and echo
+    to be enabled as well when building Nginx.
+
+TODO
+
+Getting involved
+    You'll be very welcomed to submit patches to the author or just ask for
+    a commit bit to the source repository on GitHub.
+
+Author
+    agentzh (章亦春) *<agentzh@gmail.com>*
+
+Copyright & License
+    Copyright (c) 2010, Taobao Inc., Alibaba Group ( http://www.taobao.com
+    ).
+
+    Copyright (c) 2009, Yichun Zhang (agentzh) <agentzh@gmail.com>.
+
+    This module is licensed under the terms of the BSD license.
+
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions are
+    met:
+
+    *   Redistributions of source code must retain the above copyright
+        notice, this list of conditions and the following disclaimer.
+
+    *   Redistributions in binary form must reproduce the above copyright
+        notice, this list of conditions and the following disclaimer in the
+        documentation and/or other materials provided with the distribution.
+
+    *   Neither the name of the Taobao Inc. nor the names of its
+        contributors may be used to endorse or promote products derived from
+        this software without specific prior written permission.
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+    IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+    TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+    PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+    HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+    SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+    TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+    PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+    LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+    NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+See Also
+    The ngx_memc module < http://wiki.nginx.org/NginxHttpMemcModule >.
+
