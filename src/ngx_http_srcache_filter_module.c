@@ -226,7 +226,7 @@ ngx_http_srcache_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
     }
 
     /* TODO */
-    return NGX_OK;
+    return ngx_http_next_body_filter(r, in);
 }
 
 
@@ -392,6 +392,7 @@ ngx_http_srcache_handler(ngx_http_request_t *r)
     ngx_str_t                       args;
     ngx_uint_t                      flags = 0;
     ngx_http_request_t             *sr;
+    ngx_chain_t                    *cl;
 
     ngx_http_srcache_parsed_request_t  *parsed_sr;
 
@@ -420,7 +421,11 @@ ngx_http_srcache_handler(ngx_http_request_t *r)
         if (ctx->request_done) {
             dd("request done");
 
-            rc = ngx_http_send_header(r);
+            if (! ctx->from_cache) {
+                return NGX_DECLINED;
+            }
+
+            rc = ngx_http_next_header_filter(r);
             if (rc == NGX_ERROR || rc >= NGX_HTTP_SPECIAL_RESPONSE) {
                 return rc;
             }
@@ -428,24 +433,36 @@ ngx_http_srcache_handler(ngx_http_request_t *r)
             dd("sent header from cache: %d", (int) rc);
 
             if (ctx->body_from_cache) {
-                rc = ngx_http_output_filter(r, ctx->body_from_cache);
+                if (r == r->main) {
+                    for (cl = ctx->body_from_cache; cl->next; cl = cl->next) {
+                        /* do nothing */
+                    }
+                    cl->buf->last_buf = 1;
+                }
+
+                rc = ngx_http_next_body_filter(r, ctx->body_from_cache);
 
                 if (rc == NGX_ERROR || rc >= NGX_HTTP_SPECIAL_RESPONSE) {
                     return rc;
                 }
 
                 dd("sent body from cache: %d", (int) rc);
-            }
+            } else {
+                if (r == r->main) {
+                    dd("send last buf for the main request");
 
-            if (r == r->main) {
-                dd("send last buf for the main request");
-                rc = ngx_http_send_special(r, NGX_HTTP_LAST);
+                    cl = ngx_alloc_chain_link(r->pool);
+                    cl->buf = ngx_calloc_buf(r->pool);
+                    cl->buf->last_buf = 1;
 
-                if (rc == NGX_ERROR || rc >= NGX_HTTP_SPECIAL_RESPONSE) {
-                    return rc;
+                    rc = ngx_http_next_body_filter(r, cl);
+
+                    if (rc == NGX_ERROR || rc >= NGX_HTTP_SPECIAL_RESPONSE) {
+                        return rc;
+                    }
+
+                    dd("sent last buf from cache: %d", (int) rc);
                 }
-
-                dd("sent last buf from cache: %d", (int) rc);
             }
 
             ngx_http_finalize_request(r, NGX_OK);
@@ -490,6 +507,7 @@ ngx_http_srcache_handler(ngx_http_request_t *r)
     }
 
     if (conf->fetch == NULL) {
+        dd("fetch is not defined");
         return NGX_DECLINED;
     }
 
