@@ -138,3 +138,43 @@ OK\r
 2
 "
 
+
+
+=== TEST 5: fetch & store
+--- config
+    location /main {
+        echo_location /flush;
+        echo_location /bar;
+        echo_location /bar;
+        echo_location /bar;
+    }
+
+    location /bar {
+        srcache_fetch GET /memc $uri;
+        srcache_store PUT /memc $uri;
+
+        echo $echo_incr;
+    }
+
+    location /flush {
+        internal;
+        set $memc_cmd 'flush_all';
+        memc_pass 127.0.0.1:11984;
+    }
+
+    location /memc {
+        internal;
+
+        set $memc_key $query_string;
+        set $memc_exptime 300;
+        memc_pass 127.0.0.1:11984;
+    }
+--- request
+GET /main
+--- response_body eval
+"OK\r
+1
+1
+1
+"
+
