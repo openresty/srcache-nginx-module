@@ -206,3 +206,159 @@ GET /main
 "
 --- timeout: 2
 
+
+
+=== TEST 6: deep nested echo_location/echo_location_async
+--- config
+    location /main {
+        echo_location /flush;
+        echo_location /bar;
+        echo_location_async /bar;
+        echo_location_async /bar;
+        echo_location /group;
+        echo_location_async /group;
+    }
+
+    location /group {
+        echo_location /bar;
+        echo_location_async /bar;
+    }
+
+    location /bar {
+        srcache_fetch GET /memc $uri;
+        srcache_store PUT /memc $uri;
+
+        echo $echo_incr;
+    }
+
+    location /flush {
+        internal;
+        set $memc_cmd 'flush_all';
+        memc_pass 127.0.0.1:11984;
+    }
+
+    location /memc {
+        internal;
+
+        set $memc_key $query_string;
+        set $memc_exptime 300;
+        memc_pass 127.0.0.1:11984;
+    }
+--- request
+GET /main
+--- response_body eval
+"OK\r
+1
+1
+1
+1
+1
+1
+1
+"
+--- timeout: 2
+--- SKIP
+
+
+=== TEST 7: deep nested echo_location/echo_location_async
+--- config
+    location /main {
+        echo_location /flush;
+        echo_location /bar;
+        echo_location /bar;
+        echo_location /bar;
+        echo_location /group;
+        echo_location /group;
+    }
+
+    location /group {
+        echo_location /bar;
+        echo_location /bar;
+    }
+
+    location /bar {
+        srcache_fetch GET /memc $uri;
+        srcache_store PUT /memc $uri;
+
+        echo $echo_incr;
+    }
+
+    location /flush {
+        internal;
+        set $memc_cmd 'flush_all';
+        memc_pass 127.0.0.1:11984;
+    }
+
+    location /memc {
+        internal;
+
+        set $memc_key $query_string;
+        set $memc_exptime 300;
+        memc_pass 127.0.0.1:11984;
+    }
+--- request
+GET /main
+--- response_body eval
+"OK\r
+1
+1
+1
+1
+1
+1
+1
+"
+--- timeout: 2
+
+
+
+=== TEST 8: deep nested echo_location/echo_location_async
+--- config
+    location /main {
+        echo_location /flush;
+        echo_location /bar;
+        echo_location_async /bar;
+        echo_location_async /bar;
+        echo_location_async /group;
+        echo_location_async /group;
+    }
+
+    location /group {
+        echo_location_async /bar;
+        echo_location_async /bar;
+    }
+
+    location /bar {
+        srcache_fetch GET /memc $uri;
+        srcache_store PUT /memc $uri;
+
+        echo $echo_incr;
+    }
+
+    location /flush {
+        internal;
+        set $memc_cmd 'flush_all';
+        memc_pass 127.0.0.1:11984;
+    }
+
+    location /memc {
+        internal;
+
+        set $memc_key $query_string;
+        set $memc_exptime 300;
+        memc_pass 127.0.0.1:11984;
+    }
+--- request
+GET /main
+--- response_body eval
+"OK\r
+1
+1
+1
+1
+1
+1
+1
+"
+--- timeout: 2
+

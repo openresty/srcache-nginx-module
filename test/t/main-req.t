@@ -25,7 +25,7 @@ GET /flush
 
 
 
-=== TEST 1: basic fetch
+=== TEST 2: basic fetch
 --- config
     location /foo {
         srcache_fetch GET /memc $uri;
@@ -47,7 +47,8 @@ GET /foo
 hello
 
 
-=== TEST 1: basic fetch
+
+=== TEST 3: basic fetch
 --- config
     location /foo {
         srcache_fetch GET /memc $uri;
