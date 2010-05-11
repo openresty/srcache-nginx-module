@@ -1,4 +1,4 @@
-#define DDEBUG 0
+#define DDEBUG 1
 #include "ddebug.h"
 
 #include "ngx_http_srcache_util.h"
@@ -156,8 +156,11 @@ ngx_http_srcache_adjust_subrequest(ngx_http_request_t *sr,
     ngx_table_elt_t            *h;
     ngx_http_core_main_conf_t  *cmcf;
 
-    sr->method = parsed_sr->method;
+    sr->method      = parsed_sr->method;
     sr->method_name = parsed_sr->method_name;
+
+    dd("subrequest method: %d %.*s", (int) sr->method,
+            (int) sr->method_name.len, sr->method_name.data);
 
     sr->header_in = sr->parent->header_in;
 
