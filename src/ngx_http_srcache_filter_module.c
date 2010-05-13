@@ -1,4 +1,4 @@
-#define DDEBUG 1
+#define DDEBUG 2
 #include "ddebug.h"
 
 /*
@@ -107,6 +107,7 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
     ngx_http_srcache_conf_t         *conf;
     ngx_http_post_subrequest_t      *psr, *orig_psr;
     ngx_http_srcache_postponed_request_t  *p, *ppr, **last;
+
 
     dd_enter();
 
@@ -252,6 +253,7 @@ ngx_http_srcache_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
     ngx_int_t                 rc;
     ngx_chain_t              *cl;
     ngx_flag_t                last;
+
 
     dd_enter();
 
@@ -656,8 +658,7 @@ ngx_http_srcache_store_post_subrequest(ngx_http_request_t *r,
     ngx_http_srcache_postponed_request_t  *pr;
 
 
-    dd("enter");
-    dd("orig_psr: %p", orig_psr);
+    dd_enter();
 
     pr_ctx = ngx_http_get_module_ctx(r->parent,
             ngx_http_srcache_filter_module);
@@ -673,16 +674,36 @@ ngx_http_srcache_store_post_subrequest(ngx_http_request_t *r,
         rc = orig_psr->handler(r, orig_psr->data, rc);
     }
 
-    if (r->parent->write_event_handler != ngx_http_srcache_store_wev_handler) {
-        pr_ctx->store_wev_handler_ctx = r->parent->write_event_handler;
+    if (r->parent->write_event_handler == ngx_http_srcache_store_wev_handler) {
+        ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                "ERROR: write event handler is already set to ours.");
+        return rc;
+    }
 
-        r->parent->write_event_handler = ngx_http_srcache_store_wev_handler;
+    pr_ctx->store_wev_handler_ctx = r->parent->write_event_handler;
+
+    {
+        ngx_http_posted_request_t *pr;
+
+        pr = r->main->posted_requests;
+
+        dd("r->main->posted_requests: %p", pr);
+        if (pr != NULL) {
+            dd("r->main->posted_requests->next: %p", pr->next);
+
+            if (pr->next) {
+                ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                        "ERROR: posted request chain contains heretics");
+            }
+        }
+    }
+
+    r->parent->write_event_handler = ngx_http_srcache_store_wev_handler;
 
 #if defined(nginx_version) && nginx_version >= 8011
-        /* FIXME I'm not sure why we must decrement the counter here :( */
-        r->main->count--;
+    /* FIXME I'm not sure why we must decrement the counter here :( */
+    r->main->count--;
 #endif
-    }
 
     return rc;
 }
@@ -698,7 +719,7 @@ ngx_http_srcache_store_wev_handler(ngx_http_request_t *r)
     ngx_http_srcache_postponed_request_t    *pr;
 
 
-    dd("enter");
+    dd_enter();
 
     ctx = ngx_http_get_module_ctx(r, ngx_http_srcache_filter_module);
 
@@ -747,6 +768,8 @@ ngx_http_srcache_store_subrequest(ngx_http_request_t *r,
 
     ngx_http_srcache_parsed_request_t  *parsed_sr;
 
+
+    dd_enter();
 
     conf = ngx_http_get_module_loc_conf(r, ngx_http_srcache_filter_module);
 
@@ -861,6 +884,9 @@ ngx_http_srcache_fetch_subrequest(ngx_http_request_t *r,
     ngx_int_t                       rc;
 
     ngx_http_srcache_parsed_request_t  *parsed_sr;
+
+
+    dd_enter();
 
     parsed_sr = ngx_palloc(r->pool, sizeof(ngx_http_srcache_parsed_request_t));
     if (parsed_sr == NULL) {

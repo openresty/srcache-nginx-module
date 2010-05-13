@@ -2,6 +2,7 @@
 #define DDEBUG_H
 
 #include <ngx_core.h>
+#include <ngx_http.h>
 
 #if defined(DDEBUG) && (DDEBUG)
 
@@ -10,8 +11,6 @@
 #       define dd(...) fprintf(stderr, "srcache *** %s: ", __func__); \
             fprintf(stderr, __VA_ARGS__); \
             fprintf(stderr, " at %s line %d.\n", __FILE__, __LINE__)
-
-#       define dd_enter() dd("enter %.*s", (int) r->uri.len, r->uri.data)
 
 #   else
 
@@ -23,10 +22,36 @@
 static void dd(const char * fmt, ...) {
 }
 
-static void dd_enter() {
+#    endif
+
+#   if DDEBUG > 1
+
+#       define dd_enter() dd_enter_helper(r)
+
+static void dd_enter_helper(ngx_http_request_t *r) {
+    ngx_http_posted_request_t       *pr;
+
+    fprintf(stderr, ">enter %.*s?%.*s r:%p, ar:%p, pr:%p",
+            (int) r->uri.len, r->uri.data,
+            (int) r->args.len, r->args.data,
+            r, r->connection->data, r->parent);
+
+    if (r->posted_requests) {
+        fprintf(stderr, ", posted ");
+    }
+
+    for (pr = r->posted_requests; pr; pr = pr->next) {
+        fprintf(stderr, "%p", pr);
+    }
+
+    fprintf(stderr, "\n");
 }
 
-#    endif
+#   else
+
+#       define dd_enter()
+
+#   endif
 
 #else
 
