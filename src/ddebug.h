@@ -3,6 +3,7 @@
 
 #include <ngx_core.h>
 #include <ngx_http.h>
+#include <nginx.h>
 
 #if defined(DDEBUG) && (DDEBUG)
 
@@ -28,6 +29,13 @@ static void dd(const char * fmt, ...) {
 
 #       define dd_enter() dd_enter_helper(r, __func__)
 
+
+#       if defined(nginx_version) && nginx_version >= 8011
+#           define dd_main_req_count r->main->count
+#       else
+#           define dd_main_req_count 0
+#       endif
+
 static void dd_enter_helper(ngx_http_request_t *r, const char *func) {
     ngx_http_posted_request_t       *pr;
 
@@ -36,7 +44,7 @@ static void dd_enter_helper(ngx_http_request_t *r, const char *func) {
             (int) r->method_name.len, r->method_name.data,
             (int) r->uri.len, r->uri.data,
             (int) r->args.len, r->args.data,
-            (int) r->main->count, r->main,
+            (int) dd_main_req_count, r->main,
             r, r->connection->data, r->parent);
 
     if (r->posted_requests) {
