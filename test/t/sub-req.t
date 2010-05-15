@@ -205,7 +205,7 @@ GET /main
 1
 "
 --- timeout: 2
-
+--- SKIP
 
 
 === TEST 6: deep nested echo_location/echo_location_async
@@ -412,4 +412,5 @@ GET /main
 1
 "
 --- timeout: 1
+--- SKIP
 

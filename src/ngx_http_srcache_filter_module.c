@@ -272,14 +272,23 @@ ngx_http_srcache_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
 
     if (ctx->in_fetch_subrequest) {
         if (ctx->parsing_cached_headers) {
-            /* parse the cached response's headers and
+            /* TODO parse the cached response's headers and
              * set r->parent->headers_out */
+
+            ctx->parsing_cached_headers = 0;
 
             dd("restore parent request header");
 
+            /* XXX we should restore headers saved
+             *  in the cache */
             r->parent->headers_out.status = NGX_HTTP_OK;
 
-            ctx->parsing_cached_headers = 0;
+            if (ngx_http_set_content_type(r->parent) != NGX_OK) {
+                return NGX_HTTP_INTERNAL_SERVER_ERROR;
+            }
+
+            ngx_http_clear_content_length(r->parent);
+            ngx_http_clear_accept_ranges(r->parent);
         }
 
         dd("save the cached response body for parent");

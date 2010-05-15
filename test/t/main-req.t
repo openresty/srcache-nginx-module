@@ -5,7 +5,7 @@ use Test::Nginx::Socket;
 
 #repeat_each(2);
 
-plan tests => repeat_each() * 2 * blocks();
+plan tests => repeat_each() * 3 * blocks();
 
 no_shuffle();
 
@@ -19,6 +19,8 @@ __DATA__
         set $memc_cmd 'flush_all';
         memc_pass 127.0.0.1:11984;
     }
+--- response_headers
+Content-Type: text/plain
 --- request
 GET /flush
 --- response_body eval: "OK\r\n"
@@ -28,6 +30,7 @@ GET /flush
 === TEST 2: basic fetch
 --- config
     location /foo {
+        default_type text/css;
         srcache_fetch GET /memc $uri;
         srcache_store PUT /memc $uri;
 
@@ -43,6 +46,8 @@ GET /flush
     }
 --- request
 GET /foo
+--- response_headers
+Content-Type: text/css
 --- response_body
 hello
 
@@ -51,6 +56,7 @@ hello
 === TEST 3: basic fetch
 --- config
     location /foo {
+        default_type text/css;
         srcache_fetch GET /memc $uri;
         srcache_store PUT /memc $uri;
 
@@ -66,6 +72,8 @@ hello
     }
 --- request
 GET /foo
+--- response_headers
+Content-Type: text/css
 --- response_body
 hello
 
