@@ -62,3 +62,5 @@ src/handler.c
 src/handler.h
 util/bench
 *.html
+trace.out*
+try.sh
