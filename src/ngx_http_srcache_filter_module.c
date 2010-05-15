@@ -26,7 +26,7 @@ static char *ngx_http_srcache_conf_set_request(ngx_conf_t *cf,
 static ngx_int_t ngx_http_srcache_handler(ngx_http_request_t *r);
 static ngx_int_t ngx_http_srcache_fetch_post_subrequest(ngx_http_request_t *r,
         void *data, ngx_int_t rc);
-static ngx_int_t ngx_http_srcache_store_post_subrequest(ngx_http_request_t *r,
+static ngx_int_t ngx_http_srcache_store_post_request(ngx_http_request_t *r,
         void *data, ngx_int_t rc);
 static void ngx_http_srcache_store_wev_handler(ngx_http_request_t *r);
 static ngx_int_t ngx_http_srcache_store_subrequest(ngx_http_request_t *r,
@@ -194,7 +194,7 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
 
         dd("store: orig psr: %p", orig_psr);
 
-        psr->handler = ngx_http_srcache_store_post_subrequest;
+        psr->handler = ngx_http_srcache_store_post_request;
         psr->data = orig_psr;
 
         r->post_subrequest = psr;
@@ -499,6 +499,7 @@ ngx_http_srcache_handler(ngx_http_request_t *r)
     ngx_http_srcache_ctx_t         *ctx;
     ngx_chain_t                    *cl;
 
+
     dd_enter();
 
     conf = ngx_http_get_module_loc_conf(r, ngx_http_srcache_filter_module);
@@ -513,6 +514,7 @@ ngx_http_srcache_handler(ngx_http_request_t *r)
     if (ctx != NULL) {
         if (ctx->waiting_subrequest) {
             dd("waiting subrequest");
+            //ngx_http_post_request(r, NULL);
             return NGX_AGAIN;
         }
 
@@ -568,6 +570,7 @@ ngx_http_srcache_handler(ngx_http_request_t *r)
                 }
             }
 
+            dd("finalize from here...");
             ngx_http_finalize_request(r, NGX_OK);
             /* dd("r->main->count (post): %d", (int) r->main->count); */
             return NGX_DONE;
@@ -637,35 +640,61 @@ static ngx_int_t
 ngx_http_srcache_fetch_post_subrequest(ngx_http_request_t *r, void *data,
         ngx_int_t rc)
 {
-    ngx_http_srcache_ctx_t     *pr_ctx = data;
+    ngx_http_srcache_ctx_t      *pr_ctx = data;
+    ngx_http_request_t          *pr;
 
     dd_enter();
 
+    if (r != r->connection->data) {
+        dd("waited: %d", (int) r->waited);
+    }
+
+    pr = r->parent;
+
     pr_ctx->waiting_subrequest = 0;
     pr_ctx->request_done = 1;
+
+    /* ensure that the parent request is (or will be)
+     *  posted out the head of the r->posted_requests chain */
+
+    if (r->main->posted_requests
+            && r->main->posted_requests->request != pr)
+    {
+        rc = ngx_http_srcache_post_request_at_head(pr, NULL);
+        if (rc != NGX_OK) {
+            return NGX_ERROR;
+        }
+    }
 
     return rc;
 }
 
 
 static ngx_int_t
-ngx_http_srcache_store_post_subrequest(ngx_http_request_t *r,
+ngx_http_srcache_store_post_request(ngx_http_request_t *r,
         void *data, ngx_int_t rc)
 {
     ngx_http_post_subrequest_t          *orig_psr = data;
     ngx_http_srcache_ctx_t              *pr_ctx;
+    ngx_http_request_t                  *pr;
 
-    ngx_http_srcache_postponed_request_t  *pr;
+    ngx_http_srcache_postponed_request_t    *ppr;
 
 
     dd_enter();
 
+    pr = r->parent;
+
     pr_ctx = ngx_http_get_module_ctx(r->parent,
             ngx_http_srcache_filter_module);
 
-    for (pr = pr_ctx->postponed_requests; pr; pr = pr->next) {
-        if (pr->request == r) {
-            pr->ready = 1;
+    if (pr_ctx == NULL) {
+        return NGX_ERROR;
+    }
+
+    for (ppr = pr_ctx->postponed_requests; ppr; ppr = ppr->next) {
+        if (ppr->request == r) {
+            ppr->ready = 1;
             break;
         }
     }
@@ -674,33 +703,23 @@ ngx_http_srcache_store_post_subrequest(ngx_http_request_t *r,
         rc = orig_psr->handler(r, orig_psr->data, rc);
     }
 
-    if (r->parent->write_event_handler == ngx_http_srcache_store_wev_handler) {
-        ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
-                "ERROR: write event handler is already set to ours.");
-        return rc;
-    }
+    /* ensure that the parent request is (or will be)
+     *  posted out the head of the r->posted_requests chain */
 
-    pr_ctx->store_wev_handler_ctx = r->parent->write_event_handler;
-
+    if (r->main->posted_requests
+            && r->main->posted_requests->request != pr)
     {
-        ngx_http_posted_request_t *pr;
-
-        pr = r->main->posted_requests;
-
-        dd("r->main->posted_requests: %p", pr);
-        if (pr != NULL) {
-            dd("r->main->posted_requests->next: %p", pr->next);
-
-            if (pr->next) {
-                ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
-                        "ERROR: posted request chain contains heretics");
-            }
+        rc = ngx_http_srcache_post_request_at_head(pr, NULL);
+        if (rc != NGX_OK) {
+            return NGX_ERROR;
         }
     }
 
-    r->parent->write_event_handler = ngx_http_srcache_store_wev_handler;
+    pr_ctx->store_wev_handler_ctx = pr->write_event_handler;
 
-#if defined(nginx_version) && nginx_version >= 8011
+    pr->write_event_handler = ngx_http_srcache_store_wev_handler;
+
+#if 0 && defined(nginx_version) && nginx_version >= 8011
     /* FIXME I'm not sure why we must decrement the counter here :( */
     r->main->count--;
 #endif
@@ -715,11 +734,16 @@ ngx_http_srcache_store_wev_handler(ngx_http_request_t *r)
     ngx_http_srcache_ctx_t          *ctx;
     ngx_http_event_handler_pt        orig_handler;
     ngx_int_t                        rc;
+    ngx_flag_t                       issued_sr;
 
     ngx_http_srcache_postponed_request_t    *pr;
 
 
     dd_enter();
+
+    if (r->done) {
+        return;
+    }
 
     ctx = ngx_http_get_module_ctx(r, ngx_http_srcache_filter_module);
 
@@ -729,6 +753,22 @@ ngx_http_srcache_store_wev_handler(ngx_http_request_t *r)
     }
 
     orig_handler = ctx->store_wev_handler_ctx;
+
+    if (orig_handler == NULL) {
+        return;
+    }
+
+    ctx->store_wev_handler_ctx = NULL;
+
+    r->write_event_handler = orig_handler;
+
+#if defined(nginx_version) && nginx_version >= 8011
+    r->main->count++;
+#endif
+
+    r->write_event_handler(r);
+
+    issued_sr = 0;
 
     for (pr = ctx->postponed_requests; pr; pr = pr->next) {
         if (! pr->done && pr->ready) {
@@ -741,16 +781,24 @@ ngx_http_srcache_store_wev_handler(ngx_http_request_t *r)
                 goto done;
             }
 
+#if defined(nginx_version) && nginx_version >= 8011
+            r->main->count--;
+#endif
+
             pr->done = 1;
+            issued_sr = 1;
         }
     }
 
-done:
-    r->write_event_handler = orig_handler;
-
-    if (orig_handler) {
-        orig_handler(r);
+    if (issued_sr) {
+        r->main->count--;
+        return;
     }
+
+done:
+    //r->main->count--;
+    dd("finalize from here");
+    ngx_http_finalize_request(r, NGX_OK);
 }
 
 
@@ -844,6 +892,9 @@ ngx_http_srcache_store_subrequest(ngx_http_request_t *r,
 
     dd("store args: %.*s", (int) parsed_sr->args.len,
             parsed_sr->args.data);
+
+    flags |= NGX_HTTP_SUBREQUEST_WAITED
+        | NGX_HTTP_SUBREQUEST_IN_MEMORY;
 
     rc = ngx_http_subrequest(r, &parsed_sr->location, &parsed_sr->args,
             &sr, NULL, flags);
@@ -943,6 +994,7 @@ ngx_http_srcache_fetch_subrequest(ngx_http_request_t *r,
     dd("fetch args: %.*s", (int) parsed_sr->args.len,
             parsed_sr->args.data);
 
+    flags |= NGX_HTTP_SUBREQUEST_WAITED;
     rc = ngx_http_subrequest(r, &parsed_sr->location, &parsed_sr->args,
             &sr, psr, flags);
 

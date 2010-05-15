@@ -26,22 +26,25 @@ static void dd(const char * fmt, ...) {
 
 #   if DDEBUG > 1
 
-#       define dd_enter() dd_enter_helper(r)
+#       define dd_enter() dd_enter_helper(r, __func__)
 
-static void dd_enter_helper(ngx_http_request_t *r) {
+static void dd_enter_helper(ngx_http_request_t *r, const char *func) {
     ngx_http_posted_request_t       *pr;
 
-    fprintf(stderr, ">enter %.*s?%.*s r:%p, ar:%p, pr:%p",
+    fprintf(stderr, ">enter %s %.*s %.*s?%.*s c:%d m:%p r:%p ar:%p pr:%p",
+            func,
+            (int) r->method_name.len, r->method_name.data,
             (int) r->uri.len, r->uri.data,
             (int) r->args.len, r->args.data,
+            (int) r->main->count, r->main,
             r, r->connection->data, r->parent);
 
     if (r->posted_requests) {
-        fprintf(stderr, ", posted ");
-    }
+        fprintf(stderr, " posted:");
 
-    for (pr = r->posted_requests; pr; pr = pr->next) {
-        fprintf(stderr, "%p", pr);
+        for (pr = r->posted_requests; pr; pr = pr->next) {
+            fprintf(stderr, "%p,", pr);
+        }
     }
 
     fprintf(stderr, "\n");

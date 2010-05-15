@@ -71,6 +71,8 @@ ngx_int_t ngx_http_srcache_adjust_subrequest(ngx_http_request_t *sr,
         ngx_http_srcache_parsed_request_t *parsed_sr);
 ngx_int_t ngx_http_srcache_add_copy_chain(ngx_pool_t *pool,
         ngx_chain_t **chain, ngx_chain_t *in);
+ngx_int_t ngx_http_srcache_post_request_at_head(ngx_http_request_t *r,
+        ngx_http_posted_request_t *pr);
 
 
 #endif /* NGX_HTTP_SRCACHE_UTIL_H */

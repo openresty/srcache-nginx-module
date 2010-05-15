@@ -16,6 +16,7 @@ if [[ "$BUILD_CLEAN" -eq 1 || ! -f Makefile || "$root/config" -nt Makefile || "$
           --add-module=$root/../memc-nginx-module \
           --add-module=$root $opts \
           --with-debug
+          #--add-module=/home/agentz/git/dodo/utils/dodo-hook \
           #--add-module=$home/work/ngx_http_auth_request-0.1 #\
           #--with-rtsig_module
           #--with-cc-opt="-g3 -O0"

@@ -256,3 +256,24 @@ ngx_http_srcache_add_copy_chain(ngx_pool_t *pool, ngx_chain_t **chain, ngx_chain
     return NGX_OK;
 }
 
+
+ngx_int_t
+ngx_http_srcache_post_request_at_head(ngx_http_request_t *r,
+        ngx_http_posted_request_t *pr)
+{
+    dd_enter();
+
+    if (pr == NULL) {
+        pr = ngx_palloc(r->pool, sizeof(ngx_http_posted_request_t));
+        if (pr == NULL) {
+            return NGX_ERROR;
+        }
+    }
+
+    pr->request = r;
+    pr->next = r->main->posted_requests;
+    r->main->posted_requests = pr;
+
+    return NGX_OK;
+}
+
