@@ -135,9 +135,7 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
         ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                 "srcache_fetch: subrequest returned status %d", r->headers_out.status);
 
-        if (r->headers_out.status != NGX_HTTP_OK
-                && r->headers_out.status != NGX_HTTP_CREATED)
-        {
+        if (r->headers_out.status != NGX_HTTP_OK) {
             ctx->ignore_body = 1;
 
             pr_ctx->waiting_subrequest = 0;
@@ -147,7 +145,7 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
 
         dd("srcache's subrequest succeeds");
 
-        /* r->filter_need_in_memory = 1; */
+        r->filter_need_in_memory = 1;
 
         pr_ctx->from_cache = 1;
 
@@ -171,9 +169,7 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
         return ngx_http_next_header_filter(r);
     }
 
-    if (r->headers_out.status != NGX_HTTP_OK
-            && r->headers_out.status != NGX_HTTP_CREATED)
-    {
+    if (r->headers_out.status != NGX_HTTP_OK) {
         dd("fetch: ignore bad response with status %d",
                 (int) r->headers_out.status);
 
@@ -186,6 +182,7 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
         dd("being a subrequest");
 
         psr = ngx_palloc(r->pool, sizeof(ngx_http_post_subrequest_t));
+
         if (psr == NULL) {
             return NGX_HTTP_INTERNAL_SERVER_ERROR;
         }
@@ -249,6 +246,7 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
 static ngx_int_t
 ngx_http_srcache_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
 {
+    ngx_http_request_t       *pr;
     ngx_http_srcache_ctx_t   *ctx, *pr_ctx;
     ngx_int_t                 rc;
     ngx_chain_t              *cl;
@@ -281,20 +279,26 @@ ngx_http_srcache_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
 
             /* XXX we should restore headers saved
              *  in the cache */
-            r->parent->headers_out.status = NGX_HTTP_OK;
 
-            if (ngx_http_set_content_type(r->parent) != NGX_OK) {
+            pr = r->parent;
+
+            pr->headers_out.status = NGX_HTTP_OK;
+
+            dd("setting parent request's content type");
+
+            if (ngx_http_set_content_type(pr) != NGX_OK) {
                 return NGX_HTTP_INTERNAL_SERVER_ERROR;
             }
 
-            ngx_http_clear_content_length(r->parent);
-            ngx_http_clear_accept_ranges(r->parent);
+            ngx_http_clear_content_length(pr);
+            ngx_http_clear_accept_ranges(pr);
         }
 
         dd("save the cached response body for parent");
 
         pr_ctx = ngx_http_get_module_ctx(r->parent,
                 ngx_http_srcache_filter_module);
+
         if (pr_ctx == NULL) {
             return NGX_ERROR;
         }
@@ -539,7 +543,10 @@ ngx_http_srcache_handler(ngx_http_request_t *r)
                 return NGX_DECLINED;
             }
 
+            dd("sending header");
+
             rc = ngx_http_next_header_filter(r);
+
             if (rc == NGX_ERROR || rc >= NGX_HTTP_SPECIAL_RESPONSE) {
                 return rc;
             }
@@ -662,18 +669,6 @@ ngx_http_srcache_fetch_post_subrequest(ngx_http_request_t *r, void *data,
 
     pr_ctx->waiting_subrequest = 0;
     pr_ctx->request_done = 1;
-
-    /* ensure that the parent request is (or will be)
-     *  posted out the head of the r->posted_requests chain */
-
-    if (r->main->posted_requests
-            && r->main->posted_requests->request != pr)
-    {
-        rc = ngx_http_srcache_post_request_at_head(pr, NULL);
-        if (rc != NGX_OK) {
-            return NGX_ERROR;
-        }
-    }
 
     return rc;
 }
@@ -903,8 +898,7 @@ ngx_http_srcache_store_subrequest(ngx_http_request_t *r,
     dd("store args: %.*s", (int) parsed_sr->args.len,
             parsed_sr->args.data);
 
-    flags |= NGX_HTTP_SUBREQUEST_WAITED
-        | NGX_HTTP_SUBREQUEST_IN_MEMORY;
+    flags |= NGX_HTTP_SUBREQUEST_IN_MEMORY;
 
     rc = ngx_http_subrequest(r, &parsed_sr->location, &parsed_sr->args,
             &sr, NULL, flags);
@@ -1004,7 +998,6 @@ ngx_http_srcache_fetch_subrequest(ngx_http_request_t *r,
     dd("fetch args: %.*s", (int) parsed_sr->args.len,
             parsed_sr->args.data);
 
-    flags |= NGX_HTTP_SUBREQUEST_WAITED;
     rc = ngx_http_subrequest(r, &parsed_sr->location, &parsed_sr->args,
             &sr, psr, flags);
 
