@@ -209,6 +209,7 @@ GET /main
 --- SKIP
 
 
+
 === TEST 6: deep nested echo_location/echo_location_async
 --- config
     location /main {
