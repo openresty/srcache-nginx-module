@@ -84,8 +84,9 @@ hello
     location /foo {
         default_type text/css;
         set $key $uri;
-        srcache_fetch GET /memc $key;
-        srcache_store PUT /memc $key;
+        set $loc /memc;
+        srcache_fetch GET $loc $key;
+        srcache_store PUT $loc $key;
 
         echo world;
     }

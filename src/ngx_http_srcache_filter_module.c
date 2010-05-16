@@ -795,7 +795,7 @@ ngx_http_srcache_store_wev_handler(ngx_http_request_t *r)
     }
 
     if (issued_sr) {
-#if 0 && defined(nginx_version) && nginx_version >= 8011
+#if defined(nginx_version) && nginx_version >= 8011
         r->main->count--;
 #endif
         return;
