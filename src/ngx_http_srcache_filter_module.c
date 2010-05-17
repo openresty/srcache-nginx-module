@@ -139,7 +139,7 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
             ctx->ignore_body = 1;
 
             pr_ctx->waiting_subrequest = 0;
-            pr_ctx->fetch_error = 1;
+            /* pr_ctx->fetch_error = 1; */
 
             return NGX_OK;
         }
@@ -263,7 +263,7 @@ ngx_http_srcache_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
         return ngx_http_next_body_filter(r, in);
     }
 
-    if (ctx->ignore_body || ctx->in_store_subrequest || ctx->fetch_error) {
+    if (ctx->ignore_body || ctx->in_store_subrequest/* || ctx->fetch_error */) {
         dd("ignore body");
         ngx_http_srcache_discard_bufs(r->pool, in);
         return NGX_OK;
@@ -526,9 +526,11 @@ ngx_http_srcache_handler(ngx_http_request_t *r)
     ctx = ngx_http_get_module_ctx(r, ngx_http_srcache_filter_module);
 
     if (ctx != NULL) {
+        /*
         if (ctx->fetch_error) {
             return NGX_DECLINED;
         }
+        */
 
         if (ctx->waiting_subrequest) {
             dd("waiting subrequest");
@@ -563,6 +565,7 @@ ngx_http_srcache_handler(ngx_http_request_t *r)
                     for (cl = ctx->body_from_cache; cl->next; cl = cl->next) {
                         /* do nothing */
                     }
+
                     cl->buf->last_buf = 1;
                 }
 

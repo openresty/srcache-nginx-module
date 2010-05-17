@@ -221,7 +221,8 @@ ngx_http_srcache_adjust_subrequest(ngx_http_request_t *sr,
 ngx_int_t
 ngx_http_srcache_add_copy_chain(ngx_pool_t *pool, ngx_chain_t **chain, ngx_chain_t *in)
 {
-    ngx_chain_t  *cl, **ll;
+    ngx_chain_t     *cl, **ll;
+    size_t           len;
 
     ll = chain;
 
@@ -239,8 +240,12 @@ ngx_http_srcache_add_copy_chain(ngx_pool_t *pool, ngx_chain_t **chain, ngx_chain
             cl->buf = in->buf;
         } else {
             if (ngx_buf_in_memory(in->buf)) {
-                cl->buf = ngx_create_temp_buf(pool, ngx_buf_size(in->buf));
-                *cl->buf = *in->buf;
+                len = ngx_buf_size(in->buf);
+                cl->buf = ngx_create_temp_buf(pool, len);
+                dd("buf: %.*s", (int) len, in->buf->pos);
+
+                cl->buf->last = ngx_copy(cl->buf->pos, in->buf->pos, len);
+
             } else {
                 return NGX_ERROR;
             }
