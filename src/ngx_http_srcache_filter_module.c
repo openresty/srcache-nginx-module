@@ -139,6 +139,7 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
             ctx->ignore_body = 1;
 
             pr_ctx->waiting_subrequest = 0;
+            pr_ctx->fetch_error = 1;
 
             return NGX_OK;
         }
@@ -262,7 +263,7 @@ ngx_http_srcache_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
         return ngx_http_next_body_filter(r, in);
     }
 
-    if (ctx->ignore_body || ctx->in_store_subrequest) {
+    if (ctx->ignore_body || ctx->in_store_subrequest || ctx->fetch_error) {
         dd("ignore body");
         ngx_http_srcache_discard_bufs(r->pool, in);
         return NGX_OK;
@@ -525,6 +526,10 @@ ngx_http_srcache_handler(ngx_http_request_t *r)
     ctx = ngx_http_get_module_ctx(r, ngx_http_srcache_filter_module);
 
     if (ctx != NULL) {
+        if (ctx->fetch_error) {
+            return NGX_DECLINED;
+        }
+
         if (ctx->waiting_subrequest) {
             dd("waiting subrequest");
             //ngx_http_post_request(r, NULL);
@@ -738,7 +743,6 @@ ngx_http_srcache_store_wev_handler(ngx_http_request_t *r)
     ngx_http_srcache_ctx_t          *ctx;
     ngx_http_event_handler_pt        orig_handler;
     ngx_int_t                        rc;
-    ngx_flag_t                       issued_sr;
 
     ngx_http_srcache_postponed_request_t    *pr;
 
@@ -772,8 +776,6 @@ ngx_http_srcache_store_wev_handler(ngx_http_request_t *r)
 
     r->write_event_handler(r);
 
-    issued_sr = 0;
-
     for (pr = ctx->postponed_requests; pr; pr = pr->next) {
         if (! pr->done && pr->ready) {
             rc = ngx_http_srcache_store_subrequest(pr->request, pr->ctx);
@@ -790,20 +792,12 @@ ngx_http_srcache_store_wev_handler(ngx_http_request_t *r)
 #endif
 
             pr->done = 1;
-            issued_sr = 1;
         }
-    }
-
-    if (issued_sr) {
-#if defined(nginx_version) && nginx_version >= 8011
-        r->main->count--;
-#endif
-        return;
     }
 
 done:
     dd("finalize from here");
-    ngx_http_finalize_request(r, NGX_OK);
+    ngx_http_finalize_request(r, NGX_DONE);
 }
 
 
