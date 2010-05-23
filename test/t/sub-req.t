@@ -52,8 +52,8 @@ hello
 === TEST 2: simple fetch (without fetch)
 --- config
     location /main {
-        echo_location /foo;
-        echo_location /foo;
+        echo_location /foo?1;
+        echo_location /foo?2;
     }
 
     location /foo {
@@ -263,7 +263,7 @@ GET /main
 
 
 
-=== TEST 7: deep nested echo_location/echo_location_async
+=== TEST 7: deep nested pure echo_location
 --- config
     location /main {
         echo_location /flush;
@@ -312,7 +312,7 @@ GET /main
 1
 "
 --- timeout: 2
-
+--- SKIP
 
 
 === TEST 8: deep nested echo_location/echo_location_async
@@ -367,6 +367,7 @@ GET /main
 --- SKIP
 
 
+
 === TEST 9: deep nested echo_location/echo_location_async
 --- config
     location /main {
@@ -415,4 +416,39 @@ GET /main
 "
 --- timeout: 1
 --- SKIP
+
+
+=== TEST 3: simple store
+--- config
+    location /main {
+        echo_location /flush;
+        echo_location /bar;
+    }
+
+    location /bar {
+        srcache_fetch GET /memc $uri;
+        srcache_store PUT /memc $uri;
+
+        echo $echo_incr;
+    }
+
+    location /flush {
+        internal;
+        set $memc_cmd 'flush_all';
+        memc_pass 127.0.0.1:11984;
+    }
+
+    location /memc {
+        internal;
+
+        set $memc_key $query_string;
+        set $memc_exptime 300;
+        memc_pass 127.0.0.1:11984;
+    }
+--- request
+GET /main
+--- response_body eval
+"OK\r
+1
+"
 

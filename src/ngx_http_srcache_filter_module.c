@@ -746,6 +746,7 @@ ngx_http_srcache_store_wev_handler(ngx_http_request_t *r)
     ngx_http_srcache_ctx_t          *ctx;
     ngx_http_event_handler_pt        orig_handler;
     ngx_int_t                        rc;
+    ngx_flag_t                       issued_sr = 0;
 
     ngx_http_srcache_postponed_request_t    *pr;
 
@@ -773,12 +774,6 @@ ngx_http_srcache_store_wev_handler(ngx_http_request_t *r)
 
     r->write_event_handler = orig_handler;
 
-#if defined(nginx_version) && nginx_version >= 8011
-    r->main->count++;
-#endif
-
-    r->write_event_handler(r);
-
     for (pr = ctx->postponed_requests; pr; pr = pr->next) {
         if (! pr->done && pr->ready) {
             rc = ngx_http_srcache_store_subrequest(pr->request, pr->ctx);
@@ -786,21 +781,24 @@ ngx_http_srcache_store_wev_handler(ngx_http_request_t *r)
             if (rc != NGX_OK) {
                 ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
                         "failed to fire srcache_store subrequest");
-
-                goto done;
             }
 
-#if defined(nginx_version) && nginx_version >= 8011
+#if 0 && defined(nginx_version) && nginx_version >= 8011
             r->main->count--;
 #endif
 
             pr->done = 1;
+
+            issued_sr = 1;
         }
     }
 
-done:
-    dd("finalize from here");
-    ngx_http_finalize_request(r, NGX_DONE);
+    r->write_event_handler(r);
+
+    if (issued_sr) {
+        dd("issued subrequests and finalizing...");
+        ngx_http_finalize_request(r, NGX_OK);
+    }
 }
 
 
@@ -897,8 +895,13 @@ ngx_http_srcache_store_subrequest(ngx_http_request_t *r,
 
     flags |= NGX_HTTP_SUBREQUEST_IN_MEMORY;
 
-    rc = ngx_http_subrequest(r, &parsed_sr->location, &parsed_sr->args,
+    if (r->parent == NULL) {
+        rc = ngx_http_subrequest(r, &parsed_sr->location, &parsed_sr->args,
             &sr, NULL, flags);
+    } else {
+        rc = ngx_http_subrequest(r->parent, &parsed_sr->location, &parsed_sr->args,
+            &sr, NULL, flags);
+    }
 
     if (rc != NGX_OK) {
         return NGX_ERROR;
