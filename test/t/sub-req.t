@@ -158,7 +158,7 @@ GET /main
 
 
 
-=== TEST 5: fetch & store
+=== TEST 5: fetch & store (mixture of echo_location & echo_location_async)
 --- config
     location /main {
         echo_location /flush;
@@ -201,12 +201,8 @@ GET /main
 1
 1
 1
-1
-1
-1
 "
 --- timeout: 2
---- SKIP
 
 
 
@@ -312,7 +308,7 @@ GET /main
 1
 "
 --- timeout: 2
---- SKIP
+
 
 
 === TEST 8: deep nested echo_location/echo_location_async
@@ -364,7 +360,6 @@ GET /main
 1
 "
 --- timeout: 2
---- SKIP
 
 
 
@@ -410,15 +405,12 @@ GET /main
 1
 1
 1
-1
-1
-1
 "
 --- timeout: 1
---- SKIP
 
 
-=== TEST 3: simple store
+
+=== TEST 10: simple store
 --- config
     location /main {
         echo_location /flush;

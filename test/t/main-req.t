@@ -78,6 +78,7 @@ Content-Type: text/css
 hello
 
 
+
 === TEST 4: rewrite directives run before srcache directives
 --- config
     location /foo {

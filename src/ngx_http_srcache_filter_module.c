@@ -1,4 +1,4 @@
-#define DDEBUG 0
+#define DDEBUG 1
 #include "ddebug.h"
 
 /*
@@ -534,7 +534,6 @@ ngx_http_srcache_handler(ngx_http_request_t *r)
 
         if (ctx->waiting_subrequest) {
             dd("waiting subrequest");
-            //ngx_http_post_request(r, NULL);
             return NGX_AGAIN;
         }
 
@@ -545,6 +544,17 @@ ngx_http_srcache_handler(ngx_http_request_t *r)
 
         if (ctx->request_done) {
             dd("request done");
+
+        if (
+#if defined(nginx_version) && nginx_version >= 8012
+            ngx_http_post_request(r, NULL)
+#else
+            ngx_http_post_request(r)
+#endif
+                    != NGX_OK)
+            {
+                return NGX_ERROR;
+            }
 
             if (! ctx->from_cache) {
                 return NGX_DECLINED;
@@ -670,7 +680,7 @@ ngx_http_srcache_fetch_post_subrequest(ngx_http_request_t *r, void *data,
     dd_enter();
 
     if (r != r->connection->data) {
-        dd("waited: %d", (int) r->waited);
+        dd("waited: %d, rc: %d", (int) r->waited, (int) rc);
     }
 
     pr = r->parent;
@@ -795,10 +805,12 @@ ngx_http_srcache_store_wev_handler(ngx_http_request_t *r)
 
     r->write_event_handler(r);
 
+#if 0
     if (issued_sr) {
         dd("issued subrequests and finalizing...");
         ngx_http_finalize_request(r, NGX_OK);
     }
+#endif
 }
 
 
@@ -1019,6 +1031,8 @@ ngx_http_srcache_fetch_subrequest(ngx_http_request_t *r,
     sr_ctx->in_fetch_subrequest = 1;
 
     ngx_http_set_ctx(sr, sr_ctx, ngx_http_srcache_filter_module);
+
+    ctx->fetch_sr = sr;
 
     return NGX_OK;
 }

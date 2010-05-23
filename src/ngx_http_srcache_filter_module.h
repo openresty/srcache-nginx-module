@@ -56,6 +56,7 @@ struct ngx_http_srcache_ctx_s {
 
     ngx_http_srcache_postponed_request_t  *postponed_requests;
 
+    ngx_http_request_t      *fetch_sr;
 };
 
 struct ngx_http_srcache_postponed_request_s {
