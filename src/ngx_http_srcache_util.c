@@ -28,7 +28,7 @@ ngx_http_srcache_discard_bufs(ngx_pool_t *pool, ngx_chain_t *in)
     ngx_chain_t         *cl;
 
     for (cl = in; cl; cl = cl->next) {
-        cl->buf->last = cl->buf->pos;
+        cl->buf->pos = cl->buf->last;
     }
 }
 
