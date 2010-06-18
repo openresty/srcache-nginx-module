@@ -322,11 +322,13 @@ ngx_http_srcache_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
         last = 0;
 
         for (cl = in; cl; cl = cl->next) {
+            if (ngx_buf_in_memory(cl->buf)) {
+                ctx->body_length += ngx_buf_size(cl->buf);
+            }
+
             if (cl->buf->last_buf) {
                 last = 1;
                 break;
-            } else {
-                ctx->body_length += ngx_buf_size(cl->buf);
             }
         }
 
