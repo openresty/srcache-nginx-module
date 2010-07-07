@@ -1,4 +1,4 @@
-#define DDEBUG 1
+#define DDEBUG 0
 #include "ddebug.h"
 
 /*
@@ -639,9 +639,11 @@ ngx_http_srcache_handler(ngx_http_request_t *r)
         cur_ph = &ph[r->phase_handler];
         last_ph = &ph[cur_ph->next - 1];
 
+#if 0
         if (cur_ph == last_ph) {
             dd("XXX our handler is already the last rewrite phase handler");
         }
+#endif
 
         if (cur_ph < last_ph) {
             dd("swaping the contents of cur_ph and last_ph...");
