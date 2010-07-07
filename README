@@ -68,7 +68,7 @@ Compatibility
 
     *   0.8.0 ~ 0.8.41
 
-    *   0.7.x >= 0.7.46 (last tested version is 0.7.65)
+    *   0.7.x >= 0.7.46 (last tested version is 0.7.67)
 
     Earlier versions of Nginx like 0.6.x and 0.5.x, as well as
     latest nginx 0.8.42+  will *not* work.
