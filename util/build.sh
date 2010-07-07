@@ -25,9 +25,11 @@ cd nginx-$version/
 
 if [[ "$BUILD_CLEAN" -eq 1 || ! -f Makefile || "$root/config" -nt Makefile || "$root/util/build.sh" -nt Makefile ]]; then
     ./configure --prefix=/opt/nginx \
+          --add-module=$root/../eval-nginx-module \
           --add-module=$root/../echo-nginx-module \
           --add-module=$root $opts \
           --add-module=$root/../rds-json-nginx-module \
+          --add-module=$root/../postgres-nginx-module \
           --add-module=$root/../drizzle-nginx-module \
           --add-module=$root/../memc-nginx-module \
           --with-debug
