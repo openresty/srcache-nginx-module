@@ -66,11 +66,12 @@ Installation
 Compatibility
     The following versions of Nginx should work with this module:
 
-    *   0.8.x (last tested version is 0.8.38)
+    *   0.8.0 ~ 0.8.41
 
     *   0.7.x >= 0.7.46 (last tested version is 0.7.65)
 
-    Earlier versions of Nginx like 0.6.x and 0.5.x will *not* work.
+    Earlier versions of Nginx like 0.6.x and 0.5.x, as well as
+    latest nginx 0.8.42+  will *not* work.
 
     If you find that any particular version of Nginx above 0.7.44 does not
     work with this module, please consider reporting a bug.
