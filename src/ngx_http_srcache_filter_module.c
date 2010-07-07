@@ -1,4 +1,4 @@
-#define DDEBUG 0
+#define DDEBUG 1
 #include "ddebug.h"
 
 /*
@@ -402,6 +402,8 @@ ngx_http_srcache_create_conf(ngx_conf_t *cf)
 
     conf->buf_size = NGX_CONF_UNSET_SIZE;
 
+    conf->postponed_to_phase_end = 0;
+
     return conf;
 }
 
@@ -622,20 +624,24 @@ ngx_http_srcache_handler(ngx_http_request_t *r)
         ngx_http_set_ctx(r, ctx, ngx_http_srcache_filter_module);
     }
 
-    if ( ! ctx->postponed_to_phase_end ) {
+    if ( ! conf->postponed_to_phase_end ) {
         ngx_http_core_main_conf_t       *cmcf;
         ngx_http_phase_handler_t        tmp;
         ngx_http_phase_handler_t        *ph;
         ngx_http_phase_handler_t        *cur_ph;
         ngx_http_phase_handler_t        *last_ph;
 
-        ctx->postponed_to_phase_end = 1;
+        conf->postponed_to_phase_end = 1;
 
         cmcf = ngx_http_get_module_main_conf(r, ngx_http_core_module);
 
         ph = cmcf->phase_engine.handlers;
         cur_ph = &ph[r->phase_handler];
         last_ph = &ph[cur_ph->next - 1];
+
+        if (cur_ph == last_ph) {
+            dd("XXX our handler is already the last rewrite phase handler");
+        }
 
         if (cur_ph < last_ph) {
             dd("swaping the contents of cur_ph and last_ph...");

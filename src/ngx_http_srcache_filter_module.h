@@ -26,8 +26,9 @@ typedef struct {
 typedef struct {
     ngx_http_srcache_request_t      *fetch;
     ngx_http_srcache_request_t      *store;
+    size_t                           buf_size;
 
-    size_t        buf_size;
+    ngx_flag_t              postponed_to_phase_end:1;
 } ngx_http_srcache_conf_t;
 
 typedef struct ngx_http_srcache_ctx_s ngx_http_srcache_ctx_t;
@@ -44,7 +45,6 @@ struct ngx_http_srcache_ctx_s {
     ngx_flag_t      in_store_subrequest:1;
     ngx_flag_t      ignore_body:1;
     ngx_flag_t      parsing_cached_headers:1;
-    ngx_flag_t      postponed_to_phase_end:1;
     ngx_flag_t      store_response:1;
 
     ngx_chain_t    *body_from_cache;
