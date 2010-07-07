@@ -29,7 +29,6 @@ if [[ "$BUILD_CLEAN" -eq 1 || ! -f Makefile || "$root/config" -nt Makefile || "$
           --add-module=$root/../echo-nginx-module \
           --add-module=$root $opts \
           --add-module=$root/../rds-json-nginx-module \
-          --add-module=$root/../postgres-nginx-module \
           --add-module=$root/../drizzle-nginx-module \
           --add-module=$root/../memc-nginx-module \
           --with-debug
