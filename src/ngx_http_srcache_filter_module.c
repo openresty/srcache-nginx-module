@@ -23,7 +23,8 @@ static ngx_int_t ngx_http_srcache_filter_init(ngx_conf_t *cf);
 static char *ngx_http_srcache_conf_set_request(ngx_conf_t *cf,
         ngx_command_t *cmd, void *conf);
 
-static ngx_int_t ngx_http_srcache_handler(ngx_http_request_t *r);
+static ngx_int_t ngx_http_srcache_rewrite_handler(ngx_http_request_t *r);
+static ngx_int_t ngx_http_srcache_access_handler(ngx_http_request_t *r);
 static ngx_int_t ngx_http_srcache_fetch_post_subrequest(ngx_http_request_t *r,
         void *data, ngx_int_t rc);
 static ngx_int_t ngx_http_srcache_store_post_request(ngx_http_request_t *r,
@@ -375,12 +376,21 @@ ngx_http_srcache_filter_init(ngx_conf_t *cf)
 
         cmcf = ngx_http_conf_get_module_main_conf(cf, ngx_http_core_module);
 
+        /* register our rewrite phase handler */
         h = ngx_array_push(&cmcf->phases[NGX_HTTP_REWRITE_PHASE].handlers);
         if (h == NULL) {
             return NGX_ERROR;
         }
 
-        *h = ngx_http_srcache_handler;
+        *h = ngx_http_srcache_rewrite_handler;
+
+        /* register our access phase handler */
+        h = ngx_array_push(&cmcf->phases[NGX_HTTP_ACCESS_PHASE].handlers);
+        if (h == NULL) {
+            return NGX_ERROR;
+        }
+
+        *h = ngx_http_srcache_access_handler;
     }
 
     return NGX_OK;
@@ -402,7 +412,8 @@ ngx_http_srcache_create_conf(ngx_conf_t *cf)
 
     conf->buf_size = NGX_CONF_UNSET_SIZE;
 
-    conf->postponed_to_phase_end = 0;
+    conf->postponed_to_rewrite_phase_end = 0;
+    conf->postponed_to_access_phase_end = 0;
 
     return conf;
 }
@@ -508,17 +519,189 @@ ngx_http_srcache_conf_set_request(ngx_conf_t *cf, ngx_command_t *cmd,
     return NGX_CONF_OK;
 }
 
-
 static ngx_int_t
-ngx_http_srcache_handler(ngx_http_request_t *r)
+ngx_http_srcache_access_handler(ngx_http_request_t *r)
 {
     ngx_int_t                       rc;
     ngx_http_srcache_conf_t        *conf;
     ngx_http_srcache_ctx_t         *ctx;
     ngx_chain_t                    *cl;
 
+    if (r != r->main) {
+        return NGX_DECLINED;
+    }
+
+    /* being the main request */
+
+    conf = ngx_http_get_module_loc_conf(r, ngx_http_srcache_filter_module);
+
+    if (conf->fetch == NULL && conf->store == NULL) {
+        dd("bypass");
+        return NGX_DECLINED;
+    }
+
+    ctx = ngx_http_get_module_ctx(r, ngx_http_srcache_filter_module);
+
+    if (ctx != NULL) {
+        /*
+        if (ctx->fetch_error) {
+            return NGX_DECLINED;
+        }
+        */
+
+        if (ctx->waiting_subrequest) {
+            dd("waiting subrequest");
+            return NGX_AGAIN;
+        }
+
+        if (ctx->request_done) {
+            dd("request done");
+
+            if (
+#if defined(nginx_version) && nginx_version >= 8012
+                ngx_http_post_request(r, NULL)
+#else
+                ngx_http_post_request(r)
+#endif
+                    != NGX_OK)
+            {
+                return NGX_ERROR;
+            }
+
+            if (! ctx->from_cache) {
+                return NGX_DECLINED;
+            }
+
+            dd("sending header");
+
+            rc = ngx_http_next_header_filter(r);
+
+            if (rc == NGX_ERROR || rc >= NGX_HTTP_SPECIAL_RESPONSE) {
+                return rc;
+            }
+
+            dd("sent header from cache: %d", (int) rc);
+
+            if (ctx->body_from_cache) {
+                for (cl = ctx->body_from_cache; cl->next; cl = cl->next) {
+                    /* do nothing */
+                }
+
+                cl->buf->last_buf = 1;
+
+                rc = ngx_http_next_body_filter(r, ctx->body_from_cache);
+
+                if (rc == NGX_ERROR || rc >= NGX_HTTP_SPECIAL_RESPONSE) {
+                    return rc;
+                }
+
+                dd("sent body from cache: %d", (int) rc);
+            } else {
+                dd("send last buf for the main request");
+
+                cl = ngx_alloc_chain_link(r->pool);
+                cl->buf = ngx_calloc_buf(r->pool);
+                cl->buf->last_buf = 1;
+
+                rc = ngx_http_next_body_filter(r, cl);
+
+                if (rc == NGX_ERROR || rc >= NGX_HTTP_SPECIAL_RESPONSE) {
+                    return rc;
+                }
+
+                dd("sent last buf from cache: %d", (int) rc);
+            }
+
+            dd("finalize from here...");
+            ngx_http_finalize_request(r, NGX_OK);
+            /* dd("r->main->count (post): %d", (int) r->main->count); */
+            return NGX_DONE;
+        }
+
+    } else {
+        ctx = ngx_pcalloc(r->pool, sizeof(ngx_http_srcache_filter_module));
+
+        if (ctx == NULL) {
+            return NGX_HTTP_INTERNAL_SERVER_ERROR;
+        }
+
+        ngx_http_set_ctx(r, ctx, ngx_http_srcache_filter_module);
+    }
+
+    if ( ! conf->postponed_to_access_phase_end ) {
+        ngx_http_core_main_conf_t       *cmcf;
+        ngx_http_phase_handler_t        tmp;
+        ngx_http_phase_handler_t        *ph;
+        ngx_http_phase_handler_t        *cur_ph;
+        ngx_http_phase_handler_t        *last_ph;
+
+        conf->postponed_to_access_phase_end = 1;
+
+        cmcf = ngx_http_get_module_main_conf(r, ngx_http_core_module);
+
+        ph = cmcf->phase_engine.handlers;
+        cur_ph = &ph[r->phase_handler];
+        last_ph = &ph[cur_ph->next - 1];
+
+#if 0
+        if (cur_ph == last_ph) {
+            dd("XXX our handler is already the last rewrite phase handler");
+        }
+#endif
+
+        if (cur_ph < last_ph) {
+            dd("swaping the contents of cur_ph and last_ph...");
+
+            tmp      = *cur_ph;
+
+            memmove(cur_ph, cur_ph + 1,
+                (last_ph - cur_ph) * sizeof (ngx_http_phase_handler_t));
+
+            *last_ph = tmp;
+
+            r->phase_handler--; /* redo the current ph */
+
+            return NGX_DECLINED;
+        }
+    }
+
+    if (conf->fetch == NULL) {
+        dd("fetch is not defined");
+        return NGX_DECLINED;
+    }
+
+    dd("running phase handler...");
+
+    /* issue a subrequest to fetch cached stuff (if any) */
+
+    rc = ngx_http_srcache_fetch_subrequest(r, conf, ctx);
+
+    if (rc != NGX_OK) {
+        return rc;
+    }
+
+    ctx->waiting_subrequest = 1;
+
+    dd("quit");
+
+    return NGX_AGAIN;
+}
+
+
+static ngx_int_t
+ngx_http_srcache_rewrite_handler(ngx_http_request_t *r)
+{
+    ngx_int_t                       rc;
+    ngx_http_srcache_conf_t        *conf;
+    ngx_http_srcache_ctx_t         *ctx;
 
     dd_enter();
+
+    if (r == r->main) {
+        return NGX_DECLINED;
+    }
+
+    /* being a subrequest */
 
     conf = ngx_http_get_module_loc_conf(r, ngx_http_srcache_filter_module);
 
@@ -549,11 +732,11 @@ ngx_http_srcache_handler(ngx_http_request_t *r)
         if (ctx->request_done) {
             dd("request done");
 
-        if (
+            if (
 #if defined(nginx_version) && nginx_version >= 8012
-            ngx_http_post_request(r, NULL)
+                ngx_http_post_request(r, NULL)
 #else
-            ngx_http_post_request(r)
+                ngx_http_post_request(r)
 #endif
                     != NGX_OK)
             {
@@ -575,14 +758,6 @@ ngx_http_srcache_handler(ngx_http_request_t *r)
             dd("sent header from cache: %d", (int) rc);
 
             if (ctx->body_from_cache) {
-                if (r == r->main) {
-                    for (cl = ctx->body_from_cache; cl->next; cl = cl->next) {
-                        /* do nothing */
-                    }
-
-                    cl->buf->last_buf = 1;
-                }
-
                 rc = ngx_http_next_body_filter(r, ctx->body_from_cache);
 
                 if (rc == NGX_ERROR || rc >= NGX_HTTP_SPECIAL_RESPONSE) {
@@ -590,22 +765,6 @@ ngx_http_srcache_handler(ngx_http_request_t *r)
                 }
 
                 dd("sent body from cache: %d", (int) rc);
-            } else {
-                if (r == r->main) {
-                    dd("send last buf for the main request");
-
-                    cl = ngx_alloc_chain_link(r->pool);
-                    cl->buf = ngx_calloc_buf(r->pool);
-                    cl->buf->last_buf = 1;
-
-                    rc = ngx_http_next_body_filter(r, cl);
-
-                    if (rc == NGX_ERROR || rc >= NGX_HTTP_SPECIAL_RESPONSE) {
-                        return rc;
-                    }
-
-                    dd("sent last buf from cache: %d", (int) rc);
-                }
             }
 
             dd("finalize from here...");
@@ -624,14 +783,14 @@ ngx_http_srcache_handler(ngx_http_request_t *r)
         ngx_http_set_ctx(r, ctx, ngx_http_srcache_filter_module);
     }
 
-    if ( ! conf->postponed_to_phase_end ) {
+    if ( ! conf->postponed_to_rewrite_phase_end ) {
         ngx_http_core_main_conf_t       *cmcf;
         ngx_http_phase_handler_t        tmp;
         ngx_http_phase_handler_t        *ph;
         ngx_http_phase_handler_t        *cur_ph;
         ngx_http_phase_handler_t        *last_ph;
 
-        conf->postponed_to_phase_end = 1;
+        conf->postponed_to_rewrite_phase_end = 1;
 
         cmcf = ngx_http_get_module_main_conf(r, ngx_http_core_module);
 

@@ -28,7 +28,8 @@ typedef struct {
     ngx_http_srcache_request_t      *store;
     size_t                           buf_size;
 
-    ngx_flag_t              postponed_to_phase_end:1;
+    ngx_flag_t              postponed_to_rewrite_phase_end:1;
+    ngx_flag_t              postponed_to_access_phase_end:1;
 } ngx_http_srcache_conf_t;
 
 typedef struct ngx_http_srcache_ctx_s ngx_http_srcache_ctx_t;
