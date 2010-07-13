@@ -519,6 +519,7 @@ ngx_http_srcache_conf_set_request(ngx_conf_t *cf, ngx_command_t *cmd,
     return NGX_CONF_OK;
 }
 
+
 static ngx_int_t
 ngx_http_srcache_access_handler(ngx_http_request_t *r)
 {
