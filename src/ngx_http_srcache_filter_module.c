@@ -107,8 +107,8 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
     ngx_http_srcache_ctx_t          *ctx, *pr_ctx;
     ngx_http_srcache_conf_t         *conf;
     ngx_http_post_subrequest_t      *psr, *orig_psr;
-    ngx_http_srcache_postponed_request_t  *p, *ppr, **last;
 
+    ngx_http_srcache_postponed_request_t  *p, *ppr, **last;
 
     dd_enter();
 
