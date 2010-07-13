@@ -68,7 +68,7 @@ static ngx_command_t  ngx_http_srcache_commands[] = {
 
 static ngx_http_module_t  ngx_http_srcache_filter_module_ctx = {
     NULL,                                  /* preconfiguration */
-    ngx_http_srcache_filter_init,         /* postconfiguration */
+    ngx_http_srcache_filter_init,          /* postconfiguration */
 
     NULL,                                  /* create main configuration */
     NULL,                                  /* init main configuration */
@@ -76,15 +76,15 @@ static ngx_http_module_t  ngx_http_srcache_filter_module_ctx = {
     NULL,                                  /* create server configuration */
     NULL,                                  /* merge server configuration */
 
-    ngx_http_srcache_create_conf,         /* create location configuration */
-    ngx_http_srcache_merge_conf           /* merge location configuration */
+    ngx_http_srcache_create_conf,          /* create location configuration */
+    ngx_http_srcache_merge_conf            /* merge location configuration */
 };
 
 
 ngx_module_t  ngx_http_srcache_filter_module = {
     NGX_MODULE_V1,
-    &ngx_http_srcache_filter_module_ctx,  /* module context */
-    ngx_http_srcache_commands,            /* module directives */
+    &ngx_http_srcache_filter_module_ctx,   /* module context */
+    ngx_http_srcache_commands,             /* module directives */
     NGX_HTTP_MODULE,                       /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
