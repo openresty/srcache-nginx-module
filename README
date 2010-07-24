@@ -40,6 +40,9 @@ Caveat
     For now, ngx_srcache does not cache response headers. So it's
     necessary to use the <charset>, <default_type> and <add_header>
     directives to explicitly set the Content-Type header and etc.
+    So it's probably a bad idea to combine this module with ngx_proxy
+    which usually returns varying response headers.
+
     Support for response header caching is a TODO and you're very
     welcome to submit patches for this :)
 
