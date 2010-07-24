@@ -11,6 +11,9 @@ Status
 Synopsis
 
     location /foo {
+        charset utf-8; # or some other encoding
+        default_type text/plain; # or some other MIME type
+
         set $key $uri;
         srcache_fetch GET /memc $key;
         srcache_store PUT /memc $key;
