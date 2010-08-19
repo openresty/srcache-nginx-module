@@ -45,6 +45,10 @@ Description
     "deny" direcives run *before* ours, which is usually the desired behavior
     for security reasons.
 
+    For subrequests, the srcache_fetch directive works at the end of
+    the rewrite phase, so the standard rewrite module's "set"
+    and other directives work before ours.
+
     The srcache_store directive works in an output filter.
 
 Caveat
