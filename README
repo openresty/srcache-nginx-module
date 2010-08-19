@@ -40,6 +40,13 @@ Description
     interface can be used as the fetching and storage subrequests
     used by ngx_srcache.
 
+    For main requests, the srcache_fetch directive works at the end of
+    the access phase, so the standard access module's "allow" and
+    "deny" direcives run *before* ours, which is usually the desired behavior
+    for security reasons.
+
+    The srcache_store directive works in an output filter.
+
 Caveat
     For now, ngx_srcache does not cache response headers. So it's
     necessary to use the <charset>, <default_type> and <add_header>
@@ -80,9 +87,13 @@ Installation
 Compatibility
     The following versions of Nginx should work with this module:
 
-    *   0.8.0 ~ 0.8.41
+    *   0.8.x (last tested version is 0.8.49)
 
     *   0.7.x >= 0.7.46 (last tested version is 0.7.67)
+
+    Note that for nginx 0.8.42+, only main request caching works. In other words,
+    subrequest caching does not work in 0.8.42+ due to a famous
+    regression appeared since 0.8.42: <http://forum.nginx.org/read.php?29,103078,103078 >.
 
     Earlier versions of Nginx like 0.6.x and 0.5.x, as well as
     latest nginx 0.8.42+  will *not* work.
