@@ -7,6 +7,8 @@ use Test::Nginx::Socket;
 
 plan tests => repeat_each() * 3 * blocks();
 
+$ENV{TEST_NGINX_MEMCACHED_PORT} ||= 11211;
+
 no_shuffle();
 
 run_tests();
@@ -17,7 +19,7 @@ __DATA__
 --- config
     location /flush {
         set $memc_cmd 'flush_all';
-        memc_pass 127.0.0.1:11984;
+        memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
     }
 --- response_headers
 Content-Type: text/plain
@@ -42,7 +44,7 @@ GET /flush
 
         set $memc_key $query_string;
         set $memc_exptime 300;
-        memc_pass 127.0.0.1:11984;
+        memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
     }
 --- request
 GET /foo
@@ -68,7 +70,7 @@ hello
 
         set $memc_key $query_string;
         set $memc_exptime 300;
-        memc_pass 127.0.0.1:11984;
+        memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
     }
 --- request
 GET /foo
@@ -96,7 +98,7 @@ hello
 
         set $memc_key $query_string;
         set $memc_exptime 300;
-        memc_pass 127.0.0.1:11984;
+        memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
     }
 --- request
 GET /foo
