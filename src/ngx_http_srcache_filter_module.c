@@ -111,11 +111,12 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
     ngx_http_srcache_postponed_request_t  *p, *ppr, **last;
 
     dd_enter();
+    dd("srcache header filter");
 
     ctx = ngx_http_get_module_ctx(r, ngx_http_srcache_filter_module);
 
     if (ctx == NULL || ctx->from_cache) {
-        dd("bypass");
+        dd("bypass: %.*s", (int) r->uri.len, r->uri.data);
         return ngx_http_next_header_filter(r);
     }
 
@@ -157,6 +158,7 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
     }
 
     if (ctx->in_store_subrequest) {
+        dd("in store subreuqest");
         ctx->ignore_body = 1;
 
         ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
@@ -168,6 +170,7 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
     conf = ngx_http_get_module_loc_conf(r, ngx_http_srcache_filter_module);
 
     if (conf->store == NULL) {
+        dd("conf->store is NULL");
         return ngx_http_next_header_filter(r);
     }
 
@@ -260,12 +263,12 @@ ngx_http_srcache_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
     ctx = ngx_http_get_module_ctx(r, ngx_http_srcache_filter_module);
 
     if (ctx == NULL || ctx->from_cache) {
-        dd("bypass");
+        dd("bypass: %.*s", (int) r->uri.len, r->uri.data);
         return ngx_http_next_body_filter(r, in);
     }
 
     if (ctx->ignore_body || ctx->in_store_subrequest/* || ctx->fetch_error */) {
-        dd("ignore body");
+        dd("ignore body: ignore body %d, in store sr %d", (int) ctx->ignore_body, (int) ctx->in_store_subrequest);
         ngx_http_srcache_discard_bufs(r->pool, in);
         return NGX_OK;
     }
@@ -537,9 +540,11 @@ ngx_http_srcache_access_handler(ngx_http_request_t *r)
     conf = ngx_http_get_module_loc_conf(r, ngx_http_srcache_filter_module);
 
     if (conf->fetch == NULL && conf->store == NULL) {
-        dd("bypass");
+        dd("bypass: %.*s", (int) r->uri.len, r->uri.data);
         return NGX_DECLINED;
     }
+
+    dd("store defined? %p", conf->store);
 
     ctx = ngx_http_get_module_ctx(r, ngx_http_srcache_filter_module);
 
@@ -707,7 +712,7 @@ ngx_http_srcache_rewrite_handler(ngx_http_request_t *r)
     conf = ngx_http_get_module_loc_conf(r, ngx_http_srcache_filter_module);
 
     if (conf->fetch == NULL && conf->store == NULL) {
-        dd("bypass");
+        dd("bypass: %.*s", (int) r->uri.len, r->uri.data);
         return NGX_DECLINED;
     }
 
@@ -1004,6 +1009,7 @@ ngx_http_srcache_store_subrequest(ngx_http_request_t *r,
 
 
     dd_enter();
+    dd("store subrequest");
 
     conf = ngx_http_get_module_loc_conf(r, ngx_http_srcache_filter_module);
 

@@ -70,7 +70,7 @@ Directives
 
 Installation
     1. Grab the nginx source code from nginx.net (< http://nginx.net/ >), for
-        example, the version 0.8.41 (see nginx compatibility), 
+        example, the version 0.8.41 (see nginx compatibility),
     2. and then build the source with this module:
 
         $ wget 'http://sysoev.ru/nginx/nginx-0.8.41.tar.gz'
