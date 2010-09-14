@@ -9,22 +9,22 @@
 #define ngx_http_srcache_strcmp_const(a, b) \
         ngx_strncmp(a, b, sizeof(b) - 1)
 
-ngx_str_t  ngx_http_srcache_content_length_header_key;
+extern ngx_str_t  ngx_http_srcache_content_length_header_key;
 
-ngx_str_t  ngx_http_srcache_get_method;
-ngx_str_t  ngx_http_srcache_put_method;
-ngx_str_t  ngx_http_srcache_post_method;
-ngx_str_t  ngx_http_srcache_head_method;
-ngx_str_t  ngx_http_srcache_copy_method;
-ngx_str_t  ngx_http_srcache_move_method;
-ngx_str_t  ngx_http_srcache_lock_method;
-ngx_str_t  ngx_http_srcache_mkcol_method;
-ngx_str_t  ngx_http_srcache_trace_method;
-ngx_str_t  ngx_http_srcache_delete_method;
-ngx_str_t  ngx_http_srcache_unlock_method;
-ngx_str_t  ngx_http_srcache_options_method;
-ngx_str_t  ngx_http_srcache_propfind_method;
-ngx_str_t  ngx_http_srcache_proppatch_method;
+extern ngx_str_t  ngx_http_srcache_get_method;
+extern ngx_str_t  ngx_http_srcache_put_method;
+extern ngx_str_t  ngx_http_srcache_post_method;
+extern ngx_str_t  ngx_http_srcache_head_method;
+extern ngx_str_t  ngx_http_srcache_copy_method;
+extern ngx_str_t  ngx_http_srcache_move_method;
+extern ngx_str_t  ngx_http_srcache_lock_method;
+extern ngx_str_t  ngx_http_srcache_mkcol_method;
+extern ngx_str_t  ngx_http_srcache_trace_method;
+extern ngx_str_t  ngx_http_srcache_delete_method;
+extern ngx_str_t  ngx_http_srcache_unlock_method;
+extern ngx_str_t  ngx_http_srcache_options_method;
+extern ngx_str_t  ngx_http_srcache_propfind_method;
+extern ngx_str_t  ngx_http_srcache_proppatch_method;
 
 ngx_int_t ngx_http_srcache_parse_method_name(ngx_str_t **method_name_ptr);
 void ngx_http_srcache_discard_bufs(ngx_pool_t *pool, ngx_chain_t *in);

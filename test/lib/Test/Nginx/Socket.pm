@@ -5,7 +5,7 @@ use lib 'inc';
 
 use Test::Base -Base;
 
-our $VERSION = '0.08';
+our $VERSION = '0.10';
 
 use Encode;
 use Data::Dumper;
@@ -15,7 +15,7 @@ use List::MoreUtils qw( any );
 use IO::Select ();
 
 our $ServerAddr = 'localhost';
-our $Timeout = 2;
+our $Timeout = $ENV{TEST_NGINX_TIMEOUT} || 2;
 
 use Test::Nginx::Util qw(
     setup_server_root
@@ -42,6 +42,9 @@ use Test::Nginx::Util qw(
     log_level
     no_shuffle
     no_root_location
+    server_root
+    html_dir
+    server_port
 );
 
 #use Smart::Comments::JSON '###';
@@ -58,12 +61,13 @@ our @EXPORT = qw( plan run_tests run_test
     master_process_enabled
     no_long_string workers master_on
     log_level no_shuffle no_root_location
-    server_addr
+    server_addr server_root html_dir server_port
+    timeout
 );
 
 sub send_request ($$$$);
 
-sub run_test_helper ($);
+sub run_test_helper ($$);
 
 sub error_event_handler ($);
 sub read_event_handler ($);
@@ -79,6 +83,14 @@ sub server_addr (@) {
         $ServerAddr = shift;
     } else {
         return $ServerAddr;
+    }
+}
+
+sub timeout (@) {
+    if (@_) {
+        $Timeout = shift;
+    } else {
+        $Timeout;
     }
 }
 
@@ -114,8 +126,8 @@ sub parse_request ($$) {
     };
 }
 
-sub run_test_helper ($) {
-    my $block = shift;
+sub run_test_helper ($$) {
+    my ($block, $dry_run) = @_;
 
     my $name = $block->name;
 
@@ -213,10 +225,23 @@ $parsed_req->{content}";
         $timeout = $Timeout;
     }
 
-    my $raw_resp = send_request($req, $block->raw_request_middle_delay,
-        $timeout, $block->name);
+    my $raw_resp;
+
+    if ($dry_run) {
+        $raw_resp = "200 OK HTTP/1.0\r\nContent-Length: 0\r\n\r\n";
+    } else {
+        $raw_resp = send_request($req, $block->raw_request_middle_delay,
+            $timeout, $block->name);
+    }
 
     #warn "raw resonse: [$raw_resp]\n";
+
+    my $raw_headers = '';
+    if ($raw_resp =~ /(.*?)\r\n\r\n/s) {
+        #warn "\$1: $1";
+        $raw_headers = $1;
+    }
+    #warn "raw headers: $raw_headers\n";
 
     my $res = HTTP::Response->parse($raw_resp);
     my $enc = $res->header('Transfer-Encoding');
@@ -266,21 +291,46 @@ $parsed_req->{content}";
         $res->content($decoded);
     }
 
-    if (defined $block->error_code) {
-        is($res->code || '', $block->error_code, "$name - status code ok");
+    if ($dry_run) {
+        SKIP: {
+            Test::More::skip("$name - tests skipped due to the lack of directive $dry_run", 1);
+        }
     } else {
-        is($res->code || '', 200, "$name - status code ok");
+        if (defined $block->error_code) {
+            is($res->code || '', $block->error_code, "$name - status code ok");
+        } else {
+            is($res->code || '', 200, "$name - status code ok");
+        }
     }
 
     if (defined $block->response_headers) {
         my $headers = parse_headers($block->response_headers);
         while (my ($key, $val) = each %$headers) {
-            my $expected_val = $res->header($key);
-            if (!defined $expected_val) {
-                $expected_val = '';
+            if (!defined $val) {
+                #warn "HIT";
+                if ($dry_run) {
+                    SKIP: {
+                        Test::More::skip("$name - tests skipped due to the lack of directive $dry_run", 1);
+                    }
+                } else {
+                    unlike $raw_headers, qr/^\s*\Q$key\E\s*:/ms, "$name - header $key not present in the raw headers";
+                }
+                next;
             }
-            is $expected_val, $val,
-                "$name - header $key ok";
+
+            my $actual_val = $res->header($key);
+            if (!defined $actual_val) {
+                $actual_val = '';
+            }
+
+            if ($dry_run) {
+                SKIP: {
+                    Test::More::skip("$name - tests skipped due to the lack of directive $dry_run", 1);
+                }
+            } else {
+                is $actual_val, $val,
+                    "$name - header $key ok";
+            }
         }
     } elsif (defined $block->response_headers_like) {
         my $headers = parse_headers($block->response_headers_like);
@@ -289,8 +339,14 @@ $parsed_req->{content}";
             if (!defined $expected_val) {
                 $expected_val = '';
             }
-            like $expected_val, qr/^$val$/,
-                "$name - header $key like ok";
+            if ($dry_run) {
+                SKIP: {
+                    Test::More::skip("$name - tests skipped due to the lack of directive $dry_run", 1);
+                }
+            } else {
+                like $expected_val, qr/^$val$/,
+                    "$name - header $key like ok";
+            }
         }
     }
 
@@ -321,10 +377,16 @@ $parsed_req->{content}";
         #warn show_all_chars($content);
 
         #warn "no long string: $NoLongString";
-        if ($NoLongString) {
-            is($content, $expected, "$name - response_body - response is expected");
+        if ($dry_run) {
+            SKIP: {
+                Test::More::skip("$name - tests skipped due to the lack of directive $dry_run", 1);
+            }
         } else {
-            is_string($content, $expected, "$name - response_body - response is expected");
+            if ($NoLongString) {
+                is($content, $expected, "$name - response_body - response is expected");
+            } else {
+                is_string($content, $expected, "$name - response_body - response is expected");
+            }
         }
 
     } elsif (defined $block->response_body_like) {
@@ -337,7 +399,14 @@ $parsed_req->{content}";
         $expected_pat =~ s/\$ServerPort\b/$ServerPort/g;
         $expected_pat =~ s/\$ServerPortForClient\b/$ServerPortForClient/g;
         my $summary = trim($content);
-        like($content, qr/$expected_pat/s, "$name - response_body_like - response is expected ($summary)");
+
+        if ($dry_run) {
+            SKIP: {
+                Test::More::skip("$name - tests skipped due to the lack of directive $dry_run", 1);
+            }
+        } else {
+            like($content, qr/$expected_pat/s, "$name - response_body_like - response is expected ($summary)");
+        }
     }
 }
 
@@ -695,6 +764,12 @@ The following sections are supported:
 
 =item raw_request
 
+=item user_files
+
+=item skip_nginx
+
+=item skip_nginx2
+
 Both string scalar and string arrays are supported as values.
 
 =item raw_request_middle_delay
@@ -708,6 +783,10 @@ Delay in sec between sending successive packets in the "raw_request" array value
 You'll find live samples in the following Nginx 3rd-party modules:
 
 =over
+
+=item ngx_echo
+
+L<http://github.com/agentzh/echo-nginx-module>
 
 =item ngx_chunkin
 
@@ -728,6 +807,42 @@ L<http://github.com/agentzh/rds-json-nginx-module>
 =item ngx_xss
 
 L<http://github.com/agentzh/xss-nginx-module>
+
+=item ngx_srcache
+
+L<http://github.com/agentzh/srcache-nginx-module>
+
+=item ngx_lua
+
+L<http://github.com/chaoslawful/lua-nginx-module>
+
+=item ngx_set_misc
+
+L<http://github.com/agentzh/set-misc-nginx-module>
+
+=item ngx_array_var
+
+L<http://github.com/agentzh/array-var-nginx-module>
+
+=item ngx_form_input
+
+L<http://github.com/calio/form-input-nginx-module>
+
+=item ngx_iconv
+
+L<http://github.com/calio/iconv-nginx-module>
+
+=item ngx_set_cconv
+
+L<http://github.com/liseen/set-cconv-nginx-module>
+
+=item ngx_postgres
+
+L<http://github.com/FRiCKLE/ngx_postgres>
+
+=item ngx_coolkit
+
+L<http://github.com/FRiCKLE/ngx_coolkit>
 
 =back
 

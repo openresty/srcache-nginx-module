@@ -8,6 +8,8 @@ no_long_string();
 
 plan tests => repeat_each() * 2 * blocks();
 
+$ENV{TEST_NGINX_MEMCACHED_PORT} ||= 11211;
+
 run_tests();
 
 __DATA__
@@ -31,13 +33,13 @@ __DATA__
         set $memc_key $query_string;
         set $memc_value "hello\n";
         set $memc_exptime 300;
-        memc_pass 127.0.0.1:11984;
+        memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
     }
 
     location /memc {
         set $memc_key $query_string;
         set $memc_exptime 300;
-        memc_pass 127.0.0.1:11984;
+        memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
     }
 --- request
 GET /main
@@ -67,7 +69,7 @@ hello
 
         set $memc_key $query_string;
         set $memc_exptime 300;
-        memc_pass 127.0.0.1:11984;
+        memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
     }
 --- request
 GET /main
@@ -96,7 +98,7 @@ GET /main
     location /flush {
         internal;
         set $memc_cmd 'flush_all';
-        memc_pass 127.0.0.1:11984;
+        memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
     }
 
     location /memc {
@@ -104,7 +106,7 @@ GET /main
 
         set $memc_key $query_string;
         set $memc_exptime 300;
-        memc_pass 127.0.0.1:11984;
+        memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
     }
 --- request
 GET /main
@@ -136,7 +138,7 @@ OK\r
     location /flush {
         internal;
         set $memc_cmd 'flush_all';
-        memc_pass 127.0.0.1:11984;
+        memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
     }
 
     location /memc {
@@ -144,7 +146,7 @@ OK\r
 
         set $memc_key $query_string;
         set $memc_exptime 300;
-        memc_pass 127.0.0.1:11984;
+        memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
     }
 --- request
 GET /main
@@ -183,7 +185,7 @@ GET /main
     location /flush {
         internal;
         set $memc_cmd 'flush_all';
-        memc_pass 127.0.0.1:11984;
+        memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
     }
 
     location /memc {
@@ -191,7 +193,7 @@ GET /main
 
         set $memc_key $query_string;
         set $memc_exptime 300;
-        memc_pass 127.0.0.1:11984;
+        memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
     }
 --- request
 GET /main
@@ -232,7 +234,7 @@ GET /main
     location /flush {
         internal;
         set $memc_cmd 'flush_all';
-        memc_pass 127.0.0.1:11984;
+        memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
     }
 
     location /memc {
@@ -240,7 +242,7 @@ GET /main
 
         set $memc_key $query_string;
         set $memc_exptime 300;
-        memc_pass 127.0.0.1:11984;
+        memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
     }
 --- request
 GET /main
@@ -285,7 +287,7 @@ GET /main
     location /flush {
         internal;
         set $memc_cmd 'flush_all';
-        memc_pass 127.0.0.1:11984;
+        memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
     }
 
     location /memc {
@@ -293,7 +295,7 @@ GET /main
 
         set $memc_key $query_string;
         set $memc_exptime 300;
-        memc_pass 127.0.0.1:11984;
+        memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
     }
 --- request
 GET /main
@@ -337,7 +339,7 @@ GET /main
     location /flush {
         internal;
         set $memc_cmd 'flush_all';
-        memc_pass 127.0.0.1:11984;
+        memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
     }
 
     location /memc {
@@ -345,7 +347,7 @@ GET /main
 
         set $memc_key $query_string;
         set $memc_exptime 300;
-        memc_pass 127.0.0.1:11984;
+        memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
     }
 --- request
 GET /main
@@ -387,7 +389,7 @@ GET /main
     location /flush {
         internal;
         set $memc_cmd 'flush_all';
-        memc_pass 127.0.0.1:11984;
+        memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
     }
 
     location /memc {
@@ -395,7 +397,7 @@ GET /main
 
         set $memc_key $query_string;
         set $memc_exptime 300;
-        memc_pass 127.0.0.1:11984;
+        memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
     }
 --- request
 GET /main
@@ -427,7 +429,7 @@ GET /main
     location /flush {
         internal;
         set $memc_cmd 'flush_all';
-        memc_pass 127.0.0.1:11984;
+        memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
     }
 
     location /memc {
@@ -435,7 +437,7 @@ GET /main
 
         set $memc_key $query_string;
         set $memc_exptime 300;
-        memc_pass 127.0.0.1:11984;
+        memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
     }
 --- request
 GET /main

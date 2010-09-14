@@ -1,4 +1,4 @@
-# vi:filetype=
+# vi:filetype=perl
 
 use lib 'lib';
 use Test::Nginx::Socket;
@@ -6,6 +6,9 @@ use Test::Nginx::Socket;
 #repeat_each(2);
 
 plan tests => repeat_each() * 3 * blocks();
+
+$ENV{TEST_NGINX_MEMCACHED_PORT} ||= 11211;
+$ENV{TEST_NGINX_MYSQL_PORT}     ||= 3306;
 
 no_shuffle();
 
@@ -17,7 +20,7 @@ __DATA__
 --- config
     location /flush {
         set $memc_cmd 'flush_all';
-        memc_pass 127.0.0.1:11984;
+        memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
     }
 --- response_headers
 Content-Type: text/plain
@@ -30,8 +33,8 @@ GET /flush
 === TEST 2: basic fetch (cache miss)
 --- http_config
     upstream backend {
-        drizzle_server 127.0.0.1:3306 dbname=test
-             password=some_pass user=monty protocol=mysql;
+        drizzle_server 127.0.0.1:$TEST_NGINX_MYSQL_PORT protocol=mysql
+                       dbname=ngx_test user=ngx_test password=ngx_test;
     }
 --- config
     location /main {
@@ -58,7 +61,7 @@ GET /flush
 
         set $memc_key $query_string;
         set $memc_exptime 300;
-        memc_pass 127.0.0.1:11984;
+        memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
     }
 --- request
 GET /main
@@ -72,8 +75,8 @@ Content-Type: text/plain
 === TEST 2: basic fetch (cache hit)
 --- http_config
     upstream backend {
-        drizzle_server 127.0.0.1:3306 dbname=test
-             password=some_pass user=monty protocol=mysql;
+        drizzle_server 127.0.0.1:$TEST_NGINX_MYSQL_PORT protocol=mysql
+                       dbname=ngx_test user=ngx_test password=ngx_test;
     }
 --- config
     location /main {
@@ -100,7 +103,7 @@ Content-Type: text/plain
 
         set $memc_key $query_string;
         set $memc_exptime 300;
-        memc_pass 127.0.0.1:11984;
+        memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
     }
 --- request
 GET /main

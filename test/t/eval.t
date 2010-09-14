@@ -1,4 +1,4 @@
-# vi:filetype=
+# vi:filetype=perl
 
 use lib 'lib';
 use Test::Nginx::Socket;
@@ -6,6 +6,9 @@ use Test::Nginx::Socket;
 repeat_each(3);
 
 plan tests => repeat_each() * 2 * blocks();
+
+$ENV{TEST_NGINX_MEMCACHED_PORT} ||= 11211;
+$ENV{TEST_NGINX_MYSQL_PORT}     ||= 3306;
 
 no_shuffle();
 
@@ -17,7 +20,7 @@ __DATA__
 --- config
     location /flush {
         set $memc_cmd 'flush_all';
-        memc_pass 127.0.0.1:11984;
+        memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
     }
 --- request
 GET /flush
@@ -28,13 +31,12 @@ GET /flush
 === TEST 2: cache miss
 --- http_config
     upstream backend {
-        drizzle_server 127.0.0.1:3306 dbname=test
-             password=some_pass user=monty;
-        drizzle_keepalive max=10 mode=single overflow=reject;
+        drizzle_server 127.0.0.1:$TEST_NGINX_MYSQL_PORT protocol=mysql
+                       dbname=ngx_test user=ngx_test password=ngx_test;
     }
 
     upstream mem_backend {
-        server 127.0.0.1:11984;
+        server 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
         #keepalive 100 single;
     }
 --- config
