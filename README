@@ -91,13 +91,18 @@ Installation
 Compatibility
     The following versions of Nginx should work with this module:
 
-    *   0.8.x (last tested version is 0.8.49)
+    *   0.8.x (last tested: 0.8.53)
 
     *   0.7.x >= 0.7.46 (last tested version is 0.7.67)
 
     Note that for nginx 0.8.42+, only main request caching works. In other words,
     subrequest caching does not work in 0.8.42+ due to a famous
-    regression appeared since 0.8.42: <http://forum.nginx.org/read.php?29,103078,103078 >.
+    regression appeared since 0.8.42: <http://forum.nginx.org/read.php?29,103078,103078 >. There is a patch for nginx 0.8.53 to fix this
+    issue:
+
+        L<http://agentzh.org/misc/nginx/nginx-0.8.53-rewrite_phase_fix.patch >
+
+    and this patch should also be applied other versions of nginx 0.8.42+.
 
     Earlier versions of Nginx like 0.6.x and 0.5.x, as well as
     latest nginx 0.8.42+  will *not* work.
