@@ -31,6 +31,7 @@ GET /flush
 
 
 === TEST 2: cache miss
+--- SKIP
 --- http_config
     upstream backend {
         drizzle_server 127.0.0.1:$TEST_NGINX_MYSQL_PORT protocol=mysql
@@ -43,10 +44,11 @@ GET /flush
 
         default_type text/css;
 
-        drizzle_pass backend;
-        drizzle_query 'select * from cats';
+        proxy_pass http://127.0.0.1:$server_port/foo;
+    }
 
-        rds_json on;
+    location /foo {
+        echo foo;
     }
 
     location /memc {
@@ -61,40 +63,5 @@ GET /cats
 --- response_headers
 Content-Type: application/json
 --- response_body chomp
-[{"id":2,"name":null},{"id":3,"name":"bob"}]
 
-
-
-=== TEST 3: cache hit
---- http_config
-    upstream backend {
-        drizzle_server 127.0.0.1:$TEST_NGINX_MYSQL_PORT protocol=mysql
-                       dbname=ngx_test user=ngx_test password=ngx_test;
-    }
---- config
-    location /cats {
-        srcache_fetch GET /memc $uri;
-        srcache_store PUT /memc $uri;
-
-        default_type text/css;
-
-        drizzle_pass backend;
-        drizzle_query 'invalid sql here';
-
-        rds_json on;
-    }
-
-    location /memc {
-        internal;
-
-        set $memc_key $query_string;
-        set $memc_exptime 300;
-        memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
-    }
---- request
-GET /cats
---- response_headers
-Content-Type: text/css
---- response_body chomp
-[{"id":2,"name":null},{"id":3,"name":"bob"}]
 
