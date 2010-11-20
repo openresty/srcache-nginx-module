@@ -27,9 +27,11 @@ static ngx_int_t ngx_http_srcache_rewrite_handler(ngx_http_request_t *r);
 static ngx_int_t ngx_http_srcache_access_handler(ngx_http_request_t *r);
 static ngx_int_t ngx_http_srcache_fetch_post_subrequest(ngx_http_request_t *r,
         void *data, ngx_int_t rc);
+#if 0
 static ngx_int_t ngx_http_srcache_store_post_request(ngx_http_request_t *r,
         void *data, ngx_int_t rc);
 static void ngx_http_srcache_store_wev_handler(ngx_http_request_t *r);
+#endif
 static ngx_int_t ngx_http_srcache_store_subrequest(ngx_http_request_t *r,
         ngx_http_srcache_ctx_t *ctx);
 static ngx_int_t ngx_http_srcache_fetch_subrequest(ngx_http_request_t *r,
@@ -106,9 +108,12 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
 {
     ngx_http_srcache_ctx_t          *ctx, *pr_ctx;
     ngx_http_srcache_conf_t         *conf;
+
+#if 0
     ngx_http_post_subrequest_t      *psr, *orig_psr;
 
     ngx_http_srcache_postponed_request_t  *p, *ppr, **last;
+#endif
 
     dd_enter();
     dd("srcache header filter");
@@ -184,6 +189,13 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
     dd("try to save the response header");
 
     if (r != r->main) {
+        ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                "ngx_srcache not working in subrequests (yet)");
+
+        /* not allowd in subrquests */
+        return NGX_HTTP_INTERNAL_SERVER_ERROR;
+
+#if 0
         dd("being a subrequest");
 
         psr = ngx_palloc(r->pool, sizeof(ngx_http_post_subrequest_t));
@@ -240,6 +252,8 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
         }
 
         *last = ppr;
+#endif
+
     }
 
     ctx->store_response = 1;
@@ -871,6 +885,7 @@ ngx_http_srcache_fetch_post_subrequest(ngx_http_request_t *r, void *data,
 }
 
 
+#if 0
 static ngx_int_t
 ngx_http_srcache_store_post_request(ngx_http_request_t *r,
         void *data, ngx_int_t rc)
@@ -991,6 +1006,7 @@ ngx_http_srcache_store_wev_handler(ngx_http_request_t *r)
     }
 #endif
 }
+#endif
 
 
 static ngx_int_t

@@ -1,7 +1,8 @@
 # vi:filetype=perl
 
 use lib 'lib';
-use Test::Nginx::Socket;
+use Test::Nginx::Socket skip_all => 'subrequests not working';
+;
 
 no_long_string();
 #repeat_each(2);
