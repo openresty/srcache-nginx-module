@@ -87,6 +87,11 @@ Installation
     srcache-nginx-module file list
     (<http://github.com/agentzh/srcache-nginx-module/downloads>).
 
+    Do NOT use ngx_http_js_module with this module because it has a serious
+    bug in subrequest handling:
+
+        https://github.com/kung-fu-tzu/ngx_http_js_module/issues/issue/41
+
 Compatibility
     The following versions of Nginx should work with this module:
 
