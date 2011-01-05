@@ -23,7 +23,10 @@ static ngx_int_t ngx_http_srcache_filter_init(ngx_conf_t *cf);
 static char *ngx_http_srcache_conf_set_request(ngx_conf_t *cf,
         ngx_command_t *cmd, void *conf);
 
+#if 0
 static ngx_int_t ngx_http_srcache_rewrite_handler(ngx_http_request_t *r);
+#endif
+
 static ngx_int_t ngx_http_srcache_access_handler(ngx_http_request_t *r);
 static ngx_int_t ngx_http_srcache_fetch_post_subrequest(ngx_http_request_t *r,
         void *data, ngx_int_t rc);
@@ -389,10 +392,9 @@ ngx_http_srcache_filter_init(ngx_conf_t *cf)
         ngx_http_next_body_filter = ngx_http_top_body_filter;
         ngx_http_top_body_filter = ngx_http_srcache_body_filter;
 
-        /* register our rewrite-phase handler */
-
         cmcf = ngx_http_conf_get_module_main_conf(cf, ngx_http_core_module);
 
+#if 0
         /* register our rewrite phase handler */
         h = ngx_array_push(&cmcf->phases[NGX_HTTP_REWRITE_PHASE].handlers);
         if (h == NULL) {
@@ -400,6 +402,7 @@ ngx_http_srcache_filter_init(ngx_conf_t *cf)
         }
 
         *h = ngx_http_srcache_rewrite_handler;
+#endif
 
         /* register our access phase handler */
         h = ngx_array_push(&cmcf->phases[NGX_HTTP_ACCESS_PHASE].handlers);
@@ -708,6 +711,7 @@ ngx_http_srcache_access_handler(ngx_http_request_t *r)
 }
 
 
+#if 0
 static ngx_int_t
 ngx_http_srcache_rewrite_handler(ngx_http_request_t *r)
 {
@@ -861,6 +865,7 @@ ngx_http_srcache_rewrite_handler(ngx_http_request_t *r)
 
     return NGX_AGAIN;
 }
+#endif
 
 
 static ngx_int_t
