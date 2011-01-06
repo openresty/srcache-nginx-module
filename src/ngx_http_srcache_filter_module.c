@@ -14,14 +14,15 @@
 #include "ngx_http_srcache_util.h"
 
 
-ngx_flag_t  ngx_http_srcache_used = 0;
+unsigned  ngx_http_srcache_used = 0;
 
-static void *ngx_http_srcache_create_conf(ngx_conf_t *cf);
+static void *ngx_http_srcache_create_loc_conf(ngx_conf_t *cf);
 static char *ngx_http_srcache_merge_conf(ngx_conf_t *cf, void *parent,
     void *child);
 static ngx_int_t ngx_http_srcache_filter_init(ngx_conf_t *cf);
 static char *ngx_http_srcache_conf_set_request(ngx_conf_t *cf,
         ngx_command_t *cmd, void *conf);
+static void * ngx_http_srcache_create_main_conf(ngx_conf_t *cf);
 
 #if 0
 static ngx_int_t ngx_http_srcache_rewrite_handler(ngx_http_request_t *r);
@@ -38,7 +39,7 @@ static void ngx_http_srcache_store_wev_handler(ngx_http_request_t *r);
 static ngx_int_t ngx_http_srcache_store_subrequest(ngx_http_request_t *r,
         ngx_http_srcache_ctx_t *ctx);
 static ngx_int_t ngx_http_srcache_fetch_subrequest(ngx_http_request_t *r,
-        ngx_http_srcache_conf_t *conf, ngx_http_srcache_ctx_t *ctx);
+        ngx_http_srcache_loc_conf_t *conf, ngx_http_srcache_ctx_t *ctx);
 
 
 static ngx_command_t  ngx_http_srcache_commands[] = {
@@ -48,7 +49,7 @@ static ngx_command_t  ngx_http_srcache_commands[] = {
           |NGX_CONF_TAKE1,
       ngx_conf_set_size_slot,
       NGX_HTTP_LOC_CONF_OFFSET,
-      offsetof(ngx_http_srcache_conf_t, buf_size),
+      offsetof(ngx_http_srcache_loc_conf_t, buf_size),
       NULL },
 
     { ngx_string("srcache_fetch"),
@@ -56,7 +57,7 @@ static ngx_command_t  ngx_http_srcache_commands[] = {
           |NGX_CONF_TAKE23,
       ngx_http_srcache_conf_set_request,
       NGX_HTTP_LOC_CONF_OFFSET,
-      offsetof(ngx_http_srcache_conf_t, fetch),
+      offsetof(ngx_http_srcache_loc_conf_t, fetch),
       NULL },
 
     { ngx_string("srcache_store"),
@@ -64,7 +65,7 @@ static ngx_command_t  ngx_http_srcache_commands[] = {
           |NGX_CONF_TAKE23,
       ngx_http_srcache_conf_set_request,
       NGX_HTTP_LOC_CONF_OFFSET,
-      offsetof(ngx_http_srcache_conf_t, store),
+      offsetof(ngx_http_srcache_loc_conf_t, store),
       NULL },
 
       ngx_null_command
@@ -75,13 +76,13 @@ static ngx_http_module_t  ngx_http_srcache_filter_module_ctx = {
     NULL,                                  /* preconfiguration */
     ngx_http_srcache_filter_init,          /* postconfiguration */
 
-    NULL,                                  /* create main configuration */
+    ngx_http_srcache_create_main_conf,     /* create main configuration */
     NULL,                                  /* init main configuration */
 
     NULL,                                  /* create server configuration */
     NULL,                                  /* merge server configuration */
 
-    ngx_http_srcache_create_conf,          /* create location configuration */
+    ngx_http_srcache_create_loc_conf,      /* create location configuration */
     ngx_http_srcache_merge_conf            /* merge location configuration */
 };
 
@@ -110,7 +111,7 @@ static ngx_int_t
 ngx_http_srcache_header_filter(ngx_http_request_t *r)
 {
     ngx_http_srcache_ctx_t          *ctx, *pr_ctx;
-    ngx_http_srcache_conf_t         *conf;
+    ngx_http_srcache_loc_conf_t     *slcf;
 
 #if 0
     ngx_http_post_subrequest_t      *psr, *orig_psr;
@@ -175,10 +176,10 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
         return NGX_OK;
     }
 
-    conf = ngx_http_get_module_loc_conf(r, ngx_http_srcache_filter_module);
+    slcf = ngx_http_get_module_loc_conf(r, ngx_http_srcache_filter_module);
 
-    if (conf->store == NULL) {
-        dd("conf->store is NULL");
+    if (slcf->store == NULL) {
+        dd("slcf->store is NULL");
         return ngx_http_next_header_filter(r);
     }
 
@@ -418,32 +419,29 @@ ngx_http_srcache_filter_init(ngx_conf_t *cf)
 
 
 static void *
-ngx_http_srcache_create_conf(ngx_conf_t *cf)
+ngx_http_srcache_create_loc_conf(ngx_conf_t *cf)
 {
-    ngx_http_srcache_conf_t  *conf;
+    ngx_http_srcache_loc_conf_t  *slcf;
 
-    conf = ngx_palloc(cf->pool, sizeof(ngx_http_srcache_conf_t));
-    if (conf == NULL) {
+    slcf = ngx_palloc(cf->pool, sizeof(ngx_http_srcache_loc_conf_t));
+    if (slcf == NULL) {
         return NULL;
     }
 
-    conf->fetch = NGX_CONF_UNSET_PTR;
-    conf->store = NGX_CONF_UNSET_PTR;
+    slcf->fetch = NGX_CONF_UNSET_PTR;
+    slcf->store = NGX_CONF_UNSET_PTR;
 
-    conf->buf_size = NGX_CONF_UNSET_SIZE;
+    slcf->buf_size = NGX_CONF_UNSET_SIZE;
 
-    conf->postponed_to_rewrite_phase_end = 0;
-    conf->postponed_to_access_phase_end = 0;
-
-    return conf;
+    return slcf;
 }
 
 
 static char *
 ngx_http_srcache_merge_conf(ngx_conf_t *cf, void *parent, void *child)
 {
-    ngx_http_srcache_conf_t *prev = parent;
-    ngx_http_srcache_conf_t *conf = child;
+    ngx_http_srcache_loc_conf_t *prev = parent;
+    ngx_http_srcache_loc_conf_t *conf = child;
 
     ngx_conf_merge_ptr_value(conf->fetch, prev->fetch, NULL);
     ngx_conf_merge_ptr_value(conf->store, prev->store, NULL);
@@ -544,7 +542,8 @@ static ngx_int_t
 ngx_http_srcache_access_handler(ngx_http_request_t *r)
 {
     ngx_int_t                       rc;
-    ngx_http_srcache_conf_t        *conf;
+    ngx_http_srcache_loc_conf_t    *conf;
+    ngx_http_srcache_main_conf_t   *smcf;
     ngx_http_srcache_ctx_t         *ctx;
     ngx_chain_t                    *cl;
 
@@ -651,14 +650,16 @@ ngx_http_srcache_access_handler(ngx_http_request_t *r)
         ngx_http_set_ctx(r, ctx, ngx_http_srcache_filter_module);
     }
 
-    if ( ! conf->postponed_to_access_phase_end ) {
+    smcf = ngx_http_get_module_main_conf(r, ngx_http_srcache_filter_module);
+
+    if ( ! smcf->postponed_to_access_phase_end ) {
         ngx_http_core_main_conf_t       *cmcf;
         ngx_http_phase_handler_t        tmp;
         ngx_http_phase_handler_t        *ph;
         ngx_http_phase_handler_t        *cur_ph;
         ngx_http_phase_handler_t        *last_ph;
 
-        conf->postponed_to_access_phase_end = 1;
+        smcf->postponed_to_access_phase_end = 1;
 
         cmcf = ngx_http_get_module_main_conf(r, ngx_http_core_module);
 
@@ -716,7 +717,7 @@ static ngx_int_t
 ngx_http_srcache_rewrite_handler(ngx_http_request_t *r)
 {
     ngx_int_t                       rc;
-    ngx_http_srcache_conf_t        *conf;
+    ngx_http_srcache_loc_conf_t    *conf;
     ngx_http_srcache_ctx_t         *ctx;
 
     dd_enter();
@@ -1024,7 +1025,7 @@ ngx_http_srcache_store_subrequest(ngx_http_request_t *r,
     ngx_http_request_t             *sr;
     ngx_int_t                       rc;
     ngx_http_request_body_t        *rb = NULL;
-    ngx_http_srcache_conf_t        *conf;
+    ngx_http_srcache_loc_conf_t    *conf;
 
     ngx_http_srcache_parsed_request_t  *parsed_sr;
 
@@ -1142,7 +1143,7 @@ ngx_http_srcache_store_subrequest(ngx_http_request_t *r,
 
 static ngx_int_t
 ngx_http_srcache_fetch_subrequest(ngx_http_request_t *r,
-        ngx_http_srcache_conf_t *conf, ngx_http_srcache_ctx_t *ctx)
+        ngx_http_srcache_loc_conf_t *conf, ngx_http_srcache_ctx_t *ctx)
 {
     ngx_http_srcache_ctx_t         *sr_ctx;
     ngx_http_post_subrequest_t     *psr;
@@ -1236,5 +1237,23 @@ ngx_http_srcache_fetch_subrequest(ngx_http_request_t *r,
     ctx->fetch_sr = sr;
 
     return NGX_OK;
+}
+
+
+static void *
+ngx_http_srcache_create_main_conf(ngx_conf_t *cf)
+{
+    ngx_http_srcache_main_conf_t *smcf;
+
+    smcf = ngx_pcalloc(cf->pool, sizeof(ngx_http_srcache_main_conf_t));
+    if (smcf == NULL) {
+        return NULL;
+    }
+
+    /* set by ngx_pcalloc:
+     *      smcf->postponed_to_access_phase_end = 0
+     */
+
+    return smcf;
 }
 

@@ -28,9 +28,12 @@ typedef struct {
     ngx_http_srcache_request_t      *store;
     size_t                           buf_size;
 
-    ngx_flag_t              postponed_to_rewrite_phase_end:1;
-    ngx_flag_t              postponed_to_access_phase_end:1;
-} ngx_http_srcache_conf_t;
+    unsigned              postponed_to_access_phase_end;
+} ngx_http_srcache_loc_conf_t;
+
+typedef struct {
+    unsigned    postponed_to_access_phase_end;
+} ngx_http_srcache_main_conf_t;
 
 typedef struct ngx_http_srcache_ctx_s ngx_http_srcache_ctx_t;
 
@@ -38,15 +41,15 @@ typedef struct ngx_http_srcache_postponed_request_s
     ngx_http_srcache_postponed_request_t;
 
 struct ngx_http_srcache_ctx_s {
-    ngx_flag_t      waiting_subrequest:1;
-    ngx_flag_t      request_done:1;
-    ngx_flag_t      from_cache:1;
-    /* ngx_flag_t      fetch_error:1; */
-    ngx_flag_t      in_fetch_subrequest:1;
-    ngx_flag_t      in_store_subrequest:1;
-    ngx_flag_t      ignore_body:1;
-    ngx_flag_t      parsing_cached_headers:1;
-    ngx_flag_t      store_response:1;
+    unsigned        waiting_subrequest:1;
+    unsigned        request_done:1;
+    unsigned        from_cache:1;
+    /* unsigned      fetch_error:1; */
+    unsigned        in_fetch_subrequest:1;
+    unsigned        in_store_subrequest:1;
+    unsigned        ignore_body:1;
+    unsigned        parsing_cached_headers:1;
+    unsigned        store_response:1;
 
     ngx_chain_t    *body_from_cache;
 
@@ -61,12 +64,12 @@ struct ngx_http_srcache_ctx_s {
 };
 
 struct ngx_http_srcache_postponed_request_s {
+    ngx_http_srcache_postponed_request_t     *next;
+
     ngx_http_request_t              *request;
     ngx_http_srcache_ctx_t          *ctx;
-    ngx_flag_t                       ready;
-    ngx_flag_t                       done;
-
-    ngx_http_srcache_postponed_request_t     *next;
+    unsigned                         ready:1;
+    unsigned                         done:1;
 };
 
 
