@@ -72,7 +72,7 @@ Content-Type: text/plain
 
 
 
-=== TEST 2: basic fetch (cache hit)
+=== TEST 3: basic fetch (cache hit)
 --- http_config
     upstream backend {
         drizzle_server 127.0.0.1:$TEST_NGINX_MYSQL_PORT protocol=mysql

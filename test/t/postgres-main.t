@@ -98,3 +98,42 @@ Content-Type: text/css
 --- response_body chomp
 [{"id":2,"name":null},{"id":3,"name":"bob"}]
 
+
+
+=== TEST 4: SSL packet issue (bug)
+--- ONLY
+--- http_config
+    upstream backend {
+        postgres_server 127.0.0.1:$TEST_NGINX_POSTGRESQL_PORT
+                       dbname=ngx_test user=ngx_test password=ngx_test;
+    }
+--- config
+    location /cats {
+        srcache_fetch GET /memc $uri;
+        srcache_store PUT /memc $uri;
+
+        default_type application/json;
+
+        postgres_escape $token $arg_token;
+        postgres_escape $limit $arg_limit;
+        postgres_pass backend;
+        postgres_query HEAD GET "select $token,$limit";
+
+        rds_json on;
+    }
+
+    location /memc {
+        internal;
+
+        set $memc_key $query_string;
+        set $memc_exptime 300;
+        memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
+    }
+--- request
+GET /cats?token=3&limit=10
+--- response_headers
+Content-Type: text/css
+--- response_body chomp
+[{"id":2,"name":null},{"id":3,"name":"bob"}]
+--- SKIP
+
