@@ -17,7 +17,7 @@
 unsigned  ngx_http_srcache_used = 0;
 
 static void *ngx_http_srcache_create_loc_conf(ngx_conf_t *cf);
-static char *ngx_http_srcache_merge_conf(ngx_conf_t *cf, void *parent,
+static char *ngx_http_srcache_merge_loc_conf(ngx_conf_t *cf, void *parent,
     void *child);
 static ngx_int_t ngx_http_srcache_filter_init(ngx_conf_t *cf);
 static char *ngx_http_srcache_conf_set_request(ngx_conf_t *cf,
@@ -83,7 +83,7 @@ static ngx_http_module_t  ngx_http_srcache_filter_module_ctx = {
     NULL,                                  /* merge server configuration */
 
     ngx_http_srcache_create_loc_conf,      /* create location configuration */
-    ngx_http_srcache_merge_conf            /* merge location configuration */
+    ngx_http_srcache_merge_loc_conf        /* merge location configuration */
 };
 
 
@@ -438,7 +438,7 @@ ngx_http_srcache_create_loc_conf(ngx_conf_t *cf)
 
 
 static char *
-ngx_http_srcache_merge_conf(ngx_conf_t *cf, void *parent, void *child)
+ngx_http_srcache_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
 {
     ngx_http_srcache_loc_conf_t *prev = parent;
     ngx_http_srcache_loc_conf_t *conf = child;
@@ -652,9 +652,9 @@ ngx_http_srcache_access_handler(ngx_http_request_t *r)
 
     smcf = ngx_http_get_module_main_conf(r, ngx_http_srcache_filter_module);
 
-    if ( ! smcf->postponed_to_access_phase_end ) {
+    if (! smcf->postponed_to_access_phase_end) {
         ngx_http_core_main_conf_t       *cmcf;
-        ngx_http_phase_handler_t        tmp;
+        ngx_http_phase_handler_t         tmp;
         ngx_http_phase_handler_t        *ph;
         ngx_http_phase_handler_t        *cur_ph;
         ngx_http_phase_handler_t        *last_ph;
