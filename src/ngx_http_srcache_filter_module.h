@@ -14,6 +14,7 @@ typedef struct {
     ngx_http_complex_value_t    args;
 } ngx_http_srcache_request_t;
 
+
 typedef struct {
     ngx_uint_t                  method;
     ngx_str_t                   method_name;
@@ -23,6 +24,7 @@ typedef struct {
     ssize_t                     content_length_n;
 } ngx_http_srcache_parsed_request_t;
 
+
 typedef struct {
     ngx_http_srcache_request_t      *fetch;
     ngx_http_srcache_request_t      *store;
@@ -31,14 +33,17 @@ typedef struct {
     unsigned              postponed_to_access_phase_end;
 } ngx_http_srcache_loc_conf_t;
 
+
 typedef struct {
     unsigned    postponed_to_access_phase_end;
 } ngx_http_srcache_main_conf_t;
+
 
 typedef struct ngx_http_srcache_ctx_s ngx_http_srcache_ctx_t;
 
 typedef struct ngx_http_srcache_postponed_request_s
     ngx_http_srcache_postponed_request_t;
+
 
 struct ngx_http_srcache_ctx_s {
     unsigned        waiting_subrequest:1;
@@ -62,6 +67,7 @@ struct ngx_http_srcache_ctx_s {
 
     ngx_http_request_t      *fetch_sr;
 };
+
 
 struct ngx_http_srcache_postponed_request_s {
     ngx_http_srcache_postponed_request_t     *next;
