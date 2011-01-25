@@ -69,12 +69,12 @@ Directives
 
 Installation
     1. Grab the nginx source code from nginx.net (< http://nginx.net/ >), for
-        example, the version 0.8.41 (see nginx compatibility),
+        example, the version 0.8.54 (see nginx compatibility),
     2. and then build the source with this module:
 
-        $ wget 'http://sysoev.ru/nginx/nginx-0.8.41.tar.gz'
-        $ tar -xzvf nginx-0.8.41.tar.gz
-        $ cd nginx-0.8.41/
+        $ wget 'http://sysoev.ru/nginx/nginx-0.8.54.tar.gz'
+        $ tar -xzvf nginx-0.8.54.tar.gz
+        $ cd nginx-0.8.54/
 
         # Here we assume you would install you nginx under /opt/nginx/.
         $ ./configure --prefix=/opt/nginx \
@@ -95,9 +95,11 @@ Installation
 Compatibility
     The following versions of Nginx should work with this module:
 
+    *   0.9.x (last tested: 0.9.4)
+
     *   0.8.x (last tested: 0.8.54)
 
-    *   0.7.x >= 0.7.46 (last tested version is 0.7.67)
+    *   0.7.x >= 0.7.46 (last tested: 0.7.68)
 
     Earlier versions of Nginx like 0.6.x and 0.5.x, as well as
     latest nginx 0.8.42+  will *not* work.
@@ -132,7 +134,6 @@ Test Suite
 
     To run it on your side:
 
-        $ cd test
         $ PATH=/path/to/your/nginx-with-srcache-module:$PATH prove -r t
 
     You need to terminate any Nginx processes before running the test suite
@@ -156,10 +157,10 @@ Author
     agentzh (章亦春) *<agentzh@gmail.com>*
 
 Copyright & License
-    Copyright (c) 2010, Taobao Inc., Alibaba Group ( http://www.taobao.com
+    Copyright (c) 2010, 2011 Taobao Inc., Alibaba Group ( http://www.taobao.com
     ).
 
-    Copyright (c) 2009, Yichun Zhang (agentzh) <agentzh@gmail.com>.
+    Copyright (c) 2010, 2011, Yichun "agentzh" Zhang <agentzh@gmail.com>.
 
     This module is licensed under the terms of the BSD license.
 
