@@ -101,7 +101,7 @@ Content-Type: text/css
 
 
 === TEST 4: SSL packet issue (bug)
---- ONLY
+--- SKIP
 --- http_config
     upstream backend {
         postgres_server 127.0.0.1:$TEST_NGINX_POSTGRESQL_PORT

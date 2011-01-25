@@ -64,3 +64,5 @@ util/bench
 *.html
 trace.out*
 try.sh
+all.sh
+build9
