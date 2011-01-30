@@ -147,6 +147,9 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
                 "srcache_fetch: subrequest returned status %d", r->headers_out.status);
 
         if (r->headers_out.status != NGX_HTTP_OK) {
+            dd("ignoring body because status == %d",
+                    (int) r->headers_out.status);
+
             ctx->ignore_body = 1;
 
             pr_ctx->waiting_subrequest = 0;
@@ -182,6 +185,8 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
         dd("slcf->store is NULL");
         return ngx_http_next_header_filter(r);
     }
+
+    dd("error page: %d", (int) r->error_page);
 
     if (r->headers_out.status != NGX_HTTP_OK) {
         dd("fetch: ignore bad response with status %d",
