@@ -55,7 +55,6 @@ GET /flush
 GET /foo
 --- response_body
 err
---- LAST
 
 
 
