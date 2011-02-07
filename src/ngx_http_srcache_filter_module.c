@@ -551,6 +551,7 @@ ngx_http_srcache_access_handler(ngx_http_request_t *r)
     ngx_http_srcache_main_conf_t   *smcf;
     ngx_http_srcache_ctx_t         *ctx;
     ngx_chain_t                    *cl;
+    size_t                          len;
 
     if (r != r->main) {
         return NGX_DECLINED;
@@ -601,20 +602,24 @@ ngx_http_srcache_access_handler(ngx_http_request_t *r)
 
             dd("sending header");
 
-            rc = ngx_http_next_header_filter(r);
-
-            if (rc == NGX_ERROR || rc >= NGX_HTTP_SPECIAL_RESPONSE) {
-                return rc;
-            }
-
-            dd("sent header from cache: %d", (int) rc);
-
             if (ctx->body_from_cache) {
+                len = 0;
+
                 for (cl = ctx->body_from_cache; cl->next; cl = cl->next) {
-                    /* do nothing */
+                    len += ngx_buf_size(cl->buf);
                 }
 
+                len += ngx_buf_size(cl->buf);
+
                 cl->buf->last_buf = 1;
+
+                r->headers_out.content_length_n = len;
+
+                rc = ngx_http_next_header_filter(r);
+
+                if (rc == NGX_ERROR || rc >= NGX_HTTP_SPECIAL_RESPONSE) {
+                    return rc;
+                }
 
                 rc = ngx_http_next_body_filter(r, ctx->body_from_cache);
 
@@ -623,7 +628,18 @@ ngx_http_srcache_access_handler(ngx_http_request_t *r)
                 }
 
                 dd("sent body from cache: %d", (int) rc);
+
             } else {
+                r->headers_out.content_length_n = 0;
+
+                rc = ngx_http_next_header_filter(r);
+
+                if (rc == NGX_ERROR || rc >= NGX_HTTP_SPECIAL_RESPONSE) {
+                    return rc;
+                }
+
+                dd("sent header from cache: %d", (int) rc);
+
                 dd("send last buf for the main request");
 
                 cl = ngx_alloc_chain_link(r->pool);
