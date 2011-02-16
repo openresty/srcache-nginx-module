@@ -14,8 +14,10 @@
 #include "ngx_http_srcache_util.h"
 
 
-unsigned  ngx_http_srcache_used = 0;
+unsigned  ngx_http_srcache_used;
 
+
+static ngx_int_t ngx_http_srcache_pre_config(ngx_conf_t *cf);
 static void *ngx_http_srcache_create_loc_conf(ngx_conf_t *cf);
 static char *ngx_http_srcache_merge_loc_conf(ngx_conf_t *cf, void *parent,
     void *child);
@@ -73,7 +75,7 @@ static ngx_command_t  ngx_http_srcache_commands[] = {
 
 
 static ngx_http_module_t  ngx_http_srcache_filter_module_ctx = {
-    NULL,                                  /* preconfiguration */
+    ngx_http_srcache_pre_config,           /* preconfiguration */
     ngx_http_srcache_filter_init,          /* postconfiguration */
 
     ngx_http_srcache_create_main_conf,     /* create main configuration */
@@ -384,11 +386,24 @@ done:
 
 
 static ngx_int_t
+ngx_http_srcache_pre_config(ngx_conf_t *cf)
+{
+#if 1
+    ngx_http_srcache_used = 0;
+#endif
+
+    return NGX_OK;
+}
+
+
+static ngx_int_t
 ngx_http_srcache_filter_init(ngx_conf_t *cf)
 {
+    ngx_http_handler_pt             *h;
+    ngx_http_core_main_conf_t       *cmcf;
+
     if (ngx_http_srcache_used) {
-        ngx_http_handler_pt             *h;
-        ngx_http_core_main_conf_t       *cmcf;
+        dd("using ngx-srcache");
 
         /* register our output filters */
 
