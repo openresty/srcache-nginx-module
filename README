@@ -46,7 +46,18 @@ Description
     for security reasons.
 
     For subrequests, we explicitly disallow the use of this module
-    because it's not working (yet).
+    because it's too difficult to get right. There used to be an implementation
+    but it was buggy and I finally gave up fixing it and abandoned it.
+
+    However, if you're using ngx_lua, it's easy to do subrequest caching in Lua
+    all by yourself. That is, first issue a subrequest to a ngx_memc location
+    to do an explicit cache lookup, if cache hit, just use the cached data
+    returned; otherwise, fall back to the true backend, and finally
+    do a cache insertion to feed the data into the cache.
+
+    Using ngx_srcache for main request caching and Lua for subrequest caching
+    is the approach that we're taking in our business. This hybrid solution
+    works great in production.
 
     The srcache_store directive works in an output filter.
 
