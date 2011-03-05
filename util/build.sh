@@ -3,18 +3,24 @@
 # this file is mostly meant to be used by the author himself.
 
 root=`pwd`
-cd ~/work
 version=$1
 home=~
 #opts=$2
 
+if [ ! -d ./buildroot ]; then
+    mkdir ./buildroot || exit 1
+fi
+
+cd buildroot || exit 1
+
 if [ ! -s "nginx-$version.tar.gz" ]; then
-    wget "http://sysoev.ru/nginx/nginx-$version.tar.gz" -O nginx-$version.tar.gz || exit 1
-    tar -xzvf nginx-$version.tar.gz || exit 1
-    if [ "$version" = "0.8.41" ]; then
-        cp $root/../no-pool-nginx/nginx-$version-no_pool.patch ./
-        patch -p0 < nginx-$version-no_pool.patch || exit 1
+    if [ -f ~/work/nginx-$version.tar.gz ]; then
+        cp ~/work/nginx-$version.tar.gz ./ || exit 1
+    else
+        wget "http://sysoev.ru/nginx/nginx-$version.tar.gz" -O nginx-$version.tar.gz || exit 1
     fi
+
+    tar -xzvf nginx-$version.tar.gz || exit 1
 fi
 
 #tar -xzvf nginx-$version.tar.gz || exit 1
