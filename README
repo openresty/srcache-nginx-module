@@ -61,6 +61,10 @@ Description
 
     The srcache_store directive works in an output filter.
 
+Trouble Shooting
+    *   On certain systems, enabling aio and/or sendfile may stop srcache_store
+        from working. You can disable them in the locations configured by srcache_store.
+
 Caveat
     For now, ngx_srcache does not cache response headers. So it's
     necessary to use the <charset>, <default_type> and <add_header>
