@@ -61,9 +61,43 @@ Description
 
     The srcache_store directive works in an output filter.
 
-Trouble Shooting
+Known Issues
     *   On certain systems, enabling aio and/or sendfile may stop srcache_store
         from working. You can disable them in the locations configured by srcache_store.
+
+    * Do not use the `error_page` directive or ngx_lua's `ngx.exec()` or ngx_echo's
+      echo_exec directive within locations to be captured by `ngx.location.capture()` or
+      `ngx.location.capture_multi()`; this module's srcache_store directive cannot capture
+      locations with internal redirections.
+
+      Also be careful with server-wide `error_page` settings that are automatically
+      inherited by *all* locations by default. If you're using the ngx_openresty bundle
+      (<http://github.com/agentzh/ngx_openresty>),
+
+      you can use the `no_error_pages` directive within locations that are to be captured
+      by srcache_store, for example,
+
+        server {
+            # server-wide error page settings
+            error_page 500 503 504 html/50x.html;
+
+            location /memc {
+                # explicitly disable error_page setting inheritance
+                #  within this location:
+                no_error_pages; # this directive is provided by ngx_openresty only
+
+                set $memc_key $query_string;
+                memc_pass 127.0.0.1:11211;
+            }
+
+            location /foo {
+                set $key ...;
+                srcache_fetch GET /memc $key;
+                srcache_store PUT /memc $key;
+
+                # proxy_pass/fastcgi_pass/...
+            }
+        }
 
 Caveat
     For now, ngx_srcache does not cache response headers. So it's
