@@ -70,6 +70,14 @@ static ngx_command_t  ngx_http_srcache_commands[] = {
       offsetof(ngx_http_srcache_loc_conf_t, store),
       NULL },
 
+    { ngx_string("srcache_store_max_size"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_HTTP_LIF_CONF
+          |NGX_CONF_TAKE1,
+      ngx_conf_set_size_slot,
+      NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_srcache_loc_conf_t, store_max_size),
+      NULL },
+
       ngx_null_command
 };
 
@@ -196,6 +204,14 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
 
         return ngx_http_next_header_filter(r);
     }
+
+	if (slcf->store_max_size != NGX_CONF_UNSET_SIZE 
+			&& r->headers_out.content_length_n >= (int) slcf->store_max_size) {
+		ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
+				"bypass because of too large content: %d (limit is: %d)", 
+				r->headers_out.content_length, slcf->store_max_size);
+		return ngx_http_next_header_filter(r);
+	}
 
     dd("try to save the response header");
 
@@ -457,6 +473,8 @@ ngx_http_srcache_create_loc_conf(ngx_conf_t *cf)
 
     slcf->buf_size = NGX_CONF_UNSET_SIZE;
 
+	slcf->store_max_size = NGX_CONF_UNSET_SIZE;
+
     return slcf;
 }
 
@@ -472,6 +490,9 @@ ngx_http_srcache_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
 
     ngx_conf_merge_size_value(conf->buf_size, prev->buf_size,
             (size_t) ngx_pagesize);
+
+    ngx_conf_merge_size_value(conf->store_max_size, prev->store_max_size, 
+			NGX_CONF_UNSET_SIZE);
 
     return NGX_CONF_OK;
 }

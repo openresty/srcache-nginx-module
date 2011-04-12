@@ -94,6 +94,7 @@ Known Issues
                 set $key ...;
                 srcache_fetch GET /memc $key;
                 srcache_store PUT /memc $key;
+				srcache_store_max_size 1m;
 
                 # proxy_pass/fastcgi_pass/...
             }
@@ -114,7 +115,7 @@ Directives
 
     srcache_store
 
-    srcache_store_max_size (TODO)
+    srcache_store_max_size 
 
 Installation
     1. Grab the nginx source code from nginx.net (< http://nginx.net/ >), for
