@@ -29,7 +29,7 @@ typedef struct {
     ngx_http_srcache_request_t      *fetch;
     ngx_http_srcache_request_t      *store;
     size_t                           buf_size;
-	size_t							 store_max_size;
+    size_t                           store_max_size;
 
     unsigned              postponed_to_access_phase_end;
 } ngx_http_srcache_loc_conf_t;

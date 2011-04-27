@@ -205,13 +205,13 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
         return ngx_http_next_header_filter(r);
     }
 
-	if (slcf->store_max_size != NGX_CONF_UNSET_SIZE 
-			&& r->headers_out.content_length_n >= (int) slcf->store_max_size) {
-		ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
-				"bypass because of too large content: %d (limit is: %d)", 
-				r->headers_out.content_length, slcf->store_max_size);
-		return ngx_http_next_header_filter(r);
-	}
+    if (slcf->store_max_size != 0 
+            && r->headers_out.content_length_n >= (int) slcf->store_max_size) {
+        ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
+                "bypass because of too large content-length header: %d (limit is: %d)", 
+                    r->headers_out.content_length_n, slcf->store_max_size);
+        return ngx_http_next_header_filter(r);
+    }
 
     dd("try to save the response header");
 
@@ -292,11 +292,12 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
 static ngx_int_t
 ngx_http_srcache_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
 {
-    ngx_http_request_t       *pr;
-    ngx_http_srcache_ctx_t   *ctx, *pr_ctx;
-    ngx_int_t                 rc;
-    ngx_chain_t              *cl;
-    ngx_flag_t                last;
+    ngx_http_request_t          *pr;
+    ngx_http_srcache_ctx_t      *ctx, *pr_ctx;
+    ngx_int_t                   rc;
+    ngx_chain_t                 *cl;
+    ngx_flag_t                  last;
+    ngx_http_srcache_loc_conf_t *slcf;
 
 
     dd_enter();
@@ -379,6 +380,16 @@ ngx_http_srcache_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
                 last = 1;
                 break;
             }
+        }
+
+        slcf = ngx_http_get_module_loc_conf(r, ngx_http_srcache_filter_module);
+        if (slcf->store_max_size != 0 
+                && ctx->body_length >= slcf->store_max_size) {
+            ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
+                    "bypass because body reached maximum size: %d (limit is: %d)", 
+                    ctx->body_length, slcf->store_max_size);
+            ctx->store_response = 0;
+            goto done;
         }
 
         rc = ngx_http_srcache_add_copy_chain(r->pool, &ctx->body_to_cache, in);
@@ -473,7 +484,7 @@ ngx_http_srcache_create_loc_conf(ngx_conf_t *cf)
 
     slcf->buf_size = NGX_CONF_UNSET_SIZE;
 
-	slcf->store_max_size = NGX_CONF_UNSET_SIZE;
+    slcf->store_max_size = NGX_CONF_UNSET_SIZE;
 
     return slcf;
 }
@@ -492,7 +503,7 @@ ngx_http_srcache_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
             (size_t) ngx_pagesize);
 
     ngx_conf_merge_size_value(conf->store_max_size, prev->store_max_size, 
-			NGX_CONF_UNSET_SIZE);
+            0);
 
     return NGX_CONF_OK;
 }
