@@ -115,7 +115,7 @@ Directives
 
     srcache_store
 
-    srcache_store_max_size 
+    srcache_store_max_size
 
 Installation
     1. Grab the nginx source code from nginx.net (< http://nginx.net/ >), for
