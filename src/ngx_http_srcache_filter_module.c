@@ -205,11 +205,14 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
         return ngx_http_next_header_filter(r);
     }
 
-    if (slcf->store_max_size != 0 
-            && r->headers_out.content_length_n >= (int) slcf->store_max_size) {
-        ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
-                "bypass because of too large content-length header: %d (limit is: %d)", 
-                    r->headers_out.content_length_n, slcf->store_max_size);
+    if (slcf->store_max_size != 0
+            && r->headers_out.content_length_n > (off_t) slcf->store_max_size)
+    {
+        ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                "bypass because of too large content-length header: "
+                "%O (limit is: %z)", r->headers_out.content_length_n,
+                slcf->store_max_size);
+
         return ngx_http_next_header_filter(r);
     }
 
@@ -294,11 +297,10 @@ ngx_http_srcache_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
 {
     ngx_http_request_t          *pr;
     ngx_http_srcache_ctx_t      *ctx, *pr_ctx;
-    ngx_int_t                   rc;
+    ngx_int_t                    rc;
     ngx_chain_t                 *cl;
-    ngx_flag_t                  last;
+    ngx_flag_t                   last;
     ngx_http_srcache_loc_conf_t *slcf;
-
 
     dd_enter();
 
@@ -383,12 +385,16 @@ ngx_http_srcache_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
         }
 
         slcf = ngx_http_get_module_loc_conf(r, ngx_http_srcache_filter_module);
-        if (slcf->store_max_size != 0 
-                && ctx->body_length >= slcf->store_max_size) {
-            ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
-                    "bypass because body reached maximum size: %d (limit is: %d)", 
-                    ctx->body_length, slcf->store_max_size);
+
+        if (slcf->store_max_size != 0
+                && ctx->body_length > slcf->store_max_size)
+        {
+            ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                    "bypass because body exceeded maximum size: %z "
+                    "(limit is: %z)", ctx->body_length, slcf->store_max_size);
+
             ctx->store_response = 0;
+
             goto done;
         }
 
@@ -502,8 +508,7 @@ ngx_http_srcache_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
     ngx_conf_merge_size_value(conf->buf_size, prev->buf_size,
             (size_t) ngx_pagesize);
 
-    ngx_conf_merge_size_value(conf->store_max_size, prev->store_max_size, 
-            0);
+    ngx_conf_merge_size_value(conf->store_max_size, prev->store_max_size, 0);
 
     return NGX_CONF_OK;
 }
