@@ -78,6 +78,22 @@ static ngx_command_t  ngx_http_srcache_commands[] = {
       offsetof(ngx_http_srcache_loc_conf_t, store_max_size),
       NULL },
 
+    { ngx_string("srcache_fetch_skip"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_HTTP_LIF_CONF
+          |NGX_CONF_TAKE1,
+      ngx_http_set_complex_value_slot,
+      NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_srcache_loc_conf_t, fetch_skip),
+      NULL },
+
+    { ngx_string("srcache_store_skip"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_HTTP_LIF_CONF
+          |NGX_CONF_TAKE1,
+      ngx_http_set_complex_value_slot,
+      NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_srcache_loc_conf_t, store_skip),
+      NULL },
+
       ngx_null_command
 };
 
@@ -122,6 +138,7 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
 {
     ngx_http_srcache_ctx_t          *ctx, *pr_ctx;
     ngx_http_srcache_loc_conf_t     *slcf;
+    ngx_str_t                        skip;
 
 #if 0
     ngx_http_post_subrequest_t      *psr, *orig_psr;
@@ -193,6 +210,15 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
 
     if (slcf->store == NULL) {
         dd("slcf->store is NULL");
+        return ngx_http_next_header_filter(r);
+    }
+
+    if (slcf->store_skip != NULL 
+            && ngx_http_complex_value(r, slcf->store_skip, &skip) == NGX_OK
+            && skip.len != 0) 
+    {
+        dd("bypass by srcache store skip");
+        ctx->store_skip = 1;
         return ngx_http_next_header_filter(r);
     }
 
@@ -310,7 +336,7 @@ ngx_http_srcache_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
 
     ctx = ngx_http_get_module_ctx(r, ngx_http_srcache_filter_module);
 
-    if (ctx == NULL || ctx->from_cache) {
+    if (ctx == NULL || ctx->from_cache || ctx->store_skip) {
         dd("bypass: %.*s", (int) r->uri.len, r->uri.data);
         return ngx_http_next_body_filter(r, in);
     }
@@ -510,6 +536,9 @@ ngx_http_srcache_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
 
     ngx_conf_merge_size_value(conf->store_max_size, prev->store_max_size, 0);
 
+    ngx_conf_merge_ptr_value(conf->fetch_skip, prev->fetch_skip, NULL);
+    ngx_conf_merge_ptr_value(conf->store_skip, prev->store_skip, NULL);
+
     return NGX_CONF_OK;
 }
 
@@ -602,6 +631,7 @@ ngx_http_srcache_conf_set_request(ngx_conf_t *cf, ngx_command_t *cmd,
 static ngx_int_t
 ngx_http_srcache_access_handler(ngx_http_request_t *r)
 {
+    ngx_str_t                       skip;
     ngx_int_t                       rc;
     ngx_http_srcache_loc_conf_t    *conf;
     ngx_http_srcache_main_conf_t   *smcf;
@@ -623,6 +653,14 @@ ngx_http_srcache_access_handler(ngx_http_request_t *r)
     }
 
     dd("store defined? %p", conf->store);
+
+    if (conf->fetch_skip != NULL
+            && ngx_http_complex_value(r, conf->fetch_skip, &skip) == NGX_OK
+            && skip.len != 0)
+    {
+        dd("bypass by srcache_fetch_skip");
+        return NGX_DECLINED;
+    }
 
     ctx = ngx_http_get_module_ctx(r, ngx_http_srcache_filter_module);
 

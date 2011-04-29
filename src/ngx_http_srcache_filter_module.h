@@ -30,6 +30,8 @@ typedef struct {
     ngx_http_srcache_request_t      *store;
     size_t                           buf_size;
     size_t                           store_max_size;
+    ngx_http_complex_value_t        *fetch_skip;
+    ngx_http_complex_value_t        *store_skip;
 
     unsigned              postponed_to_access_phase_end;
 } ngx_http_srcache_loc_conf_t;
@@ -56,6 +58,7 @@ struct ngx_http_srcache_ctx_s {
     unsigned        ignore_body:1;
     unsigned        parsing_cached_headers:1;
     unsigned        store_response:1;
+    unsigned        store_skip:1;
 
     ngx_chain_t    *body_from_cache;
 
