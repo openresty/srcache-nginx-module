@@ -235,9 +235,9 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
             && r->headers_out.content_length_n > (off_t) slcf->store_max_size)
     {
         ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                "bypass because of too large content-length header: "
-                "%O (limit is: %z)", r->headers_out.content_length_n,
-                slcf->store_max_size);
+                "srcache_store bypassed because of too large Content-Length "
+                "response header: %O (limit is: %z)",
+                r->headers_out.content_length_n, slcf->store_max_size);
 
         return ngx_http_next_header_filter(r);
     }
@@ -416,8 +416,9 @@ ngx_http_srcache_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
                 && ctx->body_length > slcf->store_max_size)
         {
             ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                    "bypass because body exceeded maximum size: %z "
-                    "(limit is: %z)", ctx->body_length, slcf->store_max_size);
+                    "srcache_store bypassed because response body exceeded "
+                    "maximum size: %z (limit is: %z)",
+                    ctx->body_length, slcf->store_max_size);
 
             ctx->store_response = 0;
 
