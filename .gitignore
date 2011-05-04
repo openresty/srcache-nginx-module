@@ -68,3 +68,6 @@ all.sh
 build9
 t/servroot/
 buildroot/
+build10
+go
+all

@@ -111,13 +111,24 @@ Caveat
     welcome to submit patches for this :)
 
 Directives
-    srcache_fetch
+    srcache_fetch <method> <uri> <args>?
 
     srcache_fetch_skip
 
-    srcache_store
+    srcache_store <method> <uri> <args>?
 
-    srcache_store_max_size
+    srcache_store_max_size <size>
+        Default: srcache_store_max_size 0
+
+        When the response body length is exceeding this size, this module
+        will not try to store the response body into the cache using
+        the subrequest template that is specified in srcache_store.
+
+        This is particular useful when using cache storage backend that
+        does have a hard upper limit on the input data. For example,
+        for memcached server, the limit is usually 1 MB.
+
+        When 0 is specified (the default value), there's no limit check at all.
 
     srcache_store_skip
 
