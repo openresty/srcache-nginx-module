@@ -218,8 +218,12 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
             && skip.len
             && (skip.len != 1 || skip.data[0] != '0'))
     {
-        dd("bypass by srcache store skip");
+        ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                "srcache_store skipped due to the true value fed into "
+                "srcache_store_skip: \"%V\"", &skip);
+
         ctx->store_skip = 1;
+
         return ngx_http_next_header_filter(r);
     }
 
@@ -666,9 +670,13 @@ ngx_http_srcache_access_handler(ngx_http_request_t *r)
 
     if (conf->fetch_skip != NULL
             && ngx_http_complex_value(r, conf->fetch_skip, &skip) == NGX_OK
-            && skip.len != 0)
+            && skip.len
+            && (skip.len != 1 || skip.data[0] != '0'))
     {
-        dd("bypass by srcache_fetch_skip");
+        ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                "srcache_fetch skipped due to the true value fed into "
+                "srcache_fetch_skip: \"%V\"", &skip);
+
         return NGX_DECLINED;
     }
 
