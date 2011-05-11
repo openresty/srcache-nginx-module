@@ -20,7 +20,6 @@ update-readme
 test/Makefile
 test/blib
 test.sh
-t.sh
 t/t.sh
 test/t/servroot/
 releng
@@ -64,7 +63,6 @@ util/bench
 *.html
 trace.out*
 try.sh
-all.sh
 build9
 t/servroot/
 buildroot/
