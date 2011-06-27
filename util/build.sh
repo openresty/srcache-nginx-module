@@ -5,6 +5,7 @@
 root=`pwd`
 version=$1
 home=~
+target=$root/work/nginx
 #opts=$2
 
 if [ ! -d ./buildroot ]; then
@@ -33,8 +34,9 @@ fi
 cd nginx-$version/
 
 if [[ "$BUILD_CLEAN" -eq 1 || ! -f Makefile || "$root/config" -nt Makefile || "$root/util/build.sh" -nt Makefile ]]; then
-    ./configure --prefix=$root/work/nginx \
+    ./configure --prefix=$target \
             --with-cc-opt="-O3" \
+            --with-ld-opt="-Wl,-rpath=/opt/drizzle/lib:/usr/local/lib:/home/lz/lib:/opt/luajit/lib" \
             --without-mail_pop3_module \
             --without-mail_imap_module \
             --without-mail_smtp_module \
@@ -63,11 +65,11 @@ if [[ "$BUILD_CLEAN" -eq 1 || ! -f Makefile || "$root/config" -nt Makefile || "$
   #--without-http_ssi_module  # we cannot disable ssi because echo_location_async depends on it (i dunno why?!)
 
 fi
-if [ -f $root/work/nginx/sbin/nginx ]; then
-    rm -f $root/work/nginx/sbin/nginx
+if [ -f $target/sbin/nginx ]; then
+    rm -f $target/sbin/nginx
 fi
-if [ -f $root/work/nginx/logs/nginx.pid ]; then
-    kill `cat $root/work/nginx/logs/nginx.pid`
+if [ -f $target/logs/nginx.pid ]; then
+    kill `cat $target/logs/nginx.pid`
 fi
 make -j3
 make install

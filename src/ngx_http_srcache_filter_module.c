@@ -1007,15 +1007,12 @@ ngx_http_srcache_fetch_post_subrequest(ngx_http_request_t *r, void *data,
         ngx_int_t rc)
 {
     ngx_http_srcache_ctx_t      *pr_ctx = data;
-    ngx_http_request_t          *pr;
 
     dd_enter();
 
     if (r != r->connection->data) {
         dd("waited: %d, rc: %d", (int) r->waited, (int) rc);
     }
-
-    pr = r->parent;
 
     pr_ctx->waiting_subrequest = 0;
     pr_ctx->request_done = 1;
