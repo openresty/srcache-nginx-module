@@ -33,6 +33,8 @@ static ngx_int_t ngx_http_srcache_rewrite_handler(ngx_http_request_t *r);
 static ngx_int_t ngx_http_srcache_access_handler(ngx_http_request_t *r);
 static ngx_int_t ngx_http_srcache_fetch_post_subrequest(ngx_http_request_t *r,
         void *data, ngx_int_t rc);
+static ngx_int_t ngx_http_srcache_store_post_subrequest(ngx_http_request_t *r,
+        void *data, ngx_int_t rc);
 #if 0
 static ngx_int_t ngx_http_srcache_store_post_request(ngx_http_request_t *r,
         void *data, ngx_int_t rc);
@@ -122,6 +124,7 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
 {
     ngx_http_srcache_ctx_t          *ctx, *pr_ctx;
     ngx_http_srcache_loc_conf_t     *slcf;
+    ngx_http_post_subrequest_t      *ps;
 
 #if 0
     ngx_http_post_subrequest_t      *psr, *orig_psr;
@@ -133,6 +136,20 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
     dd("srcache header filter");
 
     ctx = ngx_http_get_module_ctx(r, ngx_http_srcache_filter_module);
+
+    if (r != r->main && ctx == NULL) {
+        ps = r->post_subrequest;
+        if (ps != NULL && (ps->handler == ngx_http_srcache_fetch_post_subrequest ||
+                    ps->handler == ngx_http_srcache_store_post_subrequest) &&
+                    ps->data != NULL)
+        {
+            /* the subrequest ctx has been cleared by ngx_http_internal_redirect,
+             * resume it from the post_subrequest data
+             */
+            ctx = ps->data;
+            ngx_http_set_ctx(r, ctx, ngx_http_srcache_filter_module);
+        }
+    }
 
     if (ctx == NULL || ctx->from_cache) {
         dd("bypass: %.*s", (int) r->uri.len, r->uri.data);
@@ -948,10 +965,17 @@ ngx_http_srcache_rewrite_handler(ngx_http_request_t *r)
 
 
 static ngx_int_t
+ngx_http_srcache_store_post_subrequest(ngx_http_request_t *r, void *data,
+        ngx_int_t rc) {
+    return rc;
+}
+
+
+static ngx_int_t
 ngx_http_srcache_fetch_post_subrequest(ngx_http_request_t *r, void *data,
         ngx_int_t rc)
 {
-    ngx_http_srcache_ctx_t      *pr_ctx = data;
+    ngx_http_srcache_ctx_t      *pr_ctx;
     ngx_http_request_t          *pr;
 
     dd_enter();
@@ -961,6 +985,11 @@ ngx_http_srcache_fetch_post_subrequest(ngx_http_request_t *r, void *data,
     }
 
     pr = r->parent;
+
+    pr_ctx = ngx_http_get_module_ctx(pr, ngx_http_srcache_filter_module);
+    if (pr_ctx == NULL) {
+        return NGX_ERROR;
+    }
 
     pr_ctx->waiting_subrequest = 0;
     pr_ctx->request_done = 1;
@@ -1104,6 +1133,7 @@ ngx_http_srcache_store_subrequest(ngx_http_request_t *r,
     ngx_int_t                       rc;
     ngx_http_request_body_t        *rb = NULL;
     ngx_http_srcache_loc_conf_t    *conf;
+    ngx_http_post_subrequest_t     *psr;
 
     ngx_http_srcache_parsed_request_t  *parsed_sr;
 
@@ -1184,18 +1214,24 @@ ngx_http_srcache_store_subrequest(ngx_http_request_t *r,
     dd("store args: %.*s", (int) parsed_sr->args.len,
             parsed_sr->args.data);
 
-#if 0
-    flags |= NGX_HTTP_SUBREQUEST_IN_MEMORY|NGX_HTTP_SUBREQUEST_WAITED;
-#endif
+    sr_ctx = ngx_pcalloc(r->pool, sizeof(ngx_http_srcache_ctx_t));
 
-    if (r->parent == NULL) {
-        rc = ngx_http_subrequest(r, &parsed_sr->location, &parsed_sr->args,
-            &sr, NULL, flags);
-
-    } else {
-        rc = ngx_http_subrequest(r->parent, &parsed_sr->location, &parsed_sr->args,
-            &sr, NULL, flags);
+    if (sr_ctx == NULL) {
+        return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
+
+    sr_ctx->in_store_subrequest = 1;
+
+    psr = ngx_palloc(r->pool, sizeof(ngx_http_post_subrequest_t));
+    if (psr == NULL) {
+        return NGX_HTTP_INTERNAL_SERVER_ERROR;
+    }
+
+    psr->handler = ngx_http_srcache_store_post_subrequest;
+    psr->data = sr_ctx;
+
+    rc = ngx_http_subrequest(r, &parsed_sr->location, &parsed_sr->args,
+            &sr, psr, flags);
 
     if (rc != NGX_OK) {
         return NGX_ERROR;
@@ -1206,14 +1242,6 @@ ngx_http_srcache_store_subrequest(ngx_http_request_t *r,
     if (rc != NGX_OK) {
         return NGX_ERROR;
     }
-
-    sr_ctx = ngx_pcalloc(r->pool, sizeof(ngx_http_srcache_ctx_t));
-
-    if (sr_ctx == NULL) {
-        return NGX_HTTP_INTERNAL_SERVER_ERROR;
-    }
-
-    sr_ctx->in_store_subrequest = 1;
 
     ngx_http_set_ctx(sr, sr_ctx, ngx_http_srcache_filter_module);
 
@@ -1276,13 +1304,20 @@ ngx_http_srcache_fetch_subrequest(ngx_http_request_t *r,
         parsed_sr->args = args;
     }
 
+    sr_ctx = ngx_pcalloc(r->pool, sizeof(ngx_http_srcache_ctx_t));
+    if (sr_ctx == NULL) {
+        return NGX_HTTP_INTERNAL_SERVER_ERROR;
+    }
+
+    sr_ctx->in_fetch_subrequest = 1;
+
     psr = ngx_palloc(r->pool, sizeof(ngx_http_post_subrequest_t));
     if (psr == NULL) {
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
     psr->handler = ngx_http_srcache_fetch_post_subrequest;
-    psr->data = ctx;
+    psr->data = sr_ctx;
 
     dd("firing the fetch subrequest");
 
@@ -1304,13 +1339,6 @@ ngx_http_srcache_fetch_subrequest(ngx_http_request_t *r,
     if (rc != NGX_OK) {
         return NGX_ERROR;
     }
-
-    sr_ctx = ngx_pcalloc(r->pool, sizeof(ngx_http_srcache_ctx_t));
-    if (sr_ctx == NULL) {
-        return NGX_HTTP_INTERNAL_SERVER_ERROR;
-    }
-
-    sr_ctx->in_fetch_subrequest = 1;
 
     ngx_http_set_ctx(sr, sr_ctx, ngx_http_srcache_filter_module);
 

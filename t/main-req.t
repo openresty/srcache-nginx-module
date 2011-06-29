@@ -31,7 +31,7 @@ GET /flush
 
 
 
-=== TEST 2: basic fetch
+=== TEST 2: basic fetch (cache miss)
 --- config
     location /foo {
         default_type text/css;
@@ -58,7 +58,7 @@ hello
 
 
 
-=== TEST 3: basic fetch
+=== TEST 3: basic fetch (cache hit)
 --- config
     location /foo {
         default_type text/css;
