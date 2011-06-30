@@ -113,6 +113,13 @@ Caveat
 Directives
     srcache_fetch <method> <uri> <args>?
 
+    srcache_fetch_skip <flag>
+        Default: srcache_fetch_skip 0
+
+        The <flag> argument supports nginx variables.
+        When this argument's value is not empty AND not equal to "0",
+        then the fetching process will be unconditionally skipped.
+
     srcache_store <method> <uri> <args>?
 
     srcache_store_max_size <size>
@@ -127,6 +134,25 @@ Directives
         for memcached server, the limit is usually 1 MB.
 
         When 0 is specified (the default value), there's no limit check at all.
+
+    srcache_store_skip <flag>
+        Default: srcache_store_skip 0
+
+        The <flag> argument supports nginx variables.
+        When this argument's value is not empty AND not
+        equal to "0", then the storing process will be
+        unconditionally skipped.
+
+        Here's an example using Lua to set $nocache to avoid
+        storing URIs that contain the string "/tmp":
+
+            set_by_lua $nocache '
+                if string.match(ngx.var.uri, "/tmp") then
+                  return 1
+                end
+                return 0';
+
+            srcache_store_skip $nocache;
 
 Installation
     1. Grab the nginx source code from nginx.net (< http://nginx.net/ >), for
@@ -155,6 +181,8 @@ Installation
 
 Compatibility
     The following versions of Nginx should work with this module:
+
+    *   1.0.x (last tested: 1.0.4)
 
     *   0.9.x (last tested: 0.9.4)
 
