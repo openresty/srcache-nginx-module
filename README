@@ -156,12 +156,12 @@ Directives
 
 Installation
     1. Grab the nginx source code from nginx.net (< http://nginx.net/ >), for
-        example, the version 0.8.54 (see nginx compatibility),
+        example, the version 1.0.4 (see nginx compatibility),
     2. and then build the source with this module:
 
-        $ wget 'http://sysoev.ru/nginx/nginx-0.8.54.tar.gz'
-        $ tar -xzvf nginx-0.8.54.tar.gz
-        $ cd nginx-0.8.54/
+        $ wget 'http://sysoev.ru/nginx/nginx-1.0.4.tar.gz'
+        $ tar -xzvf nginx-1.0.4.tar.gz
+        $ cd nginx-1.0.4/
 
         # Here we assume you would install you nginx under /opt/nginx/.
         $ ./configure --prefix=/opt/nginx \
