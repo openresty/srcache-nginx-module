@@ -97,6 +97,8 @@ Here's what is going on in the sample above:
 
 One can use [[NginxHttpLuaModule]]'s [[NginxHttpLuaModule#set_by_lua|set_by_lua]] or [[NginxHttpLuaModule#rewrite_by_lua|rewrite_by_lua]] directives to inject custom Lua code to compute the <code>$backend</code> and/or <code>$key</code> variables in the sample above.
 
+One thing that should be taken care of is that memcached does have restriction on key lengths, i.e., 250 bytes, so for keys that may be very long, one could use the [[NginxHttpSetMiscModule#set_md5|set_md5]] directive or its friends to pre-hash the key to a fixed-length digest before assigning it to <code>$memc_key</code> in the <code>/memc</code> location or the like.
+
 Further, one can utilize the [[#srcache_fetch_skip|srcache_fetch_skip]] and [[#srcache_store_skip|srcache_store_skip]] directives to control what to cache and what not on a per-request basis, and Lua can also be used here in a similar way. So the possibility is really unlimited.
 
 = Directives =

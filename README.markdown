@@ -104,6 +104,8 @@ Here's what is going on in the sample above:
 
 One can use [NginxHttpLuaModule](http://wiki.nginx.org/NginxHttpLuaModule)'s [set_by_lua](http://wiki.nginx.org/NginxHttpLuaModule#set_by_lua) or [rewrite_by_lua](http://wiki.nginx.org/NginxHttpLuaModule#rewrite_by_lua) directives to inject custom Lua code to compute the `$backend` and/or `$key` variables in the sample above.
 
+One thing that should be taken care of is that memcached does have restriction on key lengths, i.e., 250 bytes, so for keys that may be very long, one could use the [set_md5](http://wiki.nginx.org/NginxHttpSetMiscModule#set_md5) directive or its friends to pre-hash the key to a fixed-length digest before assigning it to `$memc_key` in the `/memc` location or the like.
+
 Further, one can utilize the [srcache_fetch_skip](http://wiki.nginx.org/NginxHttpSRCacheModule#srcache_fetch_skip) and [srcache_store_skip](http://wiki.nginx.org/NginxHttpSRCacheModule#srcache_store_skip) directives to control what to cache and what not on a per-request basis, and Lua can also be used here in a similar way. So the possibility is really unlimited.
 
 Directives
