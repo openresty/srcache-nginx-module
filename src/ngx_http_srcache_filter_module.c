@@ -156,12 +156,14 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
 
     if (r != r->main && ctx == NULL) {
         ps = r->post_subrequest;
-        if (ps != NULL && (ps->handler == ngx_http_srcache_fetch_post_subrequest ||
+        if (ps != NULL &&
+                    (ps->handler == ngx_http_srcache_fetch_post_subrequest ||
                     ps->handler == ngx_http_srcache_store_post_subrequest) &&
                     ps->data != NULL)
         {
-            /* the subrequest ctx has been cleared by ngx_http_internal_redirect,
-             * resume it from the post_subrequest data
+            /* the subrequest ctx has been cleared by
+             * ngx_http_internal_redirect, resume it from the post_subrequest
+             * data
              */
             ctx = ps->data;
             ngx_http_set_ctx(r, ctx, ngx_http_srcache_filter_module);
@@ -188,7 +190,8 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
         }
 
         ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                "srcache_fetch: subrequest returned status %d", r->headers_out.status);
+                "srcache_fetch: subrequest returned status %d",
+                r->headers_out.status);
 
         if (r->headers_out.status != NGX_HTTP_OK) {
             dd("ignoring body because status == %d",
@@ -218,7 +221,8 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
         ctx->ignore_body = 1;
 
         ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                "srcache_store: subrequest returned status %d", r->headers_out.status);
+                "srcache_store: subrequest returned status %d",
+                r->headers_out.status);
 
         return NGX_OK;
     }
@@ -364,7 +368,8 @@ ngx_http_srcache_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
     }
 
     if (ctx->ignore_body || ctx->in_store_subrequest/* || ctx->fetch_error */) {
-        dd("ignore body: ignore body %d, in store sr %d", (int) ctx->ignore_body, (int) ctx->in_store_subrequest);
+        dd("ignore body: ignore body %d, in store sr %d",
+                (int) ctx->ignore_body, (int) ctx->in_store_subrequest);
         ngx_http_srcache_discard_bufs(r->pool, in);
         return NGX_OK;
     }
