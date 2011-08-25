@@ -36,27 +36,27 @@ Description
     This module provides a transparent caching layer for arbitrary nginx
     locations (like those use an upstream or even serve static disk files).
 
-    Usually, [[NginxHttpMemcModule]] is used together with this module to
-    provide a concrete caching storage backend. But technically, any modules
-    that provide a REST interface can be used as the fetching and storage
+    Usually, [[HttpMemcModule]] is used together with this module to provide
+    a concrete caching storage backend. But technically, any modules that
+    provide a REST interface can be used as the fetching and storage
     subrequests used by this module.
 
     For main requests, the srcache_fetch directive works at the end of the
-    access phase, so the standard access module's allow and deny direcives
-    run *before* ours, which is usually the desired behavior for security
-    reasons.
+    access phase, so the [access module (HttpAccessModule)]'s allow and deny
+    direcives run *before* ours, which is usually the desired behavior for
+    security reasons.
 
   Subrequest caching
     For subrequests, we explicitly disallow the use of this module because
     it's too difficult to get right. There used to be an implementation but
     it was buggy and I finally gave up fixing it and abandoned it.
 
-    However, if you're using [[NginxHttpLuaModule]], it's easy to do
-    subrequest caching in Lua all by yourself. That is, first issue a
-    subrequest to an [[NginxHttpMemcModule]] location to do an explicit
-    cache lookup, if cache hit, just use the cached data returned;
-    otherwise, fall back to the true backend, and finally do a cache
-    insertion to feed the data into the cache.
+    However, if you're using [[HttpLuaModule]], it's easy to do subrequest
+    caching in Lua all by yourself. That is, first issue a subrequest to an
+    [[HttpMemcModule]] location to do an explicit cache lookup, if cache
+    hit, just use the cached data returned; otherwise, fall back to the true
+    backend, and finally do a cache insertion to feed the data into the
+    cache.
 
     Using this module for main request caching and Lua for subrequest
     caching is the approach that we're taking in our business. This hybrid
@@ -106,7 +106,7 @@ Description
 
     2.  And then we group them together as an upstream list entity named
         "universe" with the "upstream_list" directive provided by
-        [[NginxHttpSetMiscModule]].
+        [[HttpSetMiscModule]].
 
     3.  After that, we define an internal location named "/memc" for talking
         to the memcached cluster.
@@ -129,9 +129,9 @@ Description
         and srcache_store for cache updates. We're using two subrequests to
         our "/memc" location defined earlier in these two directives.
 
-    One can use [[NginxHttpLuaModule]]'s set_by_lua or rewrite_by_lua
-    directives to inject custom Lua code to compute the $backend and/or $key
-    variables in the sample above.
+    One can use [[HttpLuaModule]]'s set_by_lua or rewrite_by_lua directives
+    to inject custom Lua code to compute the $backend and/or $key variables
+    in the sample above.
 
     One thing that should be taken care of is that memcached does have
     restriction on key lengths, i.e., 250 bytes, so for keys that may be
@@ -159,14 +159,13 @@ Directives
 
     When the subrequest returns status code other than 200, than a cache
     miss is signaled and the control flow will continue to the later phases
-    including the content phase configured by [[NginxHttpProxyModule]],
-    [[NginxHttpFcgiModule]], and others. If the subrequest returns "200 OK",
-    then a cache miss is signaled and this module will send the subrequest's
+    including the content phase configured by [[HttpProxyModule]],
+    [[HttpFcgiModule]], and others. If the subrequest returns "200 OK", then
+    a cache miss is signaled and this module will send the subrequest's
     response as the current main request's response to the client directly.
 
     This directive will always run at the end of the access phase, such that
-    [[NginxHttpAccessModule]]'s allow and deny will always run *before*
-    this.
+    [[HttpAccessModule]]'s allow and deny will always run *before* this.
 
     You can use the srcache_fetch_skip directive to disable cache look-up
     selectively.
@@ -202,7 +201,7 @@ Directives
 
             # proxy_pass/fastcgi_pass/content_by_lua/...
         }
-    where [[NginxHttpLuaModule]] is used to calculate the value of the C<$skip> variable at the (earlier) rewrite phase. Similarly, the C<$key> variable can be computed by Lua using the L<set_by_lua|NginxHttpLuaModule/"set_by_lua"> or L<rewrite_by_lua|NginxHttpLuaModule/"rewrite_by_lua"> directive too.
+    where [[HttpLuaModule]] is used to calculate the value of the C<$skip> variable at the (earlier) rewrite phase. Similarly, the C<$key> variable can be computed by Lua using the L<set_by_lua|HttpLuaModule/"set_by_lua"> or L<rewrite_by_lua|HttpLuaModule/"rewrite_by_lua"> directive too.
 
   srcache_store
     syntax: *srcache_store <method> <uri> <args>?*
@@ -273,9 +272,9 @@ Caveats
         TODO and you're very welcome to submit patches for this :)
 
     *   It's recommended to disable your backend server's gzip compression
-        and use nginx's [[NginxHttpGzipModule]] to do the job. In case of
-        [[NginxHttpProxyModule]], you can use the following configure
-        setting to disable backend gzip compression:
+        and use nginx's [[HttpGzipModule]] to do the job. In case of
+        [[HttpProxyModule]], you can use the following configure setting to
+        disable backend gzip compression:
 
         proxy_set_header  Accept-Encoding  "";
 
@@ -359,10 +358,9 @@ Test Suite
     test suite in parallel by specifying "-jN" when invoking the "prove"
     utility.
 
-    Some parts of the test suite requires modules
-    [[NginxHttpRewriteModule]], [[NginxHttpEchoModule]],
-    [[NginxHttpRdsJsonModule]], and [[NginxHttpDrizzleModule]] to be enabled
-    as well when building Nginx.
+    Some parts of the test suite requires modules [[HttpRewriteModule]],
+    [[HttpEchoModule]], [[HttpRdsJsonModule]], and [[HttpDrizzleModule]] to
+    be enabled as well when building Nginx.
 
 TODO
     *   add support for headers caching.
@@ -407,11 +405,11 @@ Copyright & License
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 See Also
-    *   [[NginxHttpMemcModule]]
+    *   [[HttpMemcModule]]
 
-    *   [[NginxHttpLuaModule]]
+    *   [[HttpLuaModule]]
 
-    *   [[NginxHttpSetMiscModule]]
+    *   [[HttpSetMiscModule]]
 
     *   The ngx_openresty bundle (<http://openresty.org>)
 

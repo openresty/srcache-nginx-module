@@ -3,7 +3,7 @@ Name
 
 **ngx_srcache** - Transparent subrequest-based caching layout for arbitrary nginx locations
 
-*This module is not distributed with the Nginx source.* See [the installation instructions](http://wiki.nginx.org/NginxHttpSRCacheModule#Installation).
+*This module is not distributed with the Nginx source.* See [the installation instructions](http://wiki.nginx.org/HttpSRCacheModule#Installation).
 
 Status
 ======
@@ -18,39 +18,41 @@ This document describes srcache-nginx-module [v0.12rc6](https://github.com/agent
 Synopsis
 ========
 
+
     location /foo {
         charset utf-8; # or some other encoding
         default_type text/plain; # or some other MIME type
-
+  
         set $key $uri$args;
         srcache_fetch GET /memc $key;
         srcache_store PUT /memc $key;
-
+  
         # proxy_pass/fastcgi_pass/drizzle_pass/echo/etc...
         # or even static files on the disk
     }
-
+  
     location /memc {
         set $memc_key $query_string;
         set $memc_exptime 300;
         memc_pass 127.0.0.1:11211;
     }
 
+
 Description
 ===========
 
 This module provides a transparent caching layer for arbitrary nginx locations (like those use an upstream or even serve static disk files).
 
-Usually, [NginxHttpMemcModule](http://wiki.nginx.org/NginxHttpMemcModule) is used together with this module to provide a concrete caching storage backend. But technically, any modules that provide a REST interface can be used as the fetching and storage subrequests used by this module.
+Usually, [HttpMemcModule](http://wiki.nginx.org/HttpMemcModule) is used together with this module to provide a concrete caching storage backend. But technically, any modules that provide a REST interface can be used as the fetching and storage subrequests used by this module.
 
-For main requests, the [srcache_fetch](http://wiki.nginx.org/NginxHttpSRCacheModule#srcache_fetch) directive works at the end of the access phase, so the [standard access module](http://wiki.nginx.org/NginxHttpAccessModule)'s [allow](http://wiki.nginx.org/NginxHttpAccessModule#allow) and [deny](http://wiki.nginx.org/NginxHttpAccessModule#deny) direcives run *before* ours, which is usually the desired behavior for security reasons.
+For main requests, the [srcache_fetch](http://wiki.nginx.org/HttpSRCacheModule#srcache_fetch) directive works at the end of the access phase, so the [standard access module](http://wiki.nginx.org/HttpAccessModule)'s [allow](http://wiki.nginx.org/HttpAccessModule#allow) and [deny](http://wiki.nginx.org/HttpAccessModule#deny) direcives run *before* ours, which is usually the desired behavior for security reasons.
 
 Subrequest caching
 ------------------
 
 For subrequests, we explicitly disallow the use of this module because it's too difficult to get right. There used to be an implementation but it was buggy and I finally gave up fixing it and abandoned it.
 
-However, if you're using [NginxHttpLuaModule](http://wiki.nginx.org/NginxHttpLuaModule), it's easy to do subrequest caching in Lua all by yourself. That is, first issue a subrequest to an [NginxHttpMemcModule](http://wiki.nginx.org/NginxHttpMemcModule) location to do an explicit cache lookup, if cache hit, just use the cached data returned; otherwise, fall back to the true backend, and finally do a cache insertion to feed the data into the cache.
+However, if you're using [HttpLuaModule](http://wiki.nginx.org/HttpLuaModule), it's easy to do subrequest caching in Lua all by yourself. That is, first issue a subrequest to an [HttpMemcModule](http://wiki.nginx.org/HttpMemcModule) location to do an explicit cache lookup, if cache hit, just use the cached data returned; otherwise, fall back to the true backend, and finally do a cache insertion to feed the data into the cache.
 
 Using this module for main request caching and Lua for subrequest caching is the approach that we're taking in our business. This hybrid solution works great in production.
 
@@ -95,18 +97,18 @@ Here is a simple example demonstrating a distributed memcached caching mechanism
 
 Here's what is going on in the sample above:
 1. We first define three upstreams, `moon`, `earth`, and `sun`. These are our three memcached servers.
-1. And then we group them together as an upstream list entity named `universe` with the `upstream_list` directive provided by [NginxHttpSetMiscModule](http://wiki.nginx.org/NginxHttpSetMiscModule).
+1. And then we group them together as an upstream list entity named `universe` with the `upstream_list` directive provided by [HttpSetMiscModule](http://wiki.nginx.org/HttpSetMiscModule).
 1. After that, we define an internal location named `/memc` for talking to the memcached cluster.
-1. In this `/memc` location, we first unescape the `key` URI argument in case that it contains special characters like spaces (using the [set_unescape_uri](http://wiki.nginx.org/NginxHttpSetMiscModule#set_unescape_uri) directive), and then use the [set_hashed_upstream](http://wiki.nginx.org/NginxHttpSetMiscModule#set_hashed_upstream) directive to hash our [$memc_key](http://wiki.nginx.org/NginxHttpMemcModule#.24memc_key) over the upsteam list `universe`, so as to obtain a concrete upstream name to be assigned to the variable `$backend`.
-1. We pass this `$backend` variable into the [memc_pass](http://wiki.nginx.org/NginxHttpMemcModule#memc_pass) directive. The `$backend` variable can hold a value among `moon`, `earth`, and `sun`.
-1. Also, we define the memcached caching expiration time to be 3600 seconds (i.e., an hour) by overriding the [$memc_exptime](http://wiki.nginx.org/NginxHttpMemcModule#.24memc_exptime) variable.
-1. In our main public location `/`, we configure the `$uri` variable as our cache key, and then configure [srcache_fetch](http://wiki.nginx.org/NginxHttpSRCacheModule#srcache_fetch) for cache lookups and [srcache_store](http://wiki.nginx.org/NginxHttpSRCacheModule#srcache_store) for cache updates. We're using two subrequests to our `/memc` location defined earlier in these two directives.
+1. In this `/memc` location, we first unescape the `key` URI argument in case that it contains special characters like spaces (using the [set_unescape_uri](http://wiki.nginx.org/HttpSetMiscModule#set_unescape_uri) directive), and then use the [set_hashed_upstream](http://wiki.nginx.org/HttpSetMiscModule#set_hashed_upstream) directive to hash our [$memc_key](http://wiki.nginx.org/HttpMemcModule#.24memc_key) over the upsteam list `universe`, so as to obtain a concrete upstream name to be assigned to the variable `$backend`.
+1. We pass this `$backend` variable into the [memc_pass](http://wiki.nginx.org/HttpMemcModule#memc_pass) directive. The `$backend` variable can hold a value among `moon`, `earth`, and `sun`.
+1. Also, we define the memcached caching expiration time to be 3600 seconds (i.e., an hour) by overriding the [$memc_exptime](http://wiki.nginx.org/HttpMemcModule#.24memc_exptime) variable.
+1. In our main public location `/`, we configure the `$uri` variable as our cache key, and then configure [srcache_fetch](http://wiki.nginx.org/HttpSRCacheModule#srcache_fetch) for cache lookups and [srcache_store](http://wiki.nginx.org/HttpSRCacheModule#srcache_store) for cache updates. We're using two subrequests to our `/memc` location defined earlier in these two directives.
 
-One can use [NginxHttpLuaModule](http://wiki.nginx.org/NginxHttpLuaModule)'s [set_by_lua](http://wiki.nginx.org/NginxHttpLuaModule#set_by_lua) or [rewrite_by_lua](http://wiki.nginx.org/NginxHttpLuaModule#rewrite_by_lua) directives to inject custom Lua code to compute the `$backend` and/or `$key` variables in the sample above.
+One can use [HttpLuaModule](http://wiki.nginx.org/HttpLuaModule)'s [set_by_lua](http://wiki.nginx.org/HttpLuaModule#set_by_lua) or [rewrite_by_lua](http://wiki.nginx.org/HttpLuaModule#rewrite_by_lua) directives to inject custom Lua code to compute the `$backend` and/or `$key` variables in the sample above.
 
-One thing that should be taken care of is that memcached does have restriction on key lengths, i.e., 250 bytes, so for keys that may be very long, one could use the [set_md5](http://wiki.nginx.org/NginxHttpSetMiscModule#set_md5) directive or its friends to pre-hash the key to a fixed-length digest before assigning it to `$memc_key` in the `/memc` location or the like.
+One thing that should be taken care of is that memcached does have restriction on key lengths, i.e., 250 bytes, so for keys that may be very long, one could use the [set_md5](http://wiki.nginx.org/HttpSetMiscModule#set_md5) directive or its friends to pre-hash the key to a fixed-length digest before assigning it to `$memc_key` in the `/memc` location or the like.
 
-Further, one can utilize the [srcache_fetch_skip](http://wiki.nginx.org/NginxHttpSRCacheModule#srcache_fetch_skip) and [srcache_store_skip](http://wiki.nginx.org/NginxHttpSRCacheModule#srcache_store_skip) directives to control what to cache and what not on a per-request basis, and Lua can also be used here in a similar way. So the possibility is really unlimited.
+Further, one can utilize the [srcache_fetch_skip](http://wiki.nginx.org/HttpSRCacheModule#srcache_fetch_skip) and [srcache_store_skip](http://wiki.nginx.org/HttpSRCacheModule#srcache_store_skip) directives to control what to cache and what not on a per-request basis, and Lua can also be used here in a similar way. So the possibility is really unlimited.
 
 Directives
 ==========
@@ -123,11 +125,11 @@ srcache_fetch
 
 This directive registers an access phase handler that will issue an Nginx subrequest to lookup the cache.
 
-When the subrequest returns status code other than `200`, than a cache miss is signaled and the control flow will continue to the later phases including the content phase configured by [NginxHttpProxyModule](http://wiki.nginx.org/NginxHttpProxyModule), [NginxHttpFcgiModule](http://wiki.nginx.org/NginxHttpFcgiModule), and others. If the subrequest returns `200 OK`, then a cache miss is signaled and this module will send the subrequest's response as the current main request's response to the client directly.
+When the subrequest returns status code other than `200`, than a cache miss is signaled and the control flow will continue to the later phases including the content phase configured by [HttpProxyModule](http://wiki.nginx.org/HttpProxyModule), [HttpFcgiModule](http://wiki.nginx.org/HttpFcgiModule), and others. If the subrequest returns `200 OK`, then a cache miss is signaled and this module will send the subrequest's response as the current main request's response to the client directly.
 
-This directive will always run at the end of the access phase, such that [NginxHttpAccessModule](http://wiki.nginx.org/NginxHttpAccessModule)'s [allow](http://wiki.nginx.org/NginxHttpAccessModule#allow) and [deny](http://wiki.nginx.org/NginxHttpAccessModule#deny) will always run *before* this.
+This directive will always run at the end of the access phase, such that [HttpAccessModule](http://wiki.nginx.org/HttpAccessModule)'s [allow](http://wiki.nginx.org/HttpAccessModule#allow) and [deny](http://wiki.nginx.org/HttpAccessModule#deny) will always run *before* this.
 
-You can use the [srcache_fetch_skip](http://wiki.nginx.org/NginxHttpSRCacheModule#srcache_fetch_skip) directive to disable cache look-up selectively.
+You can use the [srcache_fetch_skip](http://wiki.nginx.org/HttpSRCacheModule#srcache_fetch_skip) directive to disable cache look-up selectively.
 
 srcache_fetch_skip
 ------------------
@@ -160,7 +162,7 @@ For example, to skip caching requests which have a cookie named `foo` with the v
         # proxy_pass/fastcgi_pass/content_by_lua/...
     }
 
-where [NginxHttpLuaModule](http://wiki.nginx.org/NginxHttpLuaModule) is used to calculate the value of the `$skip` variable at the (earlier) rewrite phase. Similarly, the `$key` variable can be computed by Lua using the [set_by_lua](http://wiki.nginx.org/NginxHttpLuaModule#set_by_lua) or [rewrite_by_lua](http://wiki.nginx.org/NginxHttpLuaModule#rewrite_by_lua) directive too.
+where [HttpLuaModule](http://wiki.nginx.org/HttpLuaModule) is used to calculate the value of the `$skip` variable at the (earlier) rewrite phase. Similarly, the `$key` variable can be computed by Lua using the [set_by_lua](http://wiki.nginx.org/HttpLuaModule#set_by_lua) or [rewrite_by_lua](http://wiki.nginx.org/HttpLuaModule#rewrite_by_lua) directive too.
 
 srcache_store
 -------------
@@ -174,7 +176,7 @@ srcache_store
 
 This directive registers an output filter handler that will issue an Nginx subrequest to save the response of the current main request into a cache backend. The status code of the subrequest will be ignored.
 
-You can use the [srcache_store_skip](http://wiki.nginx.org/NginxHttpSRCacheModule#srcache_store_skip) and [srcache_store_max_size](http://wiki.nginx.org/NginxHttpSRCacheModule#srcache_store_max_size) directives to disable caching for certain requests in case of a cache miss.
+You can use the [srcache_store_skip](http://wiki.nginx.org/HttpSRCacheModule#srcache_store_skip) and [srcache_store_max_size](http://wiki.nginx.org/HttpSRCacheModule#srcache_store_max_size) directives to disable caching for certain requests in case of a cache miss.
 
 This directive works in an output filter.
 
@@ -186,7 +188,7 @@ srcache_store_max_size
 
 **context:** *http, server, location, location if*
 
-When the response body length is exceeding this size, this module will not try to store the response body into the cache using the subrequest template that is specified in [srcache_store](http://wiki.nginx.org/NginxHttpSRCacheModule#srcache_store).
+When the response body length is exceeding this size, this module will not try to store the response body into the cache using the subrequest template that is specified in [srcache_store](http://wiki.nginx.org/HttpSRCacheModule#srcache_store).
 
 This is particular useful when using cache storage backend that does have a hard upper limit on the input data. For example, for Memcached server, the limit is usually `1 MB`.
 
@@ -214,12 +216,12 @@ Here's an example using Lua to set $nocache to avoid storing URIs that contain t
 
 Known Issues
 ============
-* On certain systems, enabling aio and/or sendfile may stop [srcache_store](http://wiki.nginx.org/NginxHttpSRCacheModule#srcache_store) from working. You can disable them in the locations configured by [srcache_store](http://wiki.nginx.org/NginxHttpSRCacheModule#srcache_store).
+* On certain systems, enabling aio and/or sendfile may stop [srcache_store](http://wiki.nginx.org/HttpSRCacheModule#srcache_store) from working. You can disable them in the locations configured by [srcache_store](http://wiki.nginx.org/HttpSRCacheModule#srcache_store).
 
 Caveats
 =======
-* For now, ngx_srcache does not cache response headers. So it's necessary to use the [charset](http://wiki.nginx.org/NginxHttpCharsetModule#charset), [default_type](http://wiki.nginx.org/NginxHttpCoreModule#default_type) and [add_header](http://wiki.nginx.org/NginxHttpHeadersModule#add_header) directives to explicitly set the `Content-Type` header and etc. Therefore, it's probably a bad idea to combine this module with backends that return varying response headers. Support for response header caching is a TODO and you're very welcome to submit patches for this :)
-* It's recommended to disable your backend server's gzip compression and use nginx's [NginxHttpGzipModule](http://wiki.nginx.org/NginxHttpGzipModule) to do the job. In case of [NginxHttpProxyModule](http://wiki.nginx.org/NginxHttpProxyModule), you can use the following configure setting to disable backend gzip compression:
+* For now, ngx_srcache does not cache response headers. So it's necessary to use the [charset](http://wiki.nginx.org/HttpCharsetModule#charset), [default_type](http://wiki.nginx.org/HttpCoreModule#default_type) and [add_header](http://wiki.nginx.org/HttpHeadersModule#add_header) directives to explicitly set the `Content-Type` header and etc. Therefore, it's probably a bad idea to combine this module with backends that return varying response headers. Support for response header caching is a TODO and you're very welcome to submit patches for this :)
+* It's recommended to disable your backend server's gzip compression and use nginx's [HttpGzipModule](http://wiki.nginx.org/HttpGzipModule) to do the job. In case of [HttpProxyModule](http://wiki.nginx.org/HttpProxyModule), you can use the following configure setting to disable backend gzip compression:
 
     proxy_set_header  Accept-Encoding  "";
 
@@ -232,7 +234,7 @@ It's recommended to install this module as well as the Nginx core and many other
 
 Alternatively, you can build Nginx with this module all by yourself:
 
-* Grab the nginx source code from [nginx.org](http://nginx.org), for example, the version 1.0.5 (see [Nginx Compatibility](http://wiki.nginx.org/NginxHttpSRCacheModule#Compatibility)),
+* Grab the nginx source code from [nginx.org](http://nginx.org), for example, the version 1.0.5 (see [Nginx Compatibility](http://wiki.nginx.org/HttpSRCacheModule#Compatibility)),
 * and then download the latest version of the release tarball of this module from srcache-nginx-module [file list](http://github.com/agentzh/srcache-nginx-module/downloads),
 * and finally build the Nginx source with this module
 
@@ -288,7 +290,7 @@ You need to terminate any Nginx processes before running the test suite if you h
 
 Because a single nginx server (by default, `localhost:1984`) is used across all the test scripts (`.t` files), it's meaningless to run the test suite in parallel by specifying `-jN` when invoking the `prove` utility.
 
-Some parts of the test suite requires modules [NginxHttpRewriteModule](http://wiki.nginx.org/NginxHttpRewriteModule), [NginxHttpEchoModule](http://wiki.nginx.org/NginxHttpEchoModule), [NginxHttpRdsJsonModule](http://wiki.nginx.org/NginxHttpRdsJsonModule), and [NginxHttpDrizzleModule](http://wiki.nginx.org/NginxHttpDrizzleModule) to be enabled as well when building Nginx.
+Some parts of the test suite requires modules [HttpRewriteModule](http://wiki.nginx.org/HttpRewriteModule), [HttpEchoModule](http://wiki.nginx.org/HttpEchoModule), [HttpRdsJsonModule](http://wiki.nginx.org/HttpRdsJsonModule), and [HttpDrizzleModule](http://wiki.nginx.org/HttpDrizzleModule) to be enabled as well when building Nginx.
 
 TODO
 ====
@@ -319,8 +321,8 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 See Also
 ========
-* [NginxHttpMemcModule](http://wiki.nginx.org/NginxHttpMemcModule)
-* [NginxHttpLuaModule](http://wiki.nginx.org/NginxHttpLuaModule)
-* [NginxHttpSetMiscModule](http://wiki.nginx.org/NginxHttpSetMiscModule)
+* [HttpMemcModule](http://wiki.nginx.org/HttpMemcModule)
+* [HttpLuaModule](http://wiki.nginx.org/HttpLuaModule)
+* [HttpSetMiscModule](http://wiki.nginx.org/HttpSetMiscModule)
 * The [ngx_openresty bundle](http://openresty.org)
 
