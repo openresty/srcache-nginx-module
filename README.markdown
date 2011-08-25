@@ -142,7 +142,7 @@ Directives
 
 srcache_fetch
 -------------
-**syntax:** *srcache_fetch <method> <uri> <args>?*
+**syntax:** *srcache_fetch &lt;method&gt; &lt;uri&gt; &lt;args&gt;?*
 
 **default:** *no*
 
@@ -160,7 +160,7 @@ You can use the [srcache_fetch_skip](http://wiki.nginx.org/HttpSRCacheModule#src
 
 srcache_fetch_skip
 ------------------
-**syntax:** *srcache_fetch_skip <flag>*
+**syntax:** *srcache_fetch_skip &lt;flag&gt;*
 
 **default:** *srcache_fetch_skip 0*
 
@@ -193,7 +193,7 @@ where [HttpLuaModule](http://wiki.nginx.org/HttpLuaModule) is used to calculate 
 
 srcache_store
 -------------
-**syntax:** *srcache_store <method> <uri> <args>?*
+**syntax:** *srcache_store &lt;method&gt; &lt;uri&gt; &lt;args&gt;?*
 
 **default:** *no*
 
@@ -209,7 +209,7 @@ This directive works in an output filter.
 
 srcache_store_max_size
 ----------------------
-**syntax:** *srcache_store_max_size <size>*
+**syntax:** *srcache_store_max_size &lt;size&gt;*
 
 **default:** *srcache_store_max_size 0*
 
@@ -223,7 +223,7 @@ When `0` is specified (the default value), there's no limit check at all.
 
 srcache_store_skip
 ------------------
-**syntax:** *srcache_store_skip <flag>*
+**syntax:** *srcache_store_skip &lt;flag&gt;*
 
 **default:** *srcache_store_skip 0*
 
