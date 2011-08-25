@@ -89,7 +89,7 @@ Here is a simple example demonstrating a distributed memcached caching mechanism
         location = /memc {
             internal;
 
-            set $memc_key $args;
+            set $memc_key $query_string;
             set_hashed_upstream $backend universe $memc_key;
             set $memc_exptime 3600; # in seconds
             memc_pass $backend;
@@ -249,16 +249,16 @@ Alternatively, you can build Nginx with this module all by yourself:
 * and then download the latest version of the release tarball of this module from srcache-nginx-module [http://github.com/agentzh/srcache-nginx-module/downloads file list],
 * and finally build the Nginx source with this module
 <geshi lang="nginx">
-     $ wget 'http://sysoev.ru/nginx/nginx-1.0.5.tar.gz'
-     $ tar -xzvf nginx-1.0.5.tar.gz
-     $ cd nginx-1.0.5/
+        wget 'http://sysoev.ru/nginx/nginx-1.0.5.tar.gz'
+        tar -xzvf nginx-1.0.5.tar.gz
+        cd nginx-1.0.5/
      
-     # Here we assume you would install you nginx under /opt/nginx/.
-     $ ./configure --prefix=/opt/nginx \
+        # Here we assume you would install you nginx under /opt/nginx/.
+        ./configure --prefix=/opt/nginx \
              --add-module=/path/to/srcache-nginx-module
-  
-     $ make -j2
-     $ make install
+    
+        make -j2
+        make install
 </geshi>
 
 = Compatibility =
