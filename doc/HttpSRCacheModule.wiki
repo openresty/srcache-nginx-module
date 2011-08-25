@@ -15,6 +15,24 @@ This document describes srcache-nginx-module [https://github.com/agentzh/echo-ng
 = Synopsis =
 
 <geshi lang="nginx">
+    upstream my_memcached {
+        server 10.62.136.7:11211;
+        keepalive 512 single; # this requires the ngx_http_upstream_keepalive module
+    }
+
+    location = /memc {
+        internal;
+
+        memc_connect_timeout 100ms;
+        memc_send_timeout 100ms;
+        memc_read_timeout 100ms;
+
+        set $memc_key $query_string;
+        set $memc_exptime 300;
+
+        memc_pass my_memcached;
+    }
+
     location /foo {
         charset utf-8; # or some other encoding
         default_type text/plain; # or some other MIME type
@@ -25,12 +43,6 @@ This document describes srcache-nginx-module [https://github.com/agentzh/echo-ng
   
         # proxy_pass/fastcgi_pass/drizzle_pass/echo/etc...
         # or even static files on the disk
-    }
-  
-    location /memc {
-        set $memc_key $query_string;
-        set $memc_exptime 300;
-        memc_pass 127.0.0.1:11211;
     }
 </geshi>
 
@@ -70,10 +82,14 @@ Here is a simple example demonstrating a distributed memcached caching mechanism
 
         upstream_list universe moon earth sun;
 
+        memc_connect_timeout 100ms;
+        memc_send_timeout 100ms;
+        memc_read_timeout 100ms;
+
         location = /memc {
             internal;
 
-            set_unescape_uri $memc_key $arg_key;
+            set $memc_key $args;
             set_hashed_upstream $backend universe $memc_key;
             set $memc_exptime 3600; # in seconds
             memc_pass $backend;
@@ -92,7 +108,7 @@ Here's what is going on in the sample above:
 # We first define three upstreams, <code>moon</code>, <code>earth</code>, and <code>sun</code>. These are our three memcached servers.
 # And then we group them together as an upstream list entity named <code>universe</code> with the <code>upstream_list</code> directive provided by [[HttpSetMiscModule]].
 # After that, we define an internal location named <code>/memc</code> for talking to the memcached cluster.
-# In this <code>/memc</code> location, we first unescape the <code>key</code> URI argument in case that it contains special characters like spaces (using the [[HttpSetMiscModule#set_unescape_uri|set_unescape_uri]] directive), and then use the [[HttpSetMiscModule#set_hashed_upstream|set_hashed_upstream]] directive to hash our [[HttpMemcModule#$memc_key|$memc_key]] over the upsteam list <code>universe</code>, so as to obtain a concrete upstream name to be assigned to the variable <code>$backend</code>.
+# In this <code>/memc</code> location, we first set the <code>$memc_key</code> variable with the query string (<code>$args</code>), and then use the [[HttpSetMiscModule#set_hashed_upstream|set_hashed_upstream]] directive to hash our [[HttpMemcModule#$memc_key|$memc_key]] over the upsteam list <code>universe</code>, so as to obtain a concrete upstream name to be assigned to the variable <code>$backend</code>.
 # We pass this <code>$backend</code> variable into the [[HttpMemcModule#memc_pass|memc_pass]] directive. The <code>$backend</code> variable can hold a value among <code>moon</code>, <code>earth</code>, and <code>sun</code>.
 # Also, we define the memcached caching expiration time to be 3600 seconds (i.e., an hour) by overriding the [[HttpMemcModule#$memc_exptime|$memc_exptime]] variable.
 # In our main public location <code>/</code>, we configure the <code>$uri</code> variable as our cache key, and then configure [[#srcache_fetch|srcache_fetch]] for cache lookups and [[#srcache_store|srcache_store]] for cache updates. We're using two subrequests to our <code>/memc</code> location defined earlier in these two directives.
@@ -102,6 +118,17 @@ One can use [[HttpLuaModule]]'s [[HttpLuaModule#set_by_lua|set_by_lua]] or [[Htt
 One thing that should be taken care of is that memcached does have restriction on key lengths, i.e., 250 bytes, so for keys that may be very long, one could use the [[HttpSetMiscModule#set_md5|set_md5]] directive or its friends to pre-hash the key to a fixed-length digest before assigning it to <code>$memc_key</code> in the <code>/memc</code> location or the like.
 
 Further, one can utilize the [[#srcache_fetch_skip|srcache_fetch_skip]] and [[#srcache_store_skip|srcache_store_skip]] directives to control what to cache and what not on a per-request basis, and Lua can also be used here in a similar way. So the possibility is really unlimited.
+
+To maximize speed, we often enable TCP connection pool for our memcached upstreams provided by [[HttpUpstreamKeepaliveModule]], for example,
+
+<geshi lang="nginx">
+    upstream moon {
+        server 10.62.136.54:11211;
+        keepalive 512 single;
+    }
+</geshi>
+
+where we define a connection pool which holds up to 512 keep-alive connections for our <code>moon</code> upstream.
 
 = Directives =
 

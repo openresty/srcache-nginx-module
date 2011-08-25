@@ -19,6 +19,24 @@ Synopsis
 ========
 
 
+    upstream my_memcached {
+        server 10.62.136.7:11211;
+        keepalive 512 single; # this requires the ngx_http_upstream_keepalive module
+    }
+
+    location = /memc {
+        internal;
+
+        memc_connect_timeout 100ms;
+        memc_send_timeout 100ms;
+        memc_read_timeout 100ms;
+
+        set $memc_key $query_string;
+        set $memc_exptime 300;
+
+        memc_pass my_memcached;
+    }
+
     location /foo {
         charset utf-8; # or some other encoding
         default_type text/plain; # or some other MIME type
@@ -29,12 +47,6 @@ Synopsis
   
         # proxy_pass/fastcgi_pass/drizzle_pass/echo/etc...
         # or even static files on the disk
-    }
-  
-    location /memc {
-        set $memc_key $query_string;
-        set $memc_exptime 300;
-        memc_pass 127.0.0.1:11211;
     }
 
 
@@ -77,10 +89,14 @@ Here is a simple example demonstrating a distributed memcached caching mechanism
 
         upstream_list universe moon earth sun;
 
+        memc_connect_timeout 100ms;
+        memc_send_timeout 100ms;
+        memc_read_timeout 100ms;
+
         location = /memc {
             internal;
 
-            set_unescape_uri $memc_key $arg_key;
+            set $memc_key $args;
             set_hashed_upstream $backend universe $memc_key;
             set $memc_exptime 3600; # in seconds
             memc_pass $backend;
@@ -99,7 +115,7 @@ Here's what is going on in the sample above:
 1. We first define three upstreams, `moon`, `earth`, and `sun`. These are our three memcached servers.
 1. And then we group them together as an upstream list entity named `universe` with the `upstream_list` directive provided by [HttpSetMiscModule](http://wiki.nginx.org/HttpSetMiscModule).
 1. After that, we define an internal location named `/memc` for talking to the memcached cluster.
-1. In this `/memc` location, we first unescape the `key` URI argument in case that it contains special characters like spaces (using the [set_unescape_uri](http://wiki.nginx.org/HttpSetMiscModule#set_unescape_uri) directive), and then use the [set_hashed_upstream](http://wiki.nginx.org/HttpSetMiscModule#set_hashed_upstream) directive to hash our [$memc_key](http://wiki.nginx.org/HttpMemcModule#.24memc_key) over the upsteam list `universe`, so as to obtain a concrete upstream name to be assigned to the variable `$backend`.
+1. In this `/memc` location, we first set the `$memc_key` variable with the query string (`$args`), and then use the [set_hashed_upstream](http://wiki.nginx.org/HttpSetMiscModule#set_hashed_upstream) directive to hash our [$memc_key](http://wiki.nginx.org/HttpMemcModule#.24memc_key) over the upsteam list `universe`, so as to obtain a concrete upstream name to be assigned to the variable `$backend`.
 1. We pass this `$backend` variable into the [memc_pass](http://wiki.nginx.org/HttpMemcModule#memc_pass) directive. The `$backend` variable can hold a value among `moon`, `earth`, and `sun`.
 1. Also, we define the memcached caching expiration time to be 3600 seconds (i.e., an hour) by overriding the [$memc_exptime](http://wiki.nginx.org/HttpMemcModule#.24memc_exptime) variable.
 1. In our main public location `/`, we configure the `$uri` variable as our cache key, and then configure [srcache_fetch](http://wiki.nginx.org/HttpSRCacheModule#srcache_fetch) for cache lookups and [srcache_store](http://wiki.nginx.org/HttpSRCacheModule#srcache_store) for cache updates. We're using two subrequests to our `/memc` location defined earlier in these two directives.
@@ -109,6 +125,17 @@ One can use [HttpLuaModule](http://wiki.nginx.org/HttpLuaModule)'s [set_by_lua](
 One thing that should be taken care of is that memcached does have restriction on key lengths, i.e., 250 bytes, so for keys that may be very long, one could use the [set_md5](http://wiki.nginx.org/HttpSetMiscModule#set_md5) directive or its friends to pre-hash the key to a fixed-length digest before assigning it to `$memc_key` in the `/memc` location or the like.
 
 Further, one can utilize the [srcache_fetch_skip](http://wiki.nginx.org/HttpSRCacheModule#srcache_fetch_skip) and [srcache_store_skip](http://wiki.nginx.org/HttpSRCacheModule#srcache_store_skip) directives to control what to cache and what not on a per-request basis, and Lua can also be used here in a similar way. So the possibility is really unlimited.
+
+To maximize speed, we often enable TCP connection pool for our memcached upstreams provided by [HttpUpstreamKeepaliveModule](http://wiki.nginx.org/HttpUpstreamKeepaliveModule), for example,
+
+
+    upstream moon {
+        server 10.62.136.54:11211;
+        keepalive 512 single;
+    }
+
+
+where we define a connection pool which holds up to 512 keep-alive connections for our `moon` upstream.
 
 Directives
 ==========
