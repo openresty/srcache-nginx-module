@@ -152,7 +152,7 @@ srcache_fetch
 
 This directive registers an access phase handler that will issue an Nginx subrequest to lookup the cache.
 
-When the subrequest returns status code other than `200`, than a cache miss is signaled and the control flow will continue to the later phases including the content phase configured by [HttpProxyModule](http://wiki.nginx.org/HttpProxyModule), [HttpFcgiModule](http://wiki.nginx.org/HttpFcgiModule), and others. If the subrequest returns `200 OK`, then a cache miss is signaled and this module will send the subrequest's response as the current main request's response to the client directly.
+When the subrequest returns status code other than `200`, than a cache miss is signaled and the control flow will continue to the later phases including the content phase configured by [HttpProxyModule](http://wiki.nginx.org/HttpProxyModule), [HttpFcgiModule](http://wiki.nginx.org/HttpFcgiModule), and others. If the subrequest returns `200 OK`, then a cache hit is signaled and this module will send the subrequest's response as the current main request's response to the client directly.
 
 This directive will always run at the end of the access phase, such that [HttpAccessModule](http://wiki.nginx.org/HttpAccessModule)'s [allow](http://wiki.nginx.org/HttpAccessModule#allow) and [deny](http://wiki.nginx.org/HttpAccessModule#deny) will always run *before* this.
 
