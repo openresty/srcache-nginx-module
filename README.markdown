@@ -13,7 +13,7 @@ This module is production ready.
 Version
 =======
 
-This document describes srcache-nginx-module [v0.12rc6](https://github.com/agentzh/echo-nginx-module/downloads) released on 30 June 2011.
+This document describes srcache-nginx-module [v0.12rc6](https://github.com/agentzh/srcache-nginx-module/downloads) released on 30 June 2011.
 
 Synopsis
 ========
