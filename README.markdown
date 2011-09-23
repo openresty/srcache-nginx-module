@@ -265,7 +265,7 @@ Alternatively, you can build Nginx with this module all by yourself:
 * and then download the latest version of the release tarball of this module from srcache-nginx-module [file list](http://github.com/agentzh/srcache-nginx-module/downloads),
 * and finally build the Nginx source with this module
 
-        wget 'http://sysoev.ru/nginx/nginx-1.0.5.tar.gz'
+        wget 'http://nginx.org/download/nginx-1.0.5.tar.gz'
         tar -xzvf nginx-1.0.5.tar.gz
         cd nginx-1.0.5/
      

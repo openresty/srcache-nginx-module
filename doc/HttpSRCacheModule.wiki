@@ -143,7 +143,7 @@ where we define a connection pool which holds up to 512 keep-alive connections f
 
 This directive registers an access phase handler that will issue an Nginx subrequest to lookup the cache.
 
-When the subrequest returns status code other than <code>200</code>, than a cache miss is signaled and the control flow will continue to the later phases including the content phase configured by [[HttpProxyModule]], [[HttpFcgiModule]], and others. If the subrequest returns <code>200 OK</code>, then a cache miss is signaled and this module will send the subrequest's response as the current main request's response to the client directly.
+When the subrequest returns status code other than <code>200</code>, than a cache miss is signaled and the control flow will continue to the later phases including the content phase configured by [[HttpProxyModule]], [[HttpFcgiModule]], and others. If the subrequest returns <code>200 OK</code>, then a cache hit is signaled and this module will send the subrequest's response as the current main request's response to the client directly.
 
 This directive will always run at the end of the access phase, such that [[HttpAccessModule]]'s [[HttpAccessModule#allow|allow]] and [[HttpAccessModule#deny|deny]] will always run ''before'' this.
 
@@ -249,7 +249,7 @@ Alternatively, you can build Nginx with this module all by yourself:
 * and then download the latest version of the release tarball of this module from srcache-nginx-module [http://github.com/agentzh/srcache-nginx-module/downloads file list],
 * and finally build the Nginx source with this module
 <geshi lang="nginx">
-        wget 'http://sysoev.ru/nginx/nginx-1.0.5.tar.gz'
+        wget 'http://nginx.org/download/nginx-1.0.5.tar.gz'
         tar -xzvf nginx-1.0.5.tar.gz
         cd nginx-1.0.5/
      

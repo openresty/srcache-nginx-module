@@ -187,7 +187,7 @@ Directives
     miss is signaled and the control flow will continue to the later phases
     including the content phase configured by [[HttpProxyModule]],
     [[HttpFcgiModule]], and others. If the subrequest returns "200 OK", then
-    a cache miss is signaled and this module will send the subrequest's
+    a cache hit is signaled and this module will send the subrequest's
     response as the current main request's response to the client directly.
 
     This directive will always run at the end of the access phase, such that
@@ -322,7 +322,7 @@ Installation
 
     *   and finally build the Nginx source with this module
 
-            wget 'http://sysoev.ru/nginx/nginx-1.0.5.tar.gz'
+            wget 'http://nginx.org/download/nginx-1.0.5.tar.gz'
             tar -xzvf nginx-1.0.5.tar.gz
             cd nginx-1.0.5/
 
