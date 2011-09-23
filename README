@@ -10,8 +10,8 @@ Status
 
 Version
     This document describes srcache-nginx-module v0.12rc6
-    (<https://github.com/agentzh/echo-nginx-module/downloads>) released on
-    30 June 2011.
+    (<https://github.com/agentzh/srcache-nginx-module/downloads>) released
+    on 30 June 2011.
 
 Synopsis
         upstream my_memcached {
@@ -314,7 +314,7 @@ Installation
     Alternatively, you can build Nginx with this module all by yourself:
 
     *   Grab the nginx source code from nginx.org (<http://nginx.org>), for
-        example, the version 1.0.5 (see Nginx Compatibility),
+        example, the version 1.0.6 (see Nginx Compatibility),
 
     *   and then download the latest version of the release tarball of this
         module from srcache-nginx-module file list
@@ -322,9 +322,9 @@ Installation
 
     *   and finally build the Nginx source with this module
 
-            wget 'http://nginx.org/download/nginx-1.0.5.tar.gz'
-            tar -xzvf nginx-1.0.5.tar.gz
-            cd nginx-1.0.5/
+            wget 'http://nginx.org/download/nginx-1.0.6.tar.gz'
+            tar -xzvf nginx-1.0.6.tar.gz
+            cd nginx-1.0.6/
 
             # Here we assume you would install you nginx under /opt/nginx/.
             ./configure --prefix=/opt/nginx \
@@ -336,7 +336,7 @@ Installation
 Compatibility
     The following versions of Nginx should work with this module:
 
-    *   1.0.x (last tested: 1.0.5)
+    *   1.0.x (last tested: 1.0.6)
 
     *   0.9.x (last tested: 0.9.4)
 
