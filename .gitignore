@@ -66,6 +66,6 @@ try.sh
 build9
 t/servroot/
 buildroot/
-build10
+build1[01]
 go
 all
