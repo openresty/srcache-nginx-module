@@ -248,10 +248,15 @@ ngx_http_srcache_add_copy_chain(ngx_pool_t *pool, ngx_chain_t **chain, ngx_chain
 
         if (ngx_buf_special(in->buf)) {
             cl->buf = in->buf;
+
         } else {
             if (ngx_buf_in_memory(in->buf)) {
                 len = ngx_buf_size(in->buf);
                 cl->buf = ngx_create_temp_buf(pool, len);
+                if (cl->buf == NULL) {
+                    return NGX_ERROR;
+                }
+
                 dd("buf: %.*s", (int) len, in->buf->pos);
 
                 cl->buf->last = ngx_copy(cl->buf->pos, in->buf->pos, len);
