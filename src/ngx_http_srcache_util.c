@@ -4,22 +4,50 @@
 #include "ngx_http_srcache_util.h"
 
 
-ngx_str_t  ngx_http_srcache_content_length_header_key = ngx_string("Content-Length");
+ngx_str_t  ngx_http_srcache_content_length_header_key =
+        ngx_string("Content-Length");
 
-ngx_str_t  ngx_http_srcache_get_method = ngx_http_srcache_method_name("GET");
-ngx_str_t  ngx_http_srcache_put_method = ngx_http_srcache_method_name("PUT");
-ngx_str_t  ngx_http_srcache_post_method = ngx_http_srcache_method_name("POST");
-ngx_str_t  ngx_http_srcache_head_method = ngx_http_srcache_method_name("HEAD");
-ngx_str_t  ngx_http_srcache_copy_method = ngx_http_srcache_method_name("COPY");
-ngx_str_t  ngx_http_srcache_move_method = ngx_http_srcache_method_name("MOVE");
-ngx_str_t  ngx_http_srcache_lock_method = ngx_http_srcache_method_name("LOCK");
-ngx_str_t  ngx_http_srcache_mkcol_method = ngx_http_srcache_method_name("MKCOL");
-ngx_str_t  ngx_http_srcache_trace_method = ngx_http_srcache_method_name("TRACE");
-ngx_str_t  ngx_http_srcache_delete_method = ngx_http_srcache_method_name("DELETE");
-ngx_str_t  ngx_http_srcache_unlock_method = ngx_http_srcache_method_name("UNLOCK");
-ngx_str_t  ngx_http_srcache_options_method = ngx_http_srcache_method_name("OPTIONS");
-ngx_str_t  ngx_http_srcache_propfind_method = ngx_http_srcache_method_name("PROPFIND");
-ngx_str_t  ngx_http_srcache_proppatch_method = ngx_http_srcache_method_name("PROPPATCH");
+ngx_str_t  ngx_http_srcache_get_method =
+        ngx_http_srcache_method_name("GET");
+
+ngx_str_t  ngx_http_srcache_put_method =
+        ngx_http_srcache_method_name("PUT");
+
+ngx_str_t  ngx_http_srcache_post_method =
+        ngx_http_srcache_method_name("POST");
+
+ngx_str_t  ngx_http_srcache_head_method =
+        ngx_http_srcache_method_name("HEAD");
+
+ngx_str_t  ngx_http_srcache_copy_method =
+        ngx_http_srcache_method_name("COPY");
+
+ngx_str_t  ngx_http_srcache_move_method =
+        ngx_http_srcache_method_name("MOVE");
+
+ngx_str_t  ngx_http_srcache_lock_method =
+        ngx_http_srcache_method_name("LOCK");
+
+ngx_str_t  ngx_http_srcache_mkcol_method =
+        ngx_http_srcache_method_name("MKCOL");
+
+ngx_str_t  ngx_http_srcache_trace_method =
+        ngx_http_srcache_method_name("TRACE");
+
+ngx_str_t  ngx_http_srcache_delete_method =
+        ngx_http_srcache_method_name("DELETE");
+
+ngx_str_t  ngx_http_srcache_unlock_method =
+        ngx_http_srcache_method_name("UNLOCK");
+
+ngx_str_t  ngx_http_srcache_options_method =
+        ngx_http_srcache_method_name("OPTIONS");
+
+ngx_str_t  ngx_http_srcache_propfind_method =
+        ngx_http_srcache_method_name("PROPFIND");
+
+ngx_str_t  ngx_http_srcache_proppatch_method =
+        ngx_http_srcache_method_name("PROPPATCH");
 
 
 void
@@ -132,7 +160,9 @@ ngx_http_srcache_parse_method_name(ngx_str_t **method_name_ptr)
         break;
 
     case 9:
-        if (ngx_http_srcache_strcmp_const(method_name->data, "PROPPATCH") == 0) {
+        if (ngx_http_srcache_strcmp_const(method_name->data, "PROPPATCH")
+                == 0)
+        {
             *method_name_ptr = &ngx_http_srcache_proppatch_method;
             return NGX_HTTP_PROPPATCH;
             break;
@@ -229,7 +259,8 @@ ngx_http_srcache_adjust_subrequest(ngx_http_request_t *sr,
 
 
 ngx_int_t
-ngx_http_srcache_add_copy_chain(ngx_pool_t *pool, ngx_chain_t **chain, ngx_chain_t *in)
+ngx_http_srcache_add_copy_chain(ngx_pool_t *pool, ngx_chain_t **chain,
+        ngx_chain_t *in)
 {
     ngx_chain_t     *cl, **ll;
     size_t           len;
