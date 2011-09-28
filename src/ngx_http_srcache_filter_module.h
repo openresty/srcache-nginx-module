@@ -32,6 +32,7 @@ typedef struct {
     size_t                           store_max_size;
     ngx_http_complex_value_t        *fetch_skip;
     ngx_http_complex_value_t        *store_skip;
+    ngx_uint_t                       cache_methods;
 
     unsigned              postponed_to_access_phase_end;
 } ngx_http_srcache_loc_conf_t;

@@ -1,4 +1,6 @@
+#ifndef DDEBUG
 #define DDEBUG 0
+#endif
 #include "ddebug.h"
 
 /*
@@ -44,6 +46,16 @@ static ngx_int_t ngx_http_srcache_store_subrequest(ngx_http_request_t *r,
         ngx_http_srcache_ctx_t *ctx);
 static ngx_int_t ngx_http_srcache_fetch_subrequest(ngx_http_request_t *r,
         ngx_http_srcache_loc_conf_t *conf, ngx_http_srcache_ctx_t *ctx);
+
+
+static ngx_conf_bitmask_t  ngx_http_srcache_cache_method_mask[] = {
+   { ngx_string("GET"),  NGX_HTTP_GET},
+   { ngx_string("HEAD"), NGX_HTTP_HEAD },
+   { ngx_string("POST"), NGX_HTTP_POST },
+   { ngx_string("PUT"), NGX_HTTP_PUT },
+   { ngx_string("DELETE"), NGX_HTTP_DELETE },
+   { ngx_null_string, 0 }
+};
 
 
 static ngx_command_t  ngx_http_srcache_commands[] = {
@@ -95,6 +107,13 @@ static ngx_command_t  ngx_http_srcache_commands[] = {
       NGX_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_srcache_loc_conf_t, store_skip),
       NULL },
+
+    { ngx_string("srcache_cache_methods"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_1MORE,
+      ngx_conf_set_bitmask_slot,
+      NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_srcache_loc_conf_t, cache_methods),
+      &ngx_http_srcache_cache_method_mask },
 
       ngx_null_command
 };
@@ -231,6 +250,10 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
 
     if (slcf->store == NULL) {
         dd("slcf->store is NULL");
+        return ngx_http_next_header_filter(r);
+    }
+
+    if (!(r->method | slcf->cache_methods)) {
         return ngx_http_next_header_filter(r);
     }
 
@@ -532,24 +555,29 @@ ngx_http_srcache_filter_init(ngx_conf_t *cf)
 static void *
 ngx_http_srcache_create_loc_conf(ngx_conf_t *cf)
 {
-    ngx_http_srcache_loc_conf_t  *slcf;
+    ngx_http_srcache_loc_conf_t  *conf;
 
-    slcf = ngx_palloc(cf->pool, sizeof(ngx_http_srcache_loc_conf_t));
-    if (slcf == NULL) {
+    conf = ngx_pcalloc(cf->pool, sizeof(ngx_http_srcache_loc_conf_t));
+    if (conf == NULL) {
         return NULL;
     }
 
-    slcf->fetch = NGX_CONF_UNSET_PTR;
-    slcf->store = NGX_CONF_UNSET_PTR;
+    /*
+     * set by ngx_pcalloc():
+     *
+     *      conf->fetch_skip = NULL;
+     *      conf->store_skip = NULL;
+     *      conf->cache_methods = 0;
+     */
 
-    slcf->fetch_skip = NULL;
-    slcf->store_skip = NULL;
+    conf->fetch = NGX_CONF_UNSET_PTR;
+    conf->store = NGX_CONF_UNSET_PTR;
 
-    slcf->buf_size = NGX_CONF_UNSET_SIZE;
+    conf->buf_size = NGX_CONF_UNSET_SIZE;
 
-    slcf->store_max_size = NGX_CONF_UNSET_SIZE;
+    conf->store_max_size = NGX_CONF_UNSET_SIZE;
 
-    return slcf;
+    return conf;
 }
 
 
@@ -574,6 +602,12 @@ ngx_http_srcache_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
     if (conf->store_skip == NULL) {
         conf->store_skip = prev->store_skip;
     }
+
+    if (conf->cache_methods == 0) {
+        conf->cache_methods = prev->cache_methods;
+    }
+
+    conf->cache_methods |= NGX_HTTP_GET|NGX_HTTP_HEAD;
 
     return NGX_CONF_OK;
 }
@@ -690,6 +724,13 @@ ngx_http_srcache_access_handler(ngx_http_request_t *r)
 
     dd("store defined? %p", conf->store);
 
+    dd("req method: %lu", (unsigned long) r->method);
+    dd("cache methods: %lu", (unsigned long) conf->cache_methods);
+
+    if (!(r->method & conf->cache_methods)) {
+        return NGX_DECLINED;
+    }
+
     if (conf->fetch_skip != NULL
             && ngx_http_complex_value(r, conf->fetch_skip, &skip) == NGX_OK
             && skip.len
@@ -736,7 +777,7 @@ ngx_http_srcache_access_handler(ngx_http_request_t *r)
 
             dd("sending header");
 
-            if (ctx->body_from_cache) {
+            if (ctx->body_from_cache && !(r->method & NGX_HTTP_HEAD)) {
                 len = 0;
 
                 for (cl = ctx->body_from_cache; cl->next; cl = cl->next) {
