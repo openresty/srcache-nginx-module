@@ -108,7 +108,7 @@ static ngx_command_t  ngx_http_srcache_commands[] = {
       offsetof(ngx_http_srcache_loc_conf_t, store_skip),
       NULL },
 
-    { ngx_string("srcache_cache_methods"),
+    { ngx_string("srcache_methods"),
       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_1MORE,
       ngx_conf_set_bitmask_slot,
       NGX_HTTP_LOC_CONF_OFFSET,
@@ -253,9 +253,11 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
         return ngx_http_next_header_filter(r);
     }
 
-    if (!(r->method | slcf->cache_methods)) {
+#if 1
+    if (!(r->method & slcf->cache_methods)) {
         return ngx_http_next_header_filter(r);
     }
+#endif
 
     if (slcf->store_skip != NULL
             && ngx_http_complex_value(r, slcf->store_skip, &skip) == NGX_OK
@@ -771,7 +773,7 @@ ngx_http_srcache_access_handler(ngx_http_request_t *r)
                 return NGX_ERROR;
             }
 
-            if (! ctx->from_cache) {
+            if (!ctx->from_cache) {
                 return NGX_DECLINED;
             }
 
