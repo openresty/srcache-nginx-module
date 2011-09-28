@@ -74,7 +74,7 @@ Distributed Memcached Caching
 Here is a simple example demonstrating a distributed memcached caching mechanism built atop this module. Suppose we do have three different memcacached nodes and we use simple modulo to hash our keys.
 
 
-    server {
+    http {
         upstream moon {
             server 10.62.136.54:11211;
         }
@@ -88,7 +88,9 @@ Here is a simple example demonstrating a distributed memcached caching mechanism
         }
 
         upstream_list universe moon earth sun;
-
+    }
+    
+    server {
         memc_connect_timeout 100ms;
         memc_send_timeout 100ms;
         memc_read_timeout 100ms;
@@ -131,11 +133,12 @@ To maximize speed, we often enable TCP connection pool for our memcached upstrea
 
     upstream moon {
         server 10.62.136.54:11211;
+        server unix:/tmp/memcached.sock;
         keepalive 512 single;
     }
 
 
-where we define a connection pool which holds up to 512 keep-alive connections for our `moon` upstream.
+where we define a connection pool which holds up to 512 keep-alive connections for our `moon` upstreams.
 
 Directives
 ==========
