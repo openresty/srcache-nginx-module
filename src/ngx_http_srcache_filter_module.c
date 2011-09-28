@@ -115,6 +115,13 @@ static ngx_command_t  ngx_http_srcache_commands[] = {
       offsetof(ngx_http_srcache_loc_conf_t, cache_methods),
       &ngx_http_srcache_cache_method_mask },
 
+    { ngx_string("srcache_request_cache_control"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
+      ngx_conf_set_flag_slot,
+      NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_srcache_loc_conf_t, req_cache_control),
+      NULL },
+
       ngx_null_command
 };
 
@@ -275,7 +282,9 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
 
     dd("error page: %d", (int) r->error_page);
 
-    if (r->headers_out.status != NGX_HTTP_OK) {
+    if (r->headers_out.status < NGX_HTTP_OK
+        && r->headers_out.status >= NGX_HTTP_SPECIAL_RESPONSE)
+    {
         dd("fetch: ignore bad response with status %d",
                 (int) r->headers_out.status);
 
@@ -579,6 +588,8 @@ ngx_http_srcache_create_loc_conf(ngx_conf_t *cf)
 
     conf->store_max_size = NGX_CONF_UNSET_SIZE;
 
+    conf->req_cache_control = NGX_CONF_UNSET;
+
     return conf;
 }
 
@@ -610,6 +621,8 @@ ngx_http_srcache_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
     }
 
     conf->cache_methods |= NGX_HTTP_GET|NGX_HTTP_HEAD;
+
+    ngx_conf_merge_value(conf->req_cache_control, prev->req_cache_control, 0);
 
     return NGX_CONF_OK;
 }
@@ -731,6 +744,21 @@ ngx_http_srcache_access_handler(ngx_http_request_t *r)
 
     if (!(r->method & conf->cache_methods)) {
         return NGX_DECLINED;
+    }
+
+    if (conf->req_cache_control) {
+        if (ngx_http_srcache_request_no_cache(r) == NGX_OK) {
+            /* register a ctx to give a chance to srcache_store to run */
+            ctx = ngx_pcalloc(r->pool, sizeof(ngx_http_srcache_filter_module));
+
+            if (ctx == NULL) {
+                return NGX_HTTP_INTERNAL_SERVER_ERROR;
+            }
+
+            ngx_http_set_ctx(r, ctx, ngx_http_srcache_filter_module);
+
+            return NGX_DECLINED;
+        }
     }
 
     if (conf->fetch_skip != NULL

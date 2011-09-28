@@ -382,3 +382,59 @@ ngx_http_srcache_set_content_length_header(ngx_http_request_t *r, off_t len)
 }
 
 
+ngx_int_t
+ngx_http_srcache_request_no_cache(ngx_http_request_t *r)
+{
+    ngx_table_elt_t                 *h;
+    ngx_list_part_t                 *part;
+    u_char                          *p;
+    u_char                          *last;
+    ngx_uint_t                       i;
+
+    part = &r->headers_in.headers.part;
+    h = part->elts;
+
+    for (i = 0; /* void */; i++) {
+
+        if (i >= part->nelts) {
+            if (part->next == NULL) {
+                break;
+            }
+
+            part = part->next;
+            h = part->elts;
+            i = 0;
+        }
+
+        if (h[i].key.len == sizeof("Cache-Control") - 1
+            && ngx_strncasecmp(h[i].key.data, (u_char *) "Cache-Control",
+                sizeof("Cache-Control") - 1) == 0)
+        {
+            p = h[i].value.data;
+            last = p + h[i].value.len;
+
+            if (ngx_strlcasestrn(p, last, (u_char *) "no-cache", 8 - 1) != NULL)
+            {
+                return NGX_OK;
+            }
+
+            continue;
+        }
+
+        if (h[i].key.len == sizeof("Pragma") - 1
+            && ngx_strncasecmp(h[i].key.data, (u_char *) "Pragma",
+                sizeof("Pragma") - 1) == 0)
+        {
+            p = h[i].value.data;
+            last = p + h[i].value.len;
+
+            if (ngx_strlcasestrn(p, last, (u_char *) "no-cache", 8 - 1) != NULL)
+            {
+                return NGX_OK;
+            }
+        }
+    }
+
+    return NGX_DECLINED;
+}
+
