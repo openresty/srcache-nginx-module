@@ -4,48 +4,38 @@
 #include "ngx_http_srcache_util.h"
 
 
+static ngx_int_t ngx_http_srcache_set_content_length_header(
+        ngx_http_request_t *r, off_t len);
+
+
 ngx_str_t  ngx_http_srcache_content_length_header_key =
         ngx_string("Content-Length");
-
 ngx_str_t  ngx_http_srcache_get_method =
         ngx_http_srcache_method_name("GET");
-
 ngx_str_t  ngx_http_srcache_put_method =
         ngx_http_srcache_method_name("PUT");
-
 ngx_str_t  ngx_http_srcache_post_method =
         ngx_http_srcache_method_name("POST");
-
 ngx_str_t  ngx_http_srcache_head_method =
         ngx_http_srcache_method_name("HEAD");
-
 ngx_str_t  ngx_http_srcache_copy_method =
         ngx_http_srcache_method_name("COPY");
-
 ngx_str_t  ngx_http_srcache_move_method =
         ngx_http_srcache_method_name("MOVE");
-
 ngx_str_t  ngx_http_srcache_lock_method =
         ngx_http_srcache_method_name("LOCK");
-
 ngx_str_t  ngx_http_srcache_mkcol_method =
         ngx_http_srcache_method_name("MKCOL");
-
 ngx_str_t  ngx_http_srcache_trace_method =
         ngx_http_srcache_method_name("TRACE");
-
 ngx_str_t  ngx_http_srcache_delete_method =
         ngx_http_srcache_method_name("DELETE");
-
 ngx_str_t  ngx_http_srcache_unlock_method =
         ngx_http_srcache_method_name("UNLOCK");
-
 ngx_str_t  ngx_http_srcache_options_method =
         ngx_http_srcache_method_name("OPTIONS");
-
 ngx_str_t  ngx_http_srcache_propfind_method =
         ngx_http_srcache_method_name("PROPFIND");
-
 ngx_str_t  ngx_http_srcache_proppatch_method =
         ngx_http_srcache_method_name("PROPPATCH");
 
@@ -183,9 +173,10 @@ ngx_int_t
 ngx_http_srcache_adjust_subrequest(ngx_http_request_t *sr,
         ngx_http_srcache_parsed_request_t *parsed_sr)
 {
-    ngx_table_elt_t            *h;
     ngx_http_core_main_conf_t  *cmcf;
     ngx_http_request_t         *r;
+    ngx_http_request_body_t    *body;
+    ngx_int_t                   rc;
 
     sr->method      = parsed_sr->method;
     sr->method_name = parsed_sr->method_name;
@@ -213,45 +204,16 @@ ngx_http_srcache_adjust_subrequest(ngx_http_request_t *sr,
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
-    if (parsed_sr->content_length_n > 0) {
-        sr->headers_in.content_length_n = parsed_sr->content_length_n;
-        sr->request_body = parsed_sr->request_body;
+    body = parsed_sr->request_body;
+    if (body) {
+        sr->request_body = body;
 
-        sr->headers_in.content_length = ngx_pcalloc(sr->pool,
-                sizeof(ngx_table_elt_t));
-        sr->headers_in.content_length->value.data =
-            ngx_palloc(sr->pool, NGX_OFF_T_LEN);
-        if (sr->headers_in.content_length->value.data == NULL) {
+        rc = ngx_http_srcache_set_content_length_header(sr,
+                body->buf ? ngx_buf_size(body->buf) : 0);
+
+        if (rc != NGX_OK) {
             return NGX_HTTP_INTERNAL_SERVER_ERROR;
         }
-        sr->headers_in.content_length->value.len = ngx_sprintf(
-                sr->headers_in.content_length->value.data, "%O",
-                sr->headers_in.content_length_n) -
-                sr->headers_in.content_length->value.data;
-
-        if (ngx_list_init(&sr->headers_in.headers, sr->pool, 20,
-                    sizeof(ngx_table_elt_t)) != NGX_OK) {
-            return NGX_HTTP_INTERNAL_SERVER_ERROR;
-        }
-
-        h = ngx_list_push(&sr->headers_in.headers);
-        if (h == NULL) {
-            return NGX_HTTP_INTERNAL_SERVER_ERROR;
-        }
-
-        h->hash = sr->header_hash;
-
-        h->key = ngx_http_srcache_content_length_header_key;
-        h->value = sr->headers_in.content_length->value;
-
-        h->lowcase_key = ngx_pnalloc(sr->pool, h->key.len);
-        if (h->lowcase_key == NULL) {
-            return NGX_HTTP_INTERNAL_SERVER_ERROR;
-        }
-
-        ngx_strlow(h->lowcase_key, h->key.data, h->key.len);
-
-        dd("sr content length: %s", sr->headers_in.content_length->value.data);
     }
 
     return NGX_OK;
@@ -327,4 +289,96 @@ ngx_http_srcache_post_request_at_head(ngx_http_request_t *r,
 
     return NGX_OK;
 }
+
+
+static ngx_int_t
+ngx_http_srcache_set_content_length_header(ngx_http_request_t *r, off_t len)
+{
+    ngx_table_elt_t                 *h, *header;
+    u_char                          *p;
+    ngx_list_part_t                 *part;
+    ngx_http_request_t              *pr;
+    ngx_uint_t                       i;
+
+    r->headers_in.content_length_n = len;
+
+    if (ngx_list_init(&r->headers_in.headers, r->pool, 20,
+                sizeof(ngx_table_elt_t)) != NGX_OK) {
+        return NGX_ERROR;
+    }
+
+    h = ngx_list_push(&r->headers_in.headers);
+    if (h == NULL) {
+        return NGX_ERROR;
+    }
+
+    h->key = ngx_http_srcache_content_length_header_key;
+    h->lowcase_key = ngx_pnalloc(r->pool, h->key.len);
+    if (h->lowcase_key == NULL) {
+        return NGX_ERROR;
+    }
+
+    ngx_strlow(h->lowcase_key, h->key.data, h->key.len);
+
+    r->headers_in.content_length = h;
+
+    p = ngx_palloc(r->pool, NGX_OFF_T_LEN);
+    if (p == NULL) {
+        return NGX_ERROR;
+    }
+
+    h->value.data = p;
+
+    h->value.len = ngx_sprintf(h->value.data, "%O", len) - h->value.data;
+
+    h->hash = 1;
+
+    dd("r content length: %.*s",
+            (int)r->headers_in.content_length->value.len,
+            r->headers_in.content_length->value.data);
+
+    pr = r->parent;
+
+    if (pr == NULL) {
+        return NGX_OK;
+    }
+
+    /* forward the parent request's all other request headers */
+
+    part = &pr->headers_in.headers.part;
+    header = part->elts;
+
+    for (i = 0; /* void */; i++) {
+
+        if (i >= part->nelts) {
+            if (part->next == NULL) {
+                break;
+            }
+
+            part = part->next;
+            header = part->elts;
+            i = 0;
+        }
+
+        if (header[i].key.len == sizeof("Content-Length") - 1 &&
+                ngx_strncasecmp(header[i].key.data, (u_char *) "Content-Length",
+                sizeof("Content-Length") - 1) == 0)
+        {
+            continue;
+        }
+
+        h = ngx_list_push(&r->headers_in.headers);
+        if (h == NULL) {
+            return NGX_ERROR;
+        }
+
+        *h = header[i];
+    }
+
+    /* XXX maybe we should set those built-in header slot in
+     * ngx_http_headers_in_t too? */
+
+    return NGX_OK;
+}
+
 
