@@ -278,7 +278,7 @@ Known Issues
 
 Caveats
 =======
-* For now, ngx_srcache does not cache response headers. So it's necessary to use the [charset](http://wiki.nginx.org/HttpCharsetModule#charset), [default_type](http://wiki.nginx.org/HttpCoreModule#default_type), mime type settings, and [add_header](http://wiki.nginx.org/HttpHeadersModule#add_header) directives to explicitly set the `Content-Type` header and etc. Therefore, it's probably a bad idea to combine this module with backends that return varying response headers. Support for response header caching is a TODO and you're very welcome to submit patches for this :)
+* For now, ngx_srcache does not cache response headers. So it's necessary to use the [charset](http://wiki.nginx.org/HttpCharsetModule#charset), [default_type](http://wiki.nginx.org/HttpCoreModule#default_type) and [add_header](http://wiki.nginx.org/HttpHeadersModule#add_header) directives to explicitly set the `Content-Type` header and etc. But if a requested from cache URI resource has an explicit extension the nginx will set up an appropriate default_type according to a settings of [types](http://wiki.nginx.org/HttpCoreModule#types) nginx directive regardless of the default_type here. Therefore, it's probably a bad idea to combine this module with backends that return varying response headers. Support for response header caching is a TODO and you're very welcome to submit patches for this :)
 * It's recommended to disable your backend server's gzip compression and use nginx's [HttpGzipModule](http://wiki.nginx.org/HttpGzipModule) to do the job. In case of [HttpProxyModule](http://wiki.nginx.org/HttpProxyModule), you can use the following configure setting to disable backend gzip compression:
 
     proxy_set_header  Accept-Encoding  "";
