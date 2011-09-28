@@ -50,6 +50,33 @@ Synopsis
     }
 
 
+
+    location = /memc2 {
+        internal;
+
+        memc_connect_timeout 100ms;
+        memc_send_timeout 100ms;
+        memc_read_timeout 100ms;
+
+        set_unescape_uri $memc_key $arg_key;
+        set $memc_exptime $arg_exptime;
+
+        memc_pass unix:/tmp/memcached.sock;
+    }
+
+    location /bar {
+        charset utf-8; # or some other encoding
+        default_type text/plain; # or some other MIME type
+  
+        set_escape_uri $key $uri$args;
+        srcache_fetch GET /memc2 key=$key;
+        srcache_store PUT /memc2 key=$key&exptime=3600;
+  
+        # proxy_pass/fastcgi_pass/drizzle_pass/echo/etc...
+        # or even static files on the disk
+    }
+
+
 Description
 ===========
 
@@ -77,6 +104,7 @@ Here is a simple example demonstrating a distributed memcached caching mechanism
     http {
         upstream moon {
             server 10.62.136.54:11211;
+            server unix:/tmp/memcached.sock backup;
         }
 
         upstream earth {
@@ -88,28 +116,28 @@ Here is a simple example demonstrating a distributed memcached caching mechanism
         }
 
         upstream_list universe moon earth sun;
-    }
-    
-    server {
-        memc_connect_timeout 100ms;
-        memc_send_timeout 100ms;
-        memc_read_timeout 100ms;
 
-        location = /memc {
-            internal;
+        server {
+            memc_connect_timeout 100ms;
+            memc_send_timeout 100ms;
+            memc_read_timeout 100ms;
 
-            set $memc_key $query_string;
-            set_hashed_upstream $backend universe $memc_key;
-            set $memc_exptime 3600; # in seconds
-            memc_pass $backend;
-        }
+            location = /memc {
+                internal;
 
-        location / {
-            set $key $uri;
-            srcache_fetch GET /memc $key;
-            srcache_store PUT /memc $key;
+                set $memc_key $query_string;
+                set_hashed_upstream $backend universe $memc_key;
+                set $memc_exptime 3600; # in seconds
+                memc_pass $backend;
+            }
 
-            # proxy_pass/fastcgi_pass/content_by_lua/drizzle_pass/...
+            location / {
+                set $key $uri;
+                srcache_fetch GET /memc $key;
+                srcache_store PUT /memc $key;
+
+                # proxy_pass/fastcgi_pass/content_by_lua/drizzle_pass/...
+            }
         }
     }
 
@@ -128,22 +156,17 @@ One thing that should be taken care of is that memcached does have restriction o
 
 Further, one can utilize the [srcache_fetch_skip](http://wiki.nginx.org/HttpSRCacheModule#srcache_fetch_skip) and [srcache_store_skip](http://wiki.nginx.org/HttpSRCacheModule#srcache_store_skip) directives to control what to cache and what not on a per-request basis, and Lua can also be used here in a similar way. So the possibility is really unlimited.
 
-To maximize speed, we often enable TCP/Unix connection pool for our memcached upstreams provided by [HttpUpstreamKeepaliveModule](http://wiki.nginx.org/HttpUpstreamKeepaliveModule), for example,
+To maximize speed, we often enable TCP (or Unix Domain Socket) connection pool for our memcached upstreams provided by [HttpUpstreamKeepaliveModule](http://wiki.nginx.org/HttpUpstreamKeepaliveModule), for example,
 
 
     upstream moon {
         server 10.62.136.54:11211;
-        keepalive 512 single;
+        server unix:/tmp/memcached.sock backup;
+        keepalive 512;
     }
 
-OR:
 
-    upstream moon {
-        server unix:/tmp/memcached.sock;
-        keepalive 512 single;
-    }
-
-where we define a connection pool which holds up to 512 keep-alive connections for our `moon` upstream.
+where we define a connection pool which holds up to 512 keep-alive connections for our `moon` upstream (cluster).
 
 Directives
 ==========
@@ -255,11 +278,10 @@ Known Issues
 
 Caveats
 =======
-* For now, ngx_srcache does not cache response headers. So it's necessary to use the [charset](http://wiki.nginx.org/HttpCharsetModule#charset), [default_type](http://wiki.nginx.org/HttpCoreModule#default_type) and [add_header](http://wiki.nginx.org/HttpHeadersModule#add_header) directives to explicitly set the `Content-Type` header and etc. Therefore, it's probably a bad idea to combine this module with backends that return varying response headers. Support for response header caching is a TODO and you're very welcome to submit patches for this :)
+* For now, ngx_srcache does not cache response headers. So it's necessary to use the [charset](http://wiki.nginx.org/HttpCharsetModule#charset), [default_type](http://wiki.nginx.org/HttpCoreModule#default_type), mime type settings, and [add_header](http://wiki.nginx.org/HttpHeadersModule#add_header) directives to explicitly set the `Content-Type` header and etc. Therefore, it's probably a bad idea to combine this module with backends that return varying response headers. Support for response header caching is a TODO and you're very welcome to submit patches for this :)
 * It's recommended to disable your backend server's gzip compression and use nginx's [HttpGzipModule](http://wiki.nginx.org/HttpGzipModule) to do the job. In case of [HttpProxyModule](http://wiki.nginx.org/HttpProxyModule), you can use the following configure setting to disable backend gzip compression:
 
     proxy_set_header  Accept-Encoding  "";
-
 
 
 Installation

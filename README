@@ -44,6 +44,31 @@ Synopsis
             # or even static files on the disk
         }
 
+        location = /memc2 {
+            internal;
+
+            memc_connect_timeout 100ms;
+            memc_send_timeout 100ms;
+            memc_read_timeout 100ms;
+
+            set_unescape_uri $memc_key $arg_key;
+            set $memc_exptime $arg_exptime;
+
+            memc_pass unix:/tmp/memcached.sock;
+        }
+
+        location /bar {
+            charset utf-8; # or some other encoding
+            default_type text/plain; # or some other MIME type
+
+            set_escape_uri $key $uri$args;
+            srcache_fetch GET /memc2 key=$key;
+            srcache_store PUT /memc2 key=$key&exptime=3600;
+
+            # proxy_pass/fastcgi_pass/drizzle_pass/echo/etc...
+            # or even static files on the disk
+        }
+
 Description
     This module provides a transparent caching layer for arbitrary nginx
     locations (like those use an upstream or even serve static disk files).
@@ -79,9 +104,10 @@ Description
     mechanism built atop this module. Suppose we do have three different
     memcacached nodes and we use simple modulo to hash our keys.
 
-        server {
+        http {
             upstream moon {
                 server 10.62.136.54:11211;
+                server unix:/tmp/memcached.sock backup;
             }
 
             upstream earth {
@@ -94,25 +120,27 @@ Description
 
             upstream_list universe moon earth sun;
 
-            memc_connect_timeout 100ms;
-            memc_send_timeout 100ms;
-            memc_read_timeout 100ms;
+            server {
+                memc_connect_timeout 100ms;
+                memc_send_timeout 100ms;
+                memc_read_timeout 100ms;
 
-            location = /memc {
-                internal;
+                location = /memc {
+                    internal;
 
-                set $memc_key $query_string;
-                set_hashed_upstream $backend universe $memc_key;
-                set $memc_exptime 3600; # in seconds
-                memc_pass $backend;
-            }
+                    set $memc_key $query_string;
+                    set_hashed_upstream $backend universe $memc_key;
+                    set $memc_exptime 3600; # in seconds
+                    memc_pass $backend;
+                }
 
-            location / {
-                set $key $uri;
-                srcache_fetch GET /memc $key;
-                srcache_store PUT /memc $key;
+                location / {
+                    set $key $uri;
+                    srcache_fetch GET /memc $key;
+                    srcache_store PUT /memc $key;
 
-                # proxy_pass/fastcgi_pass/content_by_lua/drizzle_pass/...
+                    # proxy_pass/fastcgi_pass/content_by_lua/drizzle_pass/...
+                }
             }
         }
     Here's what is going on in the sample above:
@@ -159,16 +187,18 @@ Description
     and Lua can also be used here in a similar way. So the possibility is
     really unlimited.
 
-    To maximize speed, we often enable TCP connection pool for our memcached
-    upstreams provided by [[HttpUpstreamKeepaliveModule]], for example,
+    To maximize speed, we often enable TCP (or Unix Domain Socket)
+    connection pool for our memcached upstreams provided by
+    [[HttpUpstreamKeepaliveModule]], for example,
 
         upstream moon {
             server 10.62.136.54:11211;
-            keepalive 512 single;
+            server unix:/tmp/memcached.sock backup;
+            keepalive 512;
         }
 
     where we define a connection pool which holds up to 512 keep-alive
-    connections for our "moon" upstream.
+    connections for our "moon" upstream (cluster).
 
 Directives
   srcache_fetch
@@ -291,11 +321,12 @@ Known Issues
 
 Caveats
     *   For now, ngx_srcache does not cache response headers. So it's
-        necessary to use the charset, default_type and add_header directives
-        to explicitly set the "Content-Type" header and etc. Therefore, it's
-        probably a bad idea to combine this module with backends that return
-        varying response headers. Support for response header caching is a
-        TODO and you're very welcome to submit patches for this :)
+        necessary to use the charset, default_type, mime type settings, and
+        add_header directives to explicitly set the "Content-Type" header
+        and etc. Therefore, it's probably a bad idea to combine this module
+        with backends that return varying response headers. Support for
+        response header caching is a TODO and you're very welcome to submit
+        patches for this :)
 
     *   It's recommended to disable your backend server's gzip compression
         and use nginx's [[HttpGzipModule]] to do the job. In case of
