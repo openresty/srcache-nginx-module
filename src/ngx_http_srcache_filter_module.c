@@ -262,14 +262,24 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
 
 #if 1
     if (!(r->method & slcf->cache_methods)) {
+        ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                "srcache_store skipped due to request method %V", &r->method_name);
+
         return ngx_http_next_header_filter(r);
     }
 #endif
 
+    if (ngx_http_srcache_response_no_cache(r, slcf) == NGX_OK) {
+        ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                "srcache_store skipped due to response Cache-Control setting");
+
+        return ngx_http_next_header_filter(r);
+    }
+
     if (slcf->store_skip != NULL
-            && ngx_http_complex_value(r, slcf->store_skip, &skip) == NGX_OK
-            && skip.len
-            && (skip.len != 1 || skip.data[0] != '0'))
+        && ngx_http_complex_value(r, slcf->store_skip, &skip) == NGX_OK
+        && skip.len
+        && (skip.len != 1 || skip.data[0] != '0'))
     {
         ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                 "srcache_store skipped due to the true value fed into "
@@ -743,6 +753,10 @@ ngx_http_srcache_access_handler(ngx_http_request_t *r)
     dd("cache methods: %lu", (unsigned long) conf->cache_methods);
 
     if (!(r->method & conf->cache_methods)) {
+        ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                "srcache_fetch and srcache_store skipped due to request "
+                "method %V", &r->method_name);
+
         return NGX_DECLINED;
     }
 

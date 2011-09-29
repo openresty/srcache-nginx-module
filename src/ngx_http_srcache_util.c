@@ -438,3 +438,34 @@ ngx_http_srcache_request_no_cache(ngx_http_request_t *r)
     return NGX_DECLINED;
 }
 
+
+ngx_int_t
+ngx_http_srcache_response_no_cache(ngx_http_request_t *r,
+        ngx_http_srcache_loc_conf_t *conf)
+{
+    ngx_table_elt_t   **ccp;
+    ngx_uint_t          i;
+    u_char             *p, *last;
+
+    ccp = r->headers_out.cache_control.elts;
+
+    if (ccp == NULL) {
+        return NGX_DECLINED;
+    }
+
+    for (i = 0; i < r->headers_out.cache_control.nelts; i++) {
+        if (!ccp[i]->hash) {
+            continue;
+        }
+
+        p = ccp[i]->value.data;
+        last = p + ccp[i]->value.len;
+
+        if (ngx_strlcasestrn(p, last, (u_char *) "private", 7 - 1) != NULL) {
+            return NGX_OK;
+        }
+    }
+
+    return NGX_DECLINED;
+}
+
