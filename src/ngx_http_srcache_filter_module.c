@@ -129,6 +129,13 @@ static ngx_command_t  ngx_http_srcache_commands[] = {
       offsetof(ngx_http_srcache_loc_conf_t, store_private),
       NULL },
 
+    { ngx_string("srcache_store_no_store"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
+      ngx_conf_set_flag_slot,
+      NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_srcache_loc_conf_t, store_no_store),
+      NULL },
+
       ngx_null_command
 };
 
@@ -605,6 +612,7 @@ ngx_http_srcache_create_loc_conf(ngx_conf_t *cf)
     conf->store_max_size = NGX_CONF_UNSET_SIZE;
     conf->req_cache_control = NGX_CONF_UNSET;
     conf->store_private = NGX_CONF_UNSET;
+    conf->store_no_store = NGX_CONF_UNSET;
 
     return conf;
 }
@@ -640,6 +648,7 @@ ngx_http_srcache_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
 
     ngx_conf_merge_value(conf->req_cache_control, prev->req_cache_control, 0);
     ngx_conf_merge_value(conf->store_private, prev->store_private, 0);
+    ngx_conf_merge_value(conf->store_no_store, prev->store_no_store, 0);
 
     return NGX_CONF_OK;
 }

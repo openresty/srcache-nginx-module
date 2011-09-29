@@ -35,6 +35,7 @@ typedef struct {
     ngx_uint_t                       cache_methods;
     ngx_flag_t                       req_cache_control;
     ngx_flag_t                       store_private;
+    ngx_flag_t                       store_no_store;
 
     unsigned              postponed_to_access_phase_end;
 } ngx_http_srcache_loc_conf_t;
