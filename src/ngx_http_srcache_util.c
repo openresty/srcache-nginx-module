@@ -473,6 +473,11 @@ ngx_http_srcache_response_no_cache(ngx_http_request_t *r,
             return NGX_OK;
         }
 
+        if (!conf->store_no_cache
+            && ngx_strlcasestrn(p, last, (u_char *) "no-cache", 8 - 1) != NULL)
+        {
+            return NGX_OK;
+        }
     }
 
     return NGX_DECLINED;
