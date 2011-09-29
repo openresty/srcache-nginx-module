@@ -461,7 +461,9 @@ ngx_http_srcache_response_no_cache(ngx_http_request_t *r,
         p = ccp[i]->value.data;
         last = p + ccp[i]->value.len;
 
-        if (ngx_strlcasestrn(p, last, (u_char *) "private", 7 - 1) != NULL) {
+        if (!conf->store_private
+            && ngx_strlcasestrn(p, last, (u_char *) "private", 7 - 1) != NULL)
+        {
             return NGX_OK;
         }
     }

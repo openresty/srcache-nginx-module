@@ -4,7 +4,7 @@
 #include "ddebug.h"
 
 /*
- * Copyright (C) Yichun Zhang (agentzh)
+ * Copyright (C) Zhang "agentzh" Yichun
  */
 
 
@@ -120,6 +120,13 @@ static ngx_command_t  ngx_http_srcache_commands[] = {
       ngx_conf_set_flag_slot,
       NGX_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_srcache_loc_conf_t, req_cache_control),
+      NULL },
+
+    { ngx_string("srcache_store_private"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
+      ngx_conf_set_flag_slot,
+      NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_srcache_loc_conf_t, store_private),
       NULL },
 
       ngx_null_command
@@ -593,12 +600,10 @@ ngx_http_srcache_create_loc_conf(ngx_conf_t *cf)
 
     conf->fetch = NGX_CONF_UNSET_PTR;
     conf->store = NGX_CONF_UNSET_PTR;
-
     conf->buf_size = NGX_CONF_UNSET_SIZE;
-
     conf->store_max_size = NGX_CONF_UNSET_SIZE;
-
     conf->req_cache_control = NGX_CONF_UNSET;
+    conf->store_private = NGX_CONF_UNSET;
 
     return conf;
 }
@@ -633,6 +638,7 @@ ngx_http_srcache_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
     conf->cache_methods |= NGX_HTTP_GET|NGX_HTTP_HEAD;
 
     ngx_conf_merge_value(conf->req_cache_control, prev->req_cache_control, 0);
+    ngx_conf_merge_value(conf->store_private, prev->store_private, 0);
 
     return NGX_CONF_OK;
 }
