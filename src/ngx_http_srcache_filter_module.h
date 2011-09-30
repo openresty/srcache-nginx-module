@@ -7,6 +7,9 @@
 #include <nginx.h>
 
 
+extern ngx_module_t  ngx_http_srcache_filter_module;
+
+
 typedef struct {
     ngx_uint_t                  method;
     ngx_str_t                   method_name;
@@ -30,6 +33,7 @@ typedef struct {
     ngx_http_srcache_request_t      *store;
     size_t                           buf_size;
     size_t                           store_max_size;
+    size_t                           header_buf_size;
     ngx_http_complex_value_t        *fetch_skip;
     ngx_http_complex_value_t        *store_skip;
     ngx_uint_t                       cache_methods;
@@ -55,6 +59,20 @@ typedef struct ngx_http_srcache_postponed_request_s
 
 
 struct ngx_http_srcache_ctx_s {
+    ngx_chain_t                     *body_from_cache;
+    ngx_chain_t                     *body_to_cache;
+    size_t                           response_length;
+    void                            *store_wev_handler_ctx;
+    ngx_http_request_t              *fetch_sr;
+
+    ngx_int_t                      (*process_header)(ngx_http_request_t *r,
+                                        ngx_buf_t *b);
+
+    ngx_http_status_t                status;
+    ngx_buf_t                       *header_buf;
+
+    ngx_http_srcache_postponed_request_t  *postponed_requests;
+
     unsigned        waiting_subrequest:1;
     unsigned        request_done:1;
     unsigned        from_cache:1;
@@ -65,17 +83,6 @@ struct ngx_http_srcache_ctx_s {
     unsigned        parsing_cached_headers:1;
     unsigned        store_response:1;
     unsigned        store_skip:1;
-
-    ngx_chain_t    *body_from_cache;
-
-    ngx_chain_t    *body_to_cache;
-    size_t          body_length;
-
-    void           *store_wev_handler_ctx;
-
-    ngx_http_srcache_postponed_request_t  *postponed_requests;
-
-    ngx_http_request_t      *fetch_sr;
 };
 
 

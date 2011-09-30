@@ -32,7 +32,7 @@ GET /flush
     location /foo {
         default_type text/css;
         srcache_store PUT /memc $uri;
-        srcache_store_max_size 6;
+        srcache_store_max_size 49;
 
         echo hello;
     }
@@ -61,8 +61,12 @@ hello
     }
 --- request
     GET /memc
---- response_body
+--- response_body eval
+"HTTP/1.1 200 OK\r
+Content-Type: text/css\r
+\r
 hello
+"
 
 
 
@@ -83,7 +87,7 @@ GET /flush
     location /foo {
         default_type text/css;
         srcache_store PUT /memc $uri;
-        srcache_store_max_size 7;
+        srcache_store_max_size 50;
 
         echo hello;
     }
@@ -112,8 +116,12 @@ hello
     }
 --- request
     GET /memc
---- response_body
+--- response_body eval
+"HTTP/1.1 200 OK\r
+Content-Type: text/css\r
+\r
 hello
+"
 
 
 
@@ -134,7 +142,7 @@ GET /flush
     location /foo {
         default_type text/css;
         srcache_store PUT /memc $uri;
-        srcache_store_max_size 5;
+        srcache_store_max_size 48;
 
         echo hello;
     }
@@ -185,7 +193,12 @@ GET /flush
     location /foo.txt {
         default_type text/css;
         srcache_store PUT /memc $uri;
-        srcache_store_max_size 5;
+        srcache_store_max_size 48;
+
+        content_by_lua '
+            ngx.header.content_length = 40;
+            ngx.say("hello")
+        ';
     }
 
     location /memc {
@@ -196,9 +209,6 @@ GET /flush
         set $memc_exptime 300;
         memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
     }
---- user_files
->>> foo.txt
-hello
 --- request
     GET /foo.txt
 --- response_body
@@ -234,7 +244,7 @@ GET /flush
 
 === TEST 14: server-side config
 --- config
-    srcache_store_max_size 3;
+    srcache_store_max_size 46;
     location /foo.txt {
         default_type text/css;
         srcache_store PUT /memc $uri;
@@ -320,6 +330,10 @@ hello, world
     }
 --- request
     GET /memc
---- response_body
+--- response_body eval
+"HTTP/1.1 200 OK\r
+Content-Type: text/css\r
+\r
 hello, world
+"
 

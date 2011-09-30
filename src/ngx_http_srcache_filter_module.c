@@ -150,6 +150,14 @@ static ngx_command_t  ngx_http_srcache_commands[] = {
       offsetof(ngx_http_srcache_loc_conf_t, ignore_content_encoding),
       NULL },
 
+    { ngx_string("srcache_header_buffer_size"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF
+          |NGX_HTTP_LIF_CONF|NGX_CONF_TAKE1,
+      ngx_conf_set_size_slot,
+      NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_srcache_loc_conf_t, header_buf_size),
+      NULL },
+
       ngx_null_command
 };
 
@@ -219,6 +227,7 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
              * ngx_http_internal_redirect, resume it from the post_subrequest
              * data
              */
+            dd("resumed ctx from post_subrequest");
             ctx = ps->data;
             ngx_http_set_ctx(r, ctx, ngx_http_srcache_filter_module);
         }
@@ -334,7 +343,7 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
     dd("error page: %d", (int) r->error_page);
 
     if (r->headers_out.status < NGX_HTTP_OK
-        && r->headers_out.status >= NGX_HTTP_SPECIAL_RESPONSE)
+        || r->headers_out.status >= NGX_HTTP_SPECIAL_RESPONSE)
     {
         dd("fetch: ignore bad response with status %d",
                 (int) r->headers_out.status);
@@ -343,7 +352,10 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
     }
 
     if (slcf->store_max_size != 0
-            && r->headers_out.content_length_n > (off_t) slcf->store_max_size)
+        && r->headers_out.content_length_n > 0
+        && r->headers_out.content_length_n + 15
+               /* just an approxiation for the response header size */
+            > (off_t) slcf->store_max_size)
     {
         ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                 "srcache_store bypassed because of too large Content-Length "
@@ -432,7 +444,6 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
 static ngx_int_t
 ngx_http_srcache_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
 {
-    ngx_http_request_t          *pr;
     ngx_http_srcache_ctx_t      *ctx, *pr_ctx;
     ngx_int_t                    rc;
     ngx_chain_t                 *cl;
@@ -461,28 +472,70 @@ ngx_http_srcache_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
 
     if (ctx->in_fetch_subrequest) {
         if (ctx->parsing_cached_headers) {
-            /* TODO parse the cached response's headers and
+
+            /* parse the cached response's headers and
              * set r->parent->headers_out */
 
-            ctx->parsing_cached_headers = 0;
-
-            dd("restore parent request header");
-
-            /* XXX we should restore headers saved
-             *  in the cache */
-
-            pr = r->parent;
-
-            pr->headers_out.status = NGX_HTTP_OK;
-
-            dd("setting parent request's content type");
-
-            if (ngx_http_set_content_type(pr) != NGX_OK) {
-                return NGX_HTTP_INTERNAL_SERVER_ERROR;
+            if (ctx->process_header == NULL) {
+                dd("restore parent request header");
+                ctx->process_header = ngx_http_srcache_process_status_line;
             }
 
-            ngx_http_clear_content_length(pr);
-            ngx_http_clear_accept_ranges(pr);
+            for (cl = in; cl; cl = cl->next) {
+                if (ngx_buf_in_memory(cl->buf)) {
+                    dd("old pos %p, last %p", cl->buf->pos, cl->buf->last);
+
+                    rc = ctx->process_header(r, cl->buf);
+
+                    if (rc == NGX_AGAIN) {
+                        dd("AGAIN/OK: new pos %p, last %p",
+                                cl->buf->pos, cl->buf->last);
+
+                        continue;
+                    }
+
+                    if (rc == NGX_ERROR) {
+                        r->state = 0; /* sw_start */
+                        ctx->parsing_cached_headers = 0;
+                        ctx->ignore_body = 1;
+                        ngx_http_srcache_discard_bufs(r->pool, cl);
+                        pr_ctx = ngx_http_get_module_ctx(r->parent,
+                                ngx_http_srcache_filter_module);
+
+                        if (pr_ctx == NULL) {
+                            return NGX_ERROR;
+                        }
+
+                        pr_ctx->from_cache = 0;
+
+                        return NGX_OK;
+                    }
+
+                    /* rc == NGX_OK */
+
+                    dd("OK: new pos %p, last %p", cl->buf->pos, cl->buf->last);
+                    dd("buf left: %.*s", (int) (cl->buf->last - cl->buf->pos),
+                            cl->buf->pos);
+
+                    ctx->parsing_cached_headers = 0;
+
+                    break;
+                }
+            }
+
+            if (cl == NULL) {
+                return NGX_OK;
+            }
+
+            if (cl->buf->pos == cl->buf->last) {
+                cl = cl->next;
+            }
+
+            if (cl == NULL) {
+                return NGX_OK;
+            }
+
+            in = cl;
         }
 
         dd("save the cached response body for parent");
@@ -509,11 +562,19 @@ ngx_http_srcache_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
     if (ctx->store_response) {
         dd("storing the response: %p", in);
 
+        if (ctx->response_length == 0) {
+            /* store the response header to ctx->body_to_cache */
+            rc = ngx_http_srcache_store_response_header(r, ctx);
+            if (rc == NGX_ERROR) {
+                return NGX_ERROR;
+            }
+        }
+
         last = 0;
 
         for (cl = in; cl; cl = cl->next) {
             if (ngx_buf_in_memory(cl->buf)) {
-                ctx->body_length += ngx_buf_size(cl->buf);
+                ctx->response_length += ngx_buf_size(cl->buf);
             }
 
             if (cl->buf->last_buf) {
@@ -525,12 +586,12 @@ ngx_http_srcache_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
         slcf = ngx_http_get_module_loc_conf(r, ngx_http_srcache_filter_module);
 
         if (slcf->store_max_size != 0
-                && ctx->body_length > slcf->store_max_size)
+                && ctx->response_length > slcf->store_max_size)
         {
             ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                     "srcache_store bypassed because response body exceeded "
                     "maximum size: %z (limit is: %z)",
-                    ctx->body_length, slcf->store_max_size);
+                    ctx->response_length, slcf->store_max_size);
 
             ctx->store_response = 0;
 
@@ -636,6 +697,7 @@ ngx_http_srcache_create_loc_conf(ngx_conf_t *cf)
     conf->store = NGX_CONF_UNSET_PTR;
     conf->buf_size = NGX_CONF_UNSET_SIZE;
     conf->store_max_size = NGX_CONF_UNSET_SIZE;
+    conf->header_buf_size = NGX_CONF_UNSET_SIZE;
     conf->req_cache_control = NGX_CONF_UNSET;
     conf->store_private = NGX_CONF_UNSET;
     conf->store_no_store = NGX_CONF_UNSET;
@@ -659,6 +721,9 @@ ngx_http_srcache_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
             (size_t) ngx_pagesize);
 
     ngx_conf_merge_size_value(conf->store_max_size, prev->store_max_size, 0);
+
+    ngx_conf_merge_size_value(conf->header_buf_size, prev->header_buf_size,
+            (size_t) ngx_pagesize);
 
     if (conf->fetch_skip == NULL) {
         conf->fetch_skip = prev->fetch_skip;
@@ -1189,6 +1254,7 @@ static ngx_int_t
 ngx_http_srcache_fetch_post_subrequest(ngx_http_request_t *r, void *data,
         ngx_int_t rc)
 {
+    ngx_http_srcache_ctx_t      *ctx = data;
     ngx_http_srcache_ctx_t      *pr_ctx;
     ngx_http_request_t          *pr;
 
@@ -1203,6 +1269,14 @@ ngx_http_srcache_fetch_post_subrequest(ngx_http_request_t *r, void *data,
     pr_ctx = ngx_http_get_module_ctx(pr, ngx_http_srcache_filter_module);
     if (pr_ctx == NULL) {
         return NGX_ERROR;
+    }
+
+    if (ctx && ctx->parsing_cached_headers) {
+        ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                      "srcache_fetch: cache sent truncated status line "
+                      "or headers");
+
+        pr_ctx->from_cache = 0;
     }
 
     pr_ctx->waiting_subrequest = 0;
@@ -1370,7 +1444,7 @@ ngx_http_srcache_store_subrequest(ngx_http_request_t *r,
     parsed_sr->method_name = conf->store->method_name;
 
     if (ctx->body_to_cache) {
-        dd("found body to cache (len %d)", (int) ctx->body_length);
+        dd("found body to cache (len %d)", (int) ctx->response_length);
 
         rb = ngx_pcalloc(r->pool, sizeof(ngx_http_request_body_t));
 
@@ -1390,7 +1464,7 @@ ngx_http_srcache_store_subrequest(ngx_http_request_t *r,
         return NGX_ERROR;
     }
 
-    parsed_sr->content_length_n = ctx->body_length;
+    parsed_sr->content_length_n = ctx->response_length;
 
     if (ngx_http_complex_value(r, &conf->store->location,
                 &parsed_sr->location) != NGX_OK)

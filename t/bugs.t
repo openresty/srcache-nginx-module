@@ -56,7 +56,7 @@ hello
     }
     location /bar {
         default_type 'text/css';
-        echo bar;
+        echo "HTTP/1.1 200 OK\r\nContent-Type: text/css\r\n\r\nbar";
     }
 --- request
 GET /foo
@@ -170,7 +170,7 @@ GET /flush
     }
     location /set-value {
         set $memc_key foo;
-        set $memc_value bar;
+        set $memc_value "HTTP/1.0 201 Created\r\nContent-Type: text/blah\r\n\r\nbar";
         set $memc_cmd set;
 
         memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
@@ -202,8 +202,9 @@ blah
 --- request
 GET /foo
 --- response_headers
-Content-Type: text/css
+Content-Type: text/blah
 Content-Length: 3
 --- response_body chop
 bar
+--- error_code: 201
 

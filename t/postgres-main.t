@@ -94,7 +94,7 @@ Content-Type: application/json
 --- request
 GET /cats
 --- response_headers
-Content-Type: text/css
+Content-Type: application/json
 --- response_body chomp
 [{"id":2,"name":null},{"id":3,"name":"bob"}]
 

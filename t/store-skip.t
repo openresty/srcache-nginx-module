@@ -62,8 +62,12 @@ hello
     }
 --- request
     GET /memc
---- response_body
+--- response_body eval
+"HTTP/1.1 200 OK\r
+Content-Type: text/css\r
+\r
 hello
+"
 
 
 
@@ -113,8 +117,12 @@ hello
     }
 --- request
     GET /memc
---- response_body
+--- response_body eval
+"HTTP/1.1 200 OK\r
+Content-Type: text/css\r
+\r
 hello
+"
 
 
 
@@ -321,6 +329,10 @@ hello, world
     }
 --- request
     GET /memc
---- response_body
+--- response_body eval
+"HTTP/1.1 200 OK\r
+Content-Type: text/css\r
+\r
 hello, world
+"
 
