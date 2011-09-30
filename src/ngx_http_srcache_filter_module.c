@@ -143,6 +143,13 @@ static ngx_command_t  ngx_http_srcache_commands[] = {
       offsetof(ngx_http_srcache_loc_conf_t, store_no_cache),
       NULL },
 
+    { ngx_string("srcache_ignore_content_encoding"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
+      ngx_conf_set_flag_slot,
+      NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_srcache_loc_conf_t, ignore_content_encoding),
+      NULL },
+
       ngx_null_command
 };
 
@@ -291,9 +298,21 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
     }
 #endif
 
+    if (!slcf->ignore_content_encoding && r->headers_out.content_encoding
+        && r->headers_out.content_encoding->value.len)
+    {
+        ngx_log_error(NGX_LOG_WARN, r->connection->log, 0,
+                "srcache_store skipped due to response header "
+                "\"Content-Encoding: %V\" (maybe you forgot to disable "
+                "compression on the backend?)",
+                &r->headers_out.content_encoding->value);
+
+        return ngx_http_next_header_filter(r);
+    }
+
     if (ngx_http_srcache_response_no_cache(r, slcf) == NGX_OK) {
         ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                "srcache_store skipped due to response Cache-Control setting");
+                "srcache_store skipped due to response header Cache-Control");
 
         return ngx_http_next_header_filter(r);
     }
@@ -621,6 +640,7 @@ ngx_http_srcache_create_loc_conf(ngx_conf_t *cf)
     conf->store_private = NGX_CONF_UNSET;
     conf->store_no_store = NGX_CONF_UNSET;
     conf->store_no_cache = NGX_CONF_UNSET;
+    conf->ignore_content_encoding = NGX_CONF_UNSET;
 
     return conf;
 }
@@ -658,6 +678,7 @@ ngx_http_srcache_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
     ngx_conf_merge_value(conf->store_private, prev->store_private, 0);
     ngx_conf_merge_value(conf->store_no_store, prev->store_no_store, 0);
     ngx_conf_merge_value(conf->store_no_cache, prev->store_no_cache, 0);
+    ngx_conf_merge_value(conf->ignore_content_encoding, prev->ignore_content_encoding, 0);
 
     return NGX_CONF_OK;
 }
