@@ -34,7 +34,8 @@ ngx_int_t ngx_http_srcache_add_copy_chain(ngx_pool_t *pool,
         ngx_chain_t **chain, ngx_chain_t *in);
 ngx_int_t ngx_http_srcache_post_request_at_head(ngx_http_request_t *r,
         ngx_http_posted_request_t *pr);
-ngx_int_t ngx_http_srcache_request_no_cache(ngx_http_request_t *r);
+ngx_int_t ngx_http_srcache_request_no_cache(ngx_http_request_t *r,
+        unsigned *no_store);
 ngx_int_t ngx_http_srcache_response_no_cache(ngx_http_request_t *r,
         ngx_http_srcache_loc_conf_t *conf);
 
