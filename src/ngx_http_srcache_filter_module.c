@@ -479,6 +479,7 @@ ngx_http_srcache_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
             if (ctx->process_header == NULL) {
                 dd("restore parent request header");
                 ctx->process_header = ngx_http_srcache_process_status_line;
+                r->state = 0; /* sw_start */
             }
 
             for (cl = in; cl; cl = cl->next) {
