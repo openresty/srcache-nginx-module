@@ -5,7 +5,7 @@ use Test::Nginx::Socket;
 
 #repeat_each(100);
 
-plan tests => repeat_each() * 2 * blocks();
+plan tests => repeat_each() * (2 * blocks() + 1);
 
 $ENV{TEST_NGINX_MEMCACHED_PORT} ||= 11211;
 
@@ -43,6 +43,8 @@ GET /flush
     }
 --- request
 GET /index.html
+--- response_headers
+Accept-Ranges: bytes
 --- response_body_like: It works!
 
 

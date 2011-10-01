@@ -23,6 +23,7 @@ ngx-build $force $version \
           --add-module=$root/../eval-nginx-module \
           --add-module=$root/../echo-nginx-module \
           --add-module=$root $opts \
+          --add-module=$root/../headers-more-nginx-module \
           --add-module=$root/../lua-nginx-module \
           --add-module=$root/../rds-json-nginx-module \
           --add-module=$root/../drizzle-nginx-module \

@@ -43,6 +43,12 @@ typedef struct {
     ngx_flag_t                       store_no_cache;
     ngx_flag_t                       ignore_content_encoding;
 
+    ngx_hash_t                       hide_headers_hash;
+    ngx_array_t                     *hide_headers;
+    ngx_array_t                     *pass_headers;
+
+    unsigned                         hide_content_type;
+
     unsigned              postponed_to_access_phase_end;
 } ngx_http_srcache_loc_conf_t;
 

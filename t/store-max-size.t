@@ -333,6 +333,7 @@ hello, world
 --- response_body eval
 "HTTP/1.1 200 OK\r
 Content-Type: text/css\r
+Accept-Ranges: bytes\r
 \r
 hello, world
 "

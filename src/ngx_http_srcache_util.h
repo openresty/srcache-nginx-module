@@ -44,6 +44,9 @@ ngx_int_t ngx_http_srcache_process_header(ngx_http_request_t *r,
         ngx_buf_t *b);
 ngx_int_t ngx_http_srcache_store_response_header(ngx_http_request_t *r,
         ngx_http_srcache_ctx_t *ctx);
+ngx_int_t ngx_http_srcache_hide_headers_hash(ngx_conf_t *cf,
+        ngx_http_srcache_loc_conf_t *conf, ngx_http_srcache_loc_conf_t *prev,
+        ngx_str_t *default_hide_headers, ngx_hash_init_t *hash);
 
 
 #endif /* NGX_HTTP_SRCACHE_UTIL_H */

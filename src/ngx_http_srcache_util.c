@@ -143,93 +143,84 @@ ngx_http_srcache_parse_method_name(ngx_str_t **method_name_ptr)
         if (ngx_http_srcache_strcmp_const(method_name->data, "GET") == 0) {
             *method_name_ptr = &ngx_http_srcache_get_method;
             return NGX_HTTP_GET;
-            break;
         }
 
         if (ngx_http_srcache_strcmp_const(method_name->data, "PUT") == 0) {
             *method_name_ptr = &ngx_http_srcache_put_method;
             return NGX_HTTP_PUT;
-            break;
         }
 
         return NGX_HTTP_UNKNOWN;
-        break;
 
     case 4:
         if (ngx_http_srcache_strcmp_const(method_name->data, "POST") == 0) {
             *method_name_ptr = &ngx_http_srcache_post_method;
             return NGX_HTTP_POST;
-            break;
         }
+
         if (ngx_http_srcache_strcmp_const(method_name->data, "HEAD") == 0) {
             *method_name_ptr = &ngx_http_srcache_head_method;
             return NGX_HTTP_HEAD;
-            break;
         }
+
         if (ngx_http_srcache_strcmp_const(method_name->data, "COPY") == 0) {
             *method_name_ptr = &ngx_http_srcache_copy_method;
             return NGX_HTTP_COPY;
-            break;
         }
+
         if (ngx_http_srcache_strcmp_const(method_name->data, "MOVE") == 0) {
             *method_name_ptr = &ngx_http_srcache_move_method;
             return NGX_HTTP_MOVE;
-            break;
         }
+
         if (ngx_http_srcache_strcmp_const(method_name->data, "LOCK") == 0) {
             *method_name_ptr = &ngx_http_srcache_lock_method;
             return NGX_HTTP_LOCK;
-            break;
         }
+
         return NGX_HTTP_UNKNOWN;
-        break;
 
     case 5:
         if (ngx_http_srcache_strcmp_const(method_name->data, "MKCOL") == 0) {
             *method_name_ptr = &ngx_http_srcache_mkcol_method;
             return NGX_HTTP_MKCOL;
-            break;
         }
+
         if (ngx_http_srcache_strcmp_const(method_name->data, "TRACE") == 0) {
             *method_name_ptr = &ngx_http_srcache_trace_method;
             return NGX_HTTP_TRACE;
-            break;
         }
+
         return NGX_HTTP_UNKNOWN;
-        break;
 
     case 6:
         if (ngx_http_srcache_strcmp_const(method_name->data, "DELETE") == 0) {
             *method_name_ptr = &ngx_http_srcache_delete_method;
             return NGX_HTTP_DELETE;
-            break;
         }
 
         if (ngx_http_srcache_strcmp_const(method_name->data, "UNLOCK") == 0) {
             *method_name_ptr = &ngx_http_srcache_unlock_method;
             return NGX_HTTP_UNLOCK;
-            break;
         }
+
         return NGX_HTTP_UNKNOWN;
-        break;
 
     case 7:
         if (ngx_http_srcache_strcmp_const(method_name->data, "OPTIONS") == 0) {
             *method_name_ptr = &ngx_http_srcache_options_method;
             return NGX_HTTP_OPTIONS;
-            break;
         }
+
         return NGX_HTTP_UNKNOWN;
-        break;
 
     case 8:
         if (ngx_http_srcache_strcmp_const(method_name->data, "PROPFIND") == 0) {
             *method_name_ptr = &ngx_http_srcache_propfind_method;
             return NGX_HTTP_PROPFIND;
-            break;
         }
+
         return NGX_HTTP_UNKNOWN;
-        break;
 
     case 9:
         if (ngx_http_srcache_strcmp_const(method_name->data, "PROPPATCH")
@@ -237,14 +228,12 @@ ngx_http_srcache_parse_method_name(ngx_str_t **method_name_ptr)
         {
             *method_name_ptr = &ngx_http_srcache_proppatch_method;
             return NGX_HTTP_PROPPATCH;
-            break;
         }
+
         return NGX_HTTP_UNKNOWN;
-        break;
 
     default:
         return NGX_HTTP_UNKNOWN;
-        break;
     }
 
     return NGX_HTTP_UNKNOWN;
@@ -653,7 +642,9 @@ ngx_http_srcache_process_header(ngx_http_request_t *r, ngx_buf_t *b)
             truncate = 0;
         }
 
-        ctx->header_buf->last = ngx_copy(ctx->header_buf->last, b->pos, (size_t) len);
+        ctx->header_buf->last = ngx_copy(ctx->header_buf->last, b->pos,
+                (size_t) len);
+
         p = ctx->header_buf->pos;
 
         rc = ngx_http_parse_header_line(r, ctx->header_buf, 1);
@@ -761,6 +752,10 @@ ngx_http_srcache_store_response_header(ngx_http_request_t *r,
     ngx_list_part_t         *part;
     ngx_table_elt_t         *header;
 
+    ngx_http_srcache_loc_conf_t    *conf;
+
+    conf = ngx_http_get_module_loc_conf(r, ngx_http_srcache_filter_module);
+
     dd("request: %p, uri: %.*s", r, (int) r->uri.len, r->uri.data);
 
     len = sizeof("HTTP/1.x ") - 1 + sizeof(CRLF) - 1
@@ -793,7 +788,7 @@ ngx_http_srcache_store_response_header(ngx_http_request_t *r,
         }
     }
 
-    if (r->headers_out.content_type.len) {
+    if (!conf->hide_content_type && r->headers_out.content_type.len) {
         len += sizeof("Content-Type: ") - 1
                + r->headers_out.content_type.len + 2;
 
@@ -823,10 +818,8 @@ ngx_http_srcache_store_response_header(ngx_http_request_t *r,
             continue;
         }
 
-        /* XXX we should really store other headers too */
-        if (header[i].key.len != sizeof("Content-Type") - 1
-            || ngx_strncasecmp(header[i].key.data, (u_char *) "Content-Type",
-                sizeof("Content-Type") - 1) != 0)
+        if (ngx_hash_find(&conf->hide_headers_hash, header[i].hash,
+                          header[i].lowcase_key, header[i].key.len))
         {
             continue;
         }
@@ -852,7 +845,7 @@ ngx_http_srcache_store_response_header(ngx_http_request_t *r,
     }
     *b->last++ = CR; *b->last++ = LF;
 
-    if (r->headers_out.content_type.len) {
+    if (!conf->hide_content_type && r->headers_out.content_type.len) {
         b->last = ngx_cpymem(b->last, "Content-Type: ",
                              sizeof("Content-Type: ") - 1);
         b->last = ngx_copy(b->last, r->headers_out.content_type.data,
@@ -889,13 +882,22 @@ ngx_http_srcache_store_response_header(ngx_http_request_t *r,
             continue;
         }
 
-        /* XXX we should really store other headers too */
-        if (header[i].key.len != sizeof("Content-Type") - 1
-            || ngx_strncasecmp(header[i].key.data, (u_char *) "Content-Type",
-                sizeof("Content-Type") - 1) != 0)
+        dd("header lowcase key: %s", header[i].lowcase_key);
+
+        dd("header key: %.*s", (int) header[i].key.len, header[i].key.data);
+
+        dd("header hash: %lu, hash lc: %lu", (unsigned long) header[i].hash,
+                (unsigned long) ngx_hash_key_lc(header[i].key.data, header[i].key.len));
+
+        if (ngx_hash_find(&conf->hide_headers_hash, header[i].hash,
+                          header[i].lowcase_key, header[i].key.len))
         {
+            dd("skipped header key: %.*s", (int) header[i].key.len,
+                    header[i].key.data);
             continue;
         }
+
+        dd("header not skipped");
 
         b->last = ngx_copy(b->last, header[i].key.data, header[i].key.len);
         *b->last++ = ':'; *b->last++ = ' ';
@@ -905,7 +907,8 @@ ngx_http_srcache_store_response_header(ngx_http_request_t *r,
     }
 
     ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                   "%*s", (size_t) (b->last - b->pos), b->pos);
+                   "srcache store header %*s", (size_t) (b->last - b->pos),
+                   b->pos);
 
     /* the end of HTTP header */
     *b->last++ = CR; *b->last++ = LF;
@@ -913,7 +916,7 @@ ngx_http_srcache_store_response_header(ngx_http_request_t *r,
     if (b->last != b->end) {
         ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
                       "srcache_fetch: buffer error when serializing the "
-                      "response header");
+                      "response header: %O left", (off_t) (b->last - b->end));
 
         return NGX_ERROR;
     }
@@ -931,5 +934,136 @@ ngx_http_srcache_store_response_header(ngx_http_request_t *r,
     ctx->response_length += len;
 
     return NGX_OK;
+}
+
+
+ngx_int_t
+ngx_http_srcache_hide_headers_hash(ngx_conf_t *cf,
+    ngx_http_srcache_loc_conf_t *conf, ngx_http_srcache_loc_conf_t *prev,
+    ngx_str_t *default_hide_headers, ngx_hash_init_t *hash)
+{
+    ngx_str_t       *h;
+    ngx_uint_t       i, j;
+    ngx_array_t      hide_headers;
+    ngx_hash_key_t  *hk;
+
+    if (conf->hide_headers == NGX_CONF_UNSET_PTR
+        && conf->pass_headers == NGX_CONF_UNSET_PTR)
+    {
+        conf->hide_headers_hash = prev->hide_headers_hash;
+
+        if (conf->hide_headers_hash.buckets)
+        {
+            return NGX_OK;
+        }
+
+        conf->hide_headers = prev->hide_headers;
+        conf->pass_headers = prev->pass_headers;
+        conf->hide_content_type = prev->hide_content_type;
+
+    } else {
+        if (conf->hide_headers == NGX_CONF_UNSET_PTR) {
+            conf->hide_headers = prev->hide_headers;
+        }
+
+        if (conf->pass_headers == NGX_CONF_UNSET_PTR) {
+            conf->pass_headers = prev->pass_headers;
+        }
+    }
+
+    dd("init hide headers");
+
+    if (ngx_array_init(&hide_headers, cf->temp_pool, 4, sizeof(ngx_hash_key_t))
+        != NGX_OK)
+    {
+        return NGX_ERROR;
+    }
+
+    for (h = default_hide_headers; h->len; h++) {
+        hk = ngx_array_push(&hide_headers);
+        if (hk == NULL) {
+            return NGX_ERROR;
+        }
+
+        hk->key = *h;
+        hk->key_hash = ngx_hash_key_lc(h->data, h->len);
+        hk->value = (void *) 1;
+    }
+
+    if (conf->hide_headers != NGX_CONF_UNSET_PTR) {
+        dd("hide headers not empty");
+
+        h = conf->hide_headers->elts;
+
+        for (i = 0; i < conf->hide_headers->nelts; i++) {
+
+            hk = hide_headers.elts;
+
+            for (j = 0; j < hide_headers.nelts; j++) {
+                if (ngx_strcasecmp(h[i].data, hk[j].key.data) == 0) {
+                    goto exist;
+                }
+            }
+
+            hk = ngx_array_push(&hide_headers);
+            if (hk == NULL) {
+                return NGX_ERROR;
+            }
+
+            hk->key = h[i];
+            hk->key_hash = ngx_hash_key_lc(h[i].data, h[i].len);
+            hk->value = (void *) 1;
+
+            if (h[i].len == sizeof("Content-Type") - 1
+                && ngx_strncasecmp(h[i].data, (u_char *) "Content-Type",
+                    sizeof("Content-Type") - 1)
+                == 0)
+            {
+                conf->hide_content_type = 1;
+            }
+
+            dd("adding header to hide headers: %.*s", (int) h[i].len,
+                    h[i].data);
+
+        exist:
+
+            continue;
+        }
+    }
+
+    if (conf->pass_headers != NGX_CONF_UNSET_PTR) {
+
+        h = conf->pass_headers->elts;
+        hk = hide_headers.elts;
+
+        for (i = 0; i < conf->pass_headers->nelts; i++) {
+            for (j = 0; j < hide_headers.nelts; j++) {
+
+                if (hk[j].key.data == NULL) {
+                    continue;
+                }
+
+                if (h[i].len == sizeof("Content-Type") - 1
+                    && ngx_strncasecmp(h[i].data, (u_char *) "Content-Type",
+                        sizeof("Content-Type") - 1)
+                    == 0)
+                {
+                    conf->hide_content_type = 0;
+                }
+
+                if (ngx_strcasecmp(h[i].data, hk[j].key.data) == 0) {
+                    hk[j].key.data = NULL;
+                    break;
+                }
+            }
+        }
+    }
+
+    hash->hash = &conf->hide_headers_hash;
+    hash->key = ngx_hash_key_lc;
+    hash->pool = cf->pool;
+    hash->temp_pool = NULL;
+
+    return ngx_hash_init(hash, hide_headers.elts, hide_headers.nelts);
 }
 
