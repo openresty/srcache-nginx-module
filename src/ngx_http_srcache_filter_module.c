@@ -14,6 +14,7 @@
 
 #include "ngx_http_srcache_filter_module.h"
 #include "ngx_http_srcache_util.h"
+#include "ngx_http_srcache_var.h"
 
 
 unsigned  ngx_http_srcache_used;
@@ -23,6 +24,7 @@ static ngx_int_t ngx_http_srcache_pre_config(ngx_conf_t *cf);
 static void *ngx_http_srcache_create_loc_conf(ngx_conf_t *cf);
 static char *ngx_http_srcache_merge_loc_conf(ngx_conf_t *cf, void *parent,
     void *child);
+static ngx_int_t ngx_http_srcache_post_config(ngx_conf_t *cf);
 static ngx_int_t ngx_http_srcache_filter_init(ngx_conf_t *cf);
 static char *ngx_http_srcache_conf_set_request(ngx_conf_t *cf,
         ngx_command_t *cmd, void *conf);
@@ -182,7 +184,7 @@ static ngx_command_t  ngx_http_srcache_commands[] = {
 
 static ngx_http_module_t  ngx_http_srcache_filter_module_ctx = {
     ngx_http_srcache_pre_config,           /* preconfiguration */
-    ngx_http_srcache_filter_init,          /* postconfiguration */
+    ngx_http_srcache_post_config,          /* postconfiguration */
 
     ngx_http_srcache_create_main_conf,     /* create main configuration */
     NULL,                                  /* init main configuration */
@@ -1325,5 +1327,19 @@ ngx_http_srcache_create_main_conf(ngx_conf_t *cf)
      */
 
     return smcf;
+}
+
+
+static ngx_int_t
+ngx_http_srcache_post_config(ngx_conf_t *cf)
+{
+    ngx_int_t       rc;
+
+    rc = ngx_http_srcache_add_variables(cf);
+    if (rc != NGX_OK) {
+        return rc;
+    }
+
+    return ngx_http_srcache_filter_init(cf);
 }
 

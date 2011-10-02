@@ -402,7 +402,10 @@ ngx_http_srcache_set_content_length_header(ngx_http_request_t *r, off_t len)
 
     h->value.len = ngx_sprintf(h->value.data, "%O", len) - h->value.data;
 
-    h->hash = 1;
+    h->hash = ngx_hash(ngx_hash(ngx_hash(ngx_hash(ngx_hash(ngx_hash(ngx_hash(
+            ngx_hash(ngx_hash(ngx_hash(ngx_hash(ngx_hash(
+            ngx_hash('c', 'o'), 'n'), 't'), 'e'), 'n'), 't'), '-'), 'l'), 'e'),
+            'n'), 'g'), 't'), 'h');
 
     dd("r content length: %.*s",
             (int)r->headers_in.content_length->value.len,
@@ -523,7 +526,7 @@ ngx_http_srcache_request_no_cache(ngx_http_request_t *r, unsigned *no_store)
 
 ngx_int_t
 ngx_http_srcache_response_no_cache(ngx_http_request_t *r,
-        ngx_http_srcache_loc_conf_t *conf)
+    ngx_http_srcache_loc_conf_t *conf)
 {
     ngx_table_elt_t   **ccp;
     ngx_uint_t          i;
