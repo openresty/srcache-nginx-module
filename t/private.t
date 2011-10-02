@@ -304,3 +304,80 @@ Content-Length:
 --- response_body
 world
 
+
+
+=== TEST 13: flush all
+--- config
+    location /flush {
+        set $memc_cmd 'flush_all';
+        memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
+    }
+--- response_headers
+Content-Type: text/plain
+Content-Length: 4
+--- request
+GET /flush
+--- response_body eval: "OK\r\n"
+
+
+
+=== TEST 14: basic fetch (cache miss), and not stored due to Cache-Control: private, proxy_pass
+--- config
+    location /foo {
+        default_type text/css;
+        srcache_fetch GET /memc $uri;
+        srcache_store PUT /memc $uri;
+
+        proxy_pass http://127.0.0.1:$server_port/bar;
+    }
+
+    location /bar {
+        default_type text/css;
+        content_by_lua '
+            ngx.header.cache_control = "private"
+            ngx.say("hello")
+        ';
+    }
+
+    location /memc {
+        internal;
+
+        set $memc_key $query_string;
+        set $memc_exptime 300;
+        memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
+    }
+--- request
+GET /foo
+--- response_headers
+Content-Type: text/css
+Content-Length: 6
+--- response_body
+hello
+
+
+
+=== TEST 15: basic fetch (cache miss again, not stored in the previous case)
+--- config
+    location /foo {
+        default_type text/css;
+        srcache_fetch GET /memc $uri;
+        srcache_store PUT /memc $uri;
+
+        echo world;
+    }
+
+    location /memc {
+        internal;
+
+        set $memc_key $query_string;
+        set $memc_exptime 300;
+        memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
+    }
+--- request
+GET /foo
+--- response_headers
+Content-Type: text/css
+Content-Length: 
+--- response_body
+world
+
