@@ -37,7 +37,7 @@ ngx_int_t ngx_http_srcache_post_request_at_head(ngx_http_request_t *r,
 ngx_int_t ngx_http_srcache_request_no_cache(ngx_http_request_t *r,
         unsigned *no_store);
 ngx_int_t ngx_http_srcache_response_no_cache(ngx_http_request_t *r,
-        ngx_http_srcache_loc_conf_t *conf);
+        ngx_http_srcache_loc_conf_t *conf, ngx_http_srcache_ctx_t *ctx);
 ngx_int_t ngx_http_srcache_process_status_line(ngx_http_request_t *r,
         ngx_buf_t *b);
 ngx_int_t ngx_http_srcache_process_header(ngx_http_request_t *r,

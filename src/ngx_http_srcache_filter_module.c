@@ -149,6 +149,13 @@ static ngx_command_t  ngx_http_srcache_commands[] = {
       offsetof(ngx_http_srcache_loc_conf_t, store_no_cache),
       NULL },
 
+    { ngx_string("srcache_response_cache_control"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
+      ngx_conf_set_flag_slot,
+      NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_srcache_loc_conf_t, resp_cache_control),
+      NULL },
+
     { ngx_string("srcache_store_hide_header"),
       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE1,
       ngx_conf_set_str_array_slot,
@@ -333,7 +340,9 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
         return ngx_http_next_header_filter(r);
     }
 
-    if (ngx_http_srcache_response_no_cache(r, slcf) == NGX_OK) {
+    if (slcf->resp_cache_control
+        && ngx_http_srcache_response_no_cache(r, slcf, ctx) == NGX_OK)
+    {
         ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                 "srcache_store skipped due to response header Cache-Control");
 
@@ -643,13 +652,18 @@ ngx_http_srcache_create_loc_conf(ngx_conf_t *cf)
 
     conf->fetch = NGX_CONF_UNSET_PTR;
     conf->store = NGX_CONF_UNSET_PTR;
+
     conf->buf_size = NGX_CONF_UNSET_SIZE;
     conf->store_max_size = NGX_CONF_UNSET_SIZE;
     conf->header_buf_size = NGX_CONF_UNSET_SIZE;
+
     conf->req_cache_control = NGX_CONF_UNSET;
+    conf->resp_cache_control = NGX_CONF_UNSET;
+
     conf->store_private = NGX_CONF_UNSET;
     conf->store_no_store = NGX_CONF_UNSET;
     conf->store_no_cache = NGX_CONF_UNSET;
+
     conf->ignore_content_encoding = NGX_CONF_UNSET;
 
     conf->hide_headers = NGX_CONF_UNSET_PTR;
@@ -692,9 +706,12 @@ ngx_http_srcache_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
     conf->cache_methods |= NGX_HTTP_GET|NGX_HTTP_HEAD;
 
     ngx_conf_merge_value(conf->req_cache_control, prev->req_cache_control, 0);
+    ngx_conf_merge_value(conf->resp_cache_control, prev->resp_cache_control, 1);
+
     ngx_conf_merge_value(conf->store_private, prev->store_private, 0);
     ngx_conf_merge_value(conf->store_no_store, prev->store_no_store, 0);
     ngx_conf_merge_value(conf->store_no_cache, prev->store_no_cache, 0);
+
     ngx_conf_merge_value(conf->ignore_content_encoding,
             prev->ignore_content_encoding, 0);
 
@@ -836,32 +853,32 @@ ngx_http_srcache_access_handler(ngx_http_request_t *r)
         return NGX_DECLINED;
     }
 
-    if (conf->req_cache_control) {
-        if (ngx_http_srcache_request_no_cache(r, &no_store) == NGX_OK) {
-            ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                    "srcache_fetch skipped due to request headers "
-                    "\"Cache-Control: no-cache\" or \"Pragma: no-cache\"");
+    if (conf->req_cache_control
+        && ngx_http_srcache_request_no_cache(r, &no_store) == NGX_OK)
+    {
+        ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                "srcache_fetch skipped due to request headers "
+                "\"Cache-Control: no-cache\" or \"Pragma: no-cache\"");
 
-            if (!no_store) {
-                /* register a ctx to give a chance to srcache_store to run */
+        if (!no_store) {
+            /* register a ctx to give a chance to srcache_store to run */
 
-                ctx = ngx_pcalloc(r->pool,
-                        sizeof(ngx_http_srcache_filter_module));
+            ctx = ngx_pcalloc(r->pool,
+                    sizeof(ngx_http_srcache_filter_module));
 
-                if (ctx == NULL) {
-                    return NGX_HTTP_INTERNAL_SERVER_ERROR;
-                }
-
-                ngx_http_set_ctx(r, ctx, ngx_http_srcache_filter_module);
-
-            } else {
-                ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                        "srcache_store skipped due to request header "
-                        "\"Cache-Control: no-store\"");
+            if (ctx == NULL) {
+                return NGX_HTTP_INTERNAL_SERVER_ERROR;
             }
 
-            return NGX_DECLINED;
+            ngx_http_set_ctx(r, ctx, ngx_http_srcache_filter_module);
+
+        } else {
+            ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                    "srcache_store skipped due to request header "
+                    "\"Cache-Control: no-store\"");
         }
+
+        return NGX_DECLINED;
     }
 
     if (conf->fetch_skip != NULL

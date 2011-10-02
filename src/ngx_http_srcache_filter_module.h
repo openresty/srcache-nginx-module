@@ -34,13 +34,19 @@ typedef struct {
     size_t                           buf_size;
     size_t                           store_max_size;
     size_t                           header_buf_size;
+
     ngx_http_complex_value_t        *fetch_skip;
     ngx_http_complex_value_t        *store_skip;
+
     ngx_uint_t                       cache_methods;
+
     ngx_flag_t                       req_cache_control;
+    ngx_flag_t                       resp_cache_control;
+
     ngx_flag_t                       store_private;
     ngx_flag_t                       store_no_store;
     ngx_flag_t                       store_no_cache;
+
     ngx_flag_t                       ignore_content_encoding;
 
     ngx_hash_t                       hide_headers_hash;
@@ -73,6 +79,8 @@ struct ngx_http_srcache_ctx_s {
 
     ngx_int_t                      (*process_header)(ngx_http_request_t *r,
                                         ngx_buf_t *b);
+
+    time_t                           valid_sec;
 
     ngx_http_status_t                status;
     ngx_buf_t                       *header_buf;

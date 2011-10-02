@@ -526,16 +526,21 @@ ngx_http_srcache_request_no_cache(ngx_http_request_t *r, unsigned *no_store)
 
 ngx_int_t
 ngx_http_srcache_response_no_cache(ngx_http_request_t *r,
-    ngx_http_srcache_loc_conf_t *conf)
+    ngx_http_srcache_loc_conf_t *conf, ngx_http_srcache_ctx_t *ctx)
 {
     ngx_table_elt_t   **ccp;
+    ngx_table_elt_t    *h;
     ngx_uint_t          i;
     u_char             *p, *last;
+    ngx_int_t           n;
+    time_t              expires;
+
+    dd("checking response cache control settings");
 
     ccp = r->headers_out.cache_control.elts;
 
     if (ccp == NULL) {
-        return NGX_DECLINED;
+        goto check_expires;
     }
 
     for (i = 0; i < r->headers_out.cache_control.nelts; i++) {
@@ -562,6 +567,56 @@ ngx_http_srcache_response_no_cache(ngx_http_request_t *r,
             && ngx_strlcasestrn(p, last, (u_char *) "no-cache", 8 - 1) != NULL)
         {
             return NGX_OK;
+        }
+
+        if (ctx->valid_sec != 0) {
+            continue;
+        }
+
+        p = ngx_strlcasestrn(p, last, (u_char *) "max-age=", 8 - 1);
+
+        if (p == NULL) {
+            continue;
+        }
+
+        n = 0;
+
+        for (p += 8; p < last; p++) {
+            if (*p == ',' || *p == ';' || *p == ' ') {
+                break;
+            }
+
+            if (*p >= '0' && *p <= '9') {
+                n = n * 10 + *p - '0';
+                continue;
+            }
+
+            return NGX_OK;
+        }
+
+        if (n == 0) {
+            return NGX_OK;
+        }
+
+        ctx->valid_sec = ngx_time() + n;
+    }
+
+check_expires:
+    dd("valid_sec after processing cache-control: %d", (int) ctx->valid_sec);
+
+    if (ctx->valid_sec == 0) {
+        h = r->headers_out.expires;
+
+        dd("expires header: %p", h);
+
+        if (h != NULL && h->hash != 0) {
+            expires = ngx_http_parse_time(h->value.data, h->value.len);
+
+            if (expires == NGX_ERROR || expires <= ngx_time()) {
+                return NGX_OK;
+            }
+
+            ctx->valid_sec = expires;
         }
     }
 
