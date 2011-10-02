@@ -59,6 +59,7 @@ src/rds.h
 src/utils.h
 src/handler.c
 src/handler.h
+src/var.[ch]
 util/bench
 *.html
 trace.out*
