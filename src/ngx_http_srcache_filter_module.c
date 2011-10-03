@@ -185,6 +185,22 @@ static ngx_command_t  ngx_http_srcache_commands[] = {
       offsetof(ngx_http_srcache_loc_conf_t, header_buf_size),
       NULL },
 
+    { ngx_string("srcache_max_expire"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF
+          |NGX_HTTP_LIF_CONF|NGX_CONF_TAKE1,
+      ngx_conf_set_sec_slot,
+      NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_srcache_loc_conf_t, max_expire),
+      NULL },
+
+    { ngx_string("srcache_default_expire"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF
+          |NGX_HTTP_LIF_CONF|NGX_CONF_TAKE1,
+      ngx_conf_set_sec_slot,
+      NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_srcache_loc_conf_t, default_expire),
+      NULL },
+
       ngx_null_command
 };
 
@@ -664,6 +680,9 @@ ngx_http_srcache_create_loc_conf(ngx_conf_t *cf)
     conf->store_no_store = NGX_CONF_UNSET;
     conf->store_no_cache = NGX_CONF_UNSET;
 
+    conf->max_expire = NGX_CONF_UNSET;
+    conf->default_expire = NGX_CONF_UNSET;
+
     conf->ignore_content_encoding = NGX_CONF_UNSET;
 
     conf->hide_headers = NGX_CONF_UNSET_PTR;
@@ -711,6 +730,9 @@ ngx_http_srcache_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
     ngx_conf_merge_value(conf->store_private, prev->store_private, 0);
     ngx_conf_merge_value(conf->store_no_store, prev->store_no_store, 0);
     ngx_conf_merge_value(conf->store_no_cache, prev->store_no_cache, 0);
+
+    ngx_conf_merge_value(conf->max_expire, prev->max_expire, 0);
+    ngx_conf_merge_value(conf->default_expire, prev->default_expire, 60);
 
     ngx_conf_merge_value(conf->ignore_content_encoding,
             prev->ignore_content_encoding, 0);

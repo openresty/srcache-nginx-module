@@ -15,7 +15,7 @@ static ngx_http_variable_t ngx_http_srcache_variables[] = {
 
     { ngx_string("srcache_expire"), NULL,
       ngx_http_srcache_expire_variable, 0,
-      0, 0 },
+      NGX_HTTP_VAR_NOCACHEABLE, 0 },
 
     { ngx_null_string, NULL, NULL, 0, 0, 0 }
 };
@@ -25,18 +25,33 @@ static ngx_int_t
 ngx_http_srcache_expire_variable(ngx_http_request_t *r,
     ngx_http_variable_value_t *v, uintptr_t data)
 {
-    ngx_http_srcache_ctx_t      *ctx;
-    u_char                      *p;
+    ngx_http_srcache_ctx_t       *ctx;
+    u_char                       *p;
+    time_t                        expire;
+    ngx_http_srcache_loc_conf_t  *conf;
+
+    conf = ngx_http_get_module_loc_conf(r, ngx_http_srcache_filter_module);
 
     v->valid = 1;
-    v->no_cacheable = 0;
+    v->no_cacheable = 1;
     v->not_found = 0;
 
     ctx = ngx_http_get_module_ctx(r, ngx_http_srcache_filter_module);
 
-    if (ctx->valid_sec == 0) {
+    if (!ctx || !ctx->store_response) {
         v->not_found = 1;
         return NGX_OK;
+    }
+
+    if (ctx->valid_sec == 0) {
+        expire = conf->default_expire;
+
+    } else {
+        expire = ctx->valid_sec - ngx_time();
+    }
+
+    if (conf->max_expire > 0 && expire > conf->max_expire) {
+        expire = conf->max_expire;
     }
 
     p = ngx_palloc(r->pool, NGX_TIME_T_LEN);
@@ -45,7 +60,7 @@ ngx_http_srcache_expire_variable(ngx_http_request_t *r,
     }
 
     v->data = p;
-    p =  ngx_sprintf(p, "%T", ctx->valid_sec - ngx_time());
+    p =  ngx_sprintf(p, "%T", expire);
     v->len = p - v->data;
 
     return NGX_OK;

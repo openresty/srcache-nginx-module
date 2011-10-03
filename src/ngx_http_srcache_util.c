@@ -945,7 +945,8 @@ ngx_http_srcache_store_response_header(ngx_http_request_t *r,
         dd("header key: %.*s", (int) header[i].key.len, header[i].key.data);
 
         dd("header hash: %lu, hash lc: %lu", (unsigned long) header[i].hash,
-                (unsigned long) ngx_hash_key_lc(header[i].key.data, header[i].key.len));
+                (unsigned long) ngx_hash_key_lc(header[i].key.data,
+                header[i].key.len));
 
         if (ngx_hash_find(&conf->hide_headers_hash, header[i].hash,
                           header[i].lowcase_key, header[i].key.len))
