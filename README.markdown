@@ -13,7 +13,7 @@ This module is production ready.
 Version
 =======
 
-This document describes srcache-nginx-module [v0.12rc7](https://github.com/agentzh/srcache-nginx-module/downloads) released on 10 October 2011.
+This document describes srcache-nginx-module [v0.13rc1](https://github.com/agentzh/srcache-nginx-module/downloads) released on 10 October 2011.
 
 Synopsis
 ========
