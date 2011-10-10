@@ -533,7 +533,8 @@ hello
 6
 
 
-=== TEST 22: flush all
+
+=== TEST 25: flush all
 --- config
     location /flush {
         set $memc_cmd 'flush_all';
@@ -548,7 +549,7 @@ GET /flush
 
 
 
-=== TEST 23: $srcache_expire used too early
+=== TEST 26: $srcache_expire used too early
 --- config
     location /foo {
         default_type text/css;

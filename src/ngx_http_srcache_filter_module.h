@@ -53,11 +53,12 @@ typedef struct {
     ngx_array_t                     *hide_headers;
     ngx_array_t                     *pass_headers;
 
-    unsigned                         hide_content_type;
     time_t                           max_expire;
     time_t                           default_expire;
 
-    unsigned              postponed_to_access_phase_end;
+    unsigned                         postponed_to_access_phase_end:1;
+    unsigned                         hide_content_type:1;
+    unsigned                         hide_last_modified:1;
 } ngx_http_srcache_loc_conf_t;
 
 

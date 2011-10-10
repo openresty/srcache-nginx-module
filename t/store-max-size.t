@@ -312,7 +312,7 @@ GET /flush
         memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
     }
 --- user_files
->>> foo.txt
+>>> foo.txt 199801171935.33
 hello, world
 --- request
     GET /foo.txt
@@ -333,6 +333,7 @@ hello, world
 --- response_body eval
 "HTTP/1.1 200 OK\r
 Content-Type: text/css\r
+Last-Modified: Sat, 17 Jan 1998 11:35:33 GMT\r
 Accept-Ranges: bytes\r
 \r
 hello, world

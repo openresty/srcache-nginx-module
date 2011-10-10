@@ -810,6 +810,8 @@ ngx_http_srcache_store_response_header(ngx_http_request_t *r,
     ngx_list_part_t         *part;
     ngx_table_elt_t         *header;
 
+    u_char                   buf[sizeof("Mon, 28 Sep 1970 06:00:00 GMT") - 1];
+
     ngx_http_srcache_loc_conf_t    *conf;
 
     conf = ngx_http_get_module_loc_conf(r, ngx_http_srcache_filter_module);
@@ -854,6 +856,29 @@ ngx_http_srcache_store_response_header(ngx_http_request_t *r,
             && r->headers_out.charset.len)
         {
             len += sizeof("; charset=") - 1 + r->headers_out.charset.len;
+        }
+    }
+
+    if (!conf->hide_last_modified) {
+        if (r->headers_out.last_modified_time != -1) {
+            if (r->headers_out.status != NGX_HTTP_OK
+                && r->headers_out.status != NGX_HTTP_PARTIAL_CONTENT
+                && r->headers_out.status != NGX_HTTP_NOT_MODIFIED
+                && r->headers_out.status != NGX_HTTP_NO_CONTENT)
+            {
+                r->headers_out.last_modified_time = -1;
+                r->headers_out.last_modified = NULL;
+            }
+        }
+
+        dd("last modified time: %d", (int) r->headers_out.last_modified_time);
+
+        if (r->headers_out.last_modified == NULL
+            && r->headers_out.last_modified_time != -1)
+        {
+            (void) ngx_http_time(buf, r->headers_out.last_modified_time);
+
+            len += sizeof("Last-Modified: ") - 1 + sizeof(buf) + 2;
         }
     }
 
@@ -921,6 +946,18 @@ ngx_http_srcache_store_response_header(ngx_http_request_t *r,
         *b->last++ = CR; *b->last++ = LF;
     }
 
+    if (!conf->hide_last_modified
+        && r->headers_out.last_modified == NULL
+        && r->headers_out.last_modified_time != -1)
+    {
+        b->last = ngx_cpymem(b->last, "Last-Modified: ",
+                sizeof("Last-Modified: ") - 1);
+
+        b->last = ngx_cpymem(b->last, buf, sizeof(buf));
+
+        *b->last++ = CR; *b->last++ = LF;
+    }
+
     part = &r->headers_out.headers.part;
     header = part->elts;
 
@@ -939,10 +976,6 @@ ngx_http_srcache_store_response_header(ngx_http_request_t *r,
         if (header[i].hash == 0) {
             continue;
         }
-
-        dd("header lowcase key: %s", header[i].lowcase_key);
-
-        dd("header key: %.*s", (int) header[i].key.len, header[i].key.data);
 
         dd("header hash: %lu, hash lc: %lu", (unsigned long) header[i].hash,
                 (unsigned long) ngx_hash_key_lc(header[i].key.data,
@@ -1019,6 +1052,7 @@ ngx_http_srcache_hide_headers_hash(ngx_conf_t *cf,
         conf->hide_headers = prev->hide_headers;
         conf->pass_headers = prev->pass_headers;
         conf->hide_content_type = prev->hide_content_type;
+        conf->hide_last_modified = prev->hide_last_modified;
 
     } else {
         if (conf->hide_headers == NGX_CONF_UNSET_PTR) {
@@ -1073,6 +1107,14 @@ ngx_http_srcache_hide_headers_hash(ngx_conf_t *cf,
             hk->key_hash = ngx_hash_key_lc(h[i].data, h[i].len);
             hk->value = (void *) 1;
 
+            if (h[i].len == sizeof("Last-Modified") - 1
+                && ngx_strncasecmp(h[i].data, (u_char *) "Last-Modified",
+                    sizeof("Last-Modified") - 1)
+                == 0)
+            {
+                conf->hide_last_modified = 1;
+            }
+
             if (h[i].len == sizeof("Content-Type") - 1
                 && ngx_strncasecmp(h[i].data, (u_char *) "Content-Type",
                     sizeof("Content-Type") - 1)
@@ -1108,6 +1150,14 @@ ngx_http_srcache_hide_headers_hash(ngx_conf_t *cf,
                     == 0)
                 {
                     conf->hide_content_type = 0;
+                }
+
+                if (h[i].len == sizeof("Last-Modified") - 1
+                    && ngx_strncasecmp(h[i].data, (u_char *) "Last-Modified",
+                        sizeof("Last-Modified") - 1)
+                    == 0)
+                {
+                    conf->hide_last_modified = 0;
                 }
 
                 if (ngx_strcasecmp(h[i].data, hk[j].key.data) == 0) {
