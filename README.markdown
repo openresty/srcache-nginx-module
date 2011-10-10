@@ -13,7 +13,7 @@ This module is production ready.
 Version
 =======
 
-This document describes srcache-nginx-module [v0.12rc6](https://github.com/agentzh/srcache-nginx-module/downloads) released on 30 June 2011.
+This document describes srcache-nginx-module [v0.12rc7](https://github.com/agentzh/srcache-nginx-module/downloads) released on 10 October 2011.
 
 Synopsis
 ========
@@ -38,9 +38,6 @@ Synopsis
     }
 
     location /foo {
-        charset utf-8; # or some other encoding
-        default_type text/plain; # or some other MIME type
-  
         set $key $uri$args;
         srcache_fetch GET /memc $key;
         srcache_store PUT /memc $key;
@@ -65,12 +62,9 @@ Synopsis
     }
 
     location /bar {
-        charset utf-8; # or some other encoding
-        default_type text/plain; # or some other MIME type
-  
         set_escape_uri $key $uri$args;
         srcache_fetch GET /memc2 key=$key;
-        srcache_store PUT /memc2 key=$key&exptime=3600;
+        srcache_store PUT /memc2 key=$key&exptime=$srcache_expire;
   
         # proxy_pass/fastcgi_pass/drizzle_pass/echo/etc...
         # or even static files on the disk
@@ -179,7 +173,7 @@ srcache_fetch
 
 **context:** *http, server, location, location if*
 
-**phase:** *access tail*
+**phase:** *post access*
 
 This directive registers an access phase handler that will issue an Nginx subrequest to lookup the cache.
 
@@ -196,6 +190,8 @@ srcache_fetch_skip
 **default:** *srcache_fetch_skip 0*
 
 **context:** *http, server, location, location if*
+
+**phase:** *post access*
 
 The `<flag>` argument supports nginx variables. When this argument's value is not empty *and* not equal to `0`, then the fetching process will be unconditionally skipped.
 
@@ -236,6 +232,20 @@ This directive registers an output filter handler that will issue an Nginx subre
 
 You can use the [srcache_store_skip](http://wiki.nginx.org/HttpSRCacheModule#srcache_store_skip) and [srcache_store_max_size](http://wiki.nginx.org/HttpSRCacheModule#srcache_store_max_size) directives to disable caching for certain requests in case of a cache miss.
 
+Since the `v0.12rc7` release, both the response status line, response headers, and response bodies will be put into the cache. By default, the following special response headers will not be cached:
+
+* Connection
+* Keep-Alive
+* Proxy-Authenticate
+* Proxy-Authorization
+* TE
+* Trailers
+* Transfer-Encoding
+* Upgrade
+* Set-Cookie
+
+You can use the [srcache_store_pass_header](http://wiki.nginx.org/HttpSRCacheModule#srcache_store_pass_header) and/or [srcache_store_hide_header](http://wiki.nginx.org/HttpSRCacheModule#srcache_store_hide_header) directives to control what headers to cache and what not.
+
 This directive works in an output filter.
 
 srcache_store_max_size
@@ -258,6 +268,10 @@ srcache_store_skip
 
 **default:** *srcache_store_skip 0*
 
+**context:** *http, server, location, location if*
+
+**phase:** *output filter*
+
 The `<flag>` argument supports Nginx variables. When this argument's value is not empty *and* not equal to `0`, then the storing process will be unconditionally skipped.
 
 Here's an example using Lua to set $nocache to avoid storing URIs that contain the string "/tmp":
@@ -272,13 +286,292 @@ Here's an example using Lua to set $nocache to avoid storing URIs that contain t
     srcache_store_skip $nocache;
 
 
+srcache_header_buffer_size
+--------------------------
+**syntax:** *srcache_header_buffer_size &lt;size&gt;*
+
+**default:** *srcache_header_buffer_size 4k/8k*
+
+**context:** *http, server, location, location if*
+
+**phase:** *output filter*
+
+This directive controles the header buffer when serializing response headers for [srcache_store](http://wiki.nginx.org/HttpSRCacheModule#srcache_store). The default size is the page size, usually `4k` or `8k` depending on specific platforms.
+
+Note that the buffer is not used to hold all the response headers, but just each individual header. So the buffer is merely needed to be big enough to hold the longest response header.
+
+This directive was first introduced in the `v0.12rc7` release.
+
+srcache_store_hide_header
+-------------------------
+**syntax:** *srcache_store_hide_header &lt;header&gt;*
+
+**default:** *no*
+
+**context:** *http, server, location, location if*
+
+**phase:** *output filter*
+
+By default, this module caches all the response headers except the following ones:
+
+* Connection
+* Keep-Alive
+* Proxy-Authenticate
+* Proxy-Authorization
+* TE
+* Trailers
+* Transfer-Encoding
+* Upgrade
+* Set-Cookie
+
+You can hide even more response headers from [srcache_store](http://wiki.nginx.org/HttpSRCacheModule#srcache_store) by listing their names (case-insensitive) by means of this directive. For examples,
+
+
+    srcache_store_hide_header X-Foo;
+    srcache_store_hide_header Last-Modified;
+
+
+Multiple occurrences of this directive are allowed in a single location.
+
+This directive was first introduced in the `v0.12rc7` release.
+
+See also [srcache_store_pass_header](http://wiki.nginx.org/HttpSRCacheModule#srcache_store_pass_header).
+
+srcache_store_pass_header
+-------------------------
+**syntax:** *srcache_store_pass_header &lt;header&gt;*
+
+**default:** *no*
+
+**context:** *http, server, location, location if*
+
+**phase:** *output filter*
+
+By default, this module caches all the response headers except the following ones:
+
+* Connection
+* Keep-Alive
+* Proxy-Authenticate
+* Proxy-Authorization
+* TE
+* Trailers
+* Transfer-Encoding
+* Upgrade
+* Set-Cookie
+
+You can force [srcache_store](http://wiki.nginx.org/HttpSRCacheModule#srcache_store) to store one or more of these response headers from [srcache_store](http://wiki.nginx.org/HttpSRCacheModule#srcache_store) by listing their names (case-insensitive) by means of this directive. For examples,
+
+
+    srcache_store_pass_header Set-Cookie;
+    srcache_store_pass_header Proxy-Autenticate;
+
+
+Multiple occurrences of this directive are allowed in a single location.
+
+This directive was first introduced in the `v0.12rc7` release.
+
+See also [srcache_store_hide_header](http://wiki.nginx.org/HttpSRCacheModule#srcache_store_hide_header).
+
+srcache_methods
+---------------
+**syntax:** *srcache_methods &lt;method&gt;...*
+
+**default:** *srcache_methods GET HEAD*
+
+**context:** *http, server, location*
+
+**phase:** *output filter*
+
+This directive specifies HTTP request methods that are considered by either [srcache_fetch](http://wiki.nginx.org/HttpSRCacheModule#srcache_fetch) or [srcache_store](http://wiki.nginx.org/HttpSRCacheModule#srcache_store). HTTP request methods not listed will be skipped completely from the cache.
+
+The following HTTP methods are allowed: `GET`, `HEAD`, `POST`, `PUT`, and `DELETE`. The `GET` and `HEAD` methods are always implicitly included in the list regardless of their presence in this directive.
+
+This directive was first introduced in the `v0.12rc7` release.
+
+srcache_ignore_content_encoding
+-------------------------------
+**syntax:** *srcache_ignore_content_encoding on|off*
+
+**default:** *srcache_ignore_content_encoding off*
+
+**context:** *http, server, location, location if*
+
+**phase:** *output filter*
+
+When this directive is turned `off` (which is the default), non-empty `Content-Encoding` response header will cause [srcache_store](http://wiki.nginx.org/HttpSRCacheModule#srcache_store) skip storing the whole response into the cache and issue a warning into nginx's `error.log` file like this:
+
+
+    [warn] 12500#0: *1 srcache_store skipped due to response header "Content-Encoding: gzip"
+                (maybe you forgot to disable compression on the backend?)
+
+
+Turning on this directive will ignore the `Content-Encoding` response header and store the response as usual (and also without warning).
+
+It's recommended to always disable gzip/deflate compression on your backend server by specifying the following line in your `nginx.conf` file:
+
+
+    proxy_set_header  Accept-Encoding  "";
+
+
+This directive was first introduced in the `v0.12rc7` release.
+
+srcache_request_cache_control
+-----------------------------
+**syntax:** *srcache_request_cache_control on|off*
+
+**default:** *srcache_request_cache_control off*
+
+**context:** *http, server, location*
+
+When this directive is turned `on`, the request headers `Cache-Control` and `Pragma` will be honored by this module in the following ways:
+
+1. [srcache_fetch](http://wiki.nginx.org/HttpSRCacheModule#srcache_fetch), i.e., the cache lookup operation, will be skipped when request headers `Cache-Control: no-cache` and/or `Pragma: no-cache` are present.
+1. [srcache_store](http://wiki.nginx.org/HttpSRCacheModule#srcache_store), i.e., the cache store operation, will be skipped when the request header `Cache-Control: no-store` is specified.
+
+Turning off this directive will disable this functionality and is considered safer for busy sites mainly relying on cache for speed.
+
+This directive was first introduced in the `v0.12rc7` release.
+
+See also [srcache_response_cache_control](http://wiki.nginx.org/HttpSRCacheModule#srcache_response_cache_control).
+
+srcache_response_cache_control
+------------------------------
+**syntax:** *srcache_response_cache_control on|off*
+
+**default:** *srcache_response_cache_control on*
+
+**context:** *http, server, location*
+
+When this directive is turned `on`, the response headers `Cache-Control` and `Expires` will be honored by this module in the following ways:
+
+* `Cache-Control: private` skips [srcache_store](http://wiki.nginx.org/HttpSRCacheModule#srcache_store),
+* `Cache-Control: no-store` skips [srcache_store](http://wiki.nginx.org/HttpSRCacheModule#srcache_store),
+* `Cache-Control: no-cache` skips [srcache_store](http://wiki.nginx.org/HttpSRCacheModule#srcache_store),
+* `Cache-Control: max-age=0` skips [srcache_store](http://wiki.nginx.org/HttpSRCacheModule#srcache_store),
+* and `Expires: <date-no-more-recently-than-now>` skips [srcache_store](http://wiki.nginx.org/HttpSRCacheModule#srcache_store).
+
+This directive takes priority over the [srcache_store_no_store](http://wiki.nginx.org/HttpSRCacheModule#srcache_store_no_store), [srcache_store_no_cache](http://wiki.nginx.org/HttpSRCacheModule#srcache_store_no_cache), and [srcache_store_private](http://wiki.nginx.org/HttpSRCacheModule#srcache_store_private) directives.
+
+This directive was first introduced in the `v0.12rc7` release.
+
+See also [srcache_request_cache_control](http://wiki.nginx.org/HttpSRCacheModule#srcache_request_cache_control).
+
+srcache_store_no_store
+----------------------
+**syntax:** *srcache_store_no_store on|off*
+
+**default:** *srcache_store_no_store off*
+
+**context:** *http, server, location*
+
+**phase:** *output filter*
+
+Turning this directive on will force responses with the header `Cache-Control: no-store` to be stored into the cache when [srcache_response_cache_control](http://wiki.nginx.org/HttpSRCacheModule#srcache_response_cache_control) is turned `on` *and* other conditions are met. Default to `off`.
+
+This directive was first introduced in the `v0.12rc7` release.
+
+srcache_store_no_cache
+----------------------
+**syntax:** *srcache_store_no_cache on|off*
+
+**default:** *srcache_store_no_cache off*
+
+**context:** *http, server, location*
+
+**phase:** *output filter*
+
+Turning this directive on will force responses with the header `Cache-Control: no-cache` to be stored into the cache when [srcache_response_cache_control](http://wiki.nginx.org/HttpSRCacheModule#srcache_response_cache_control) is turned `on` *and* other conditions are met. Default to `off`.
+
+This directive was first introduced in the `v0.12rc7` release.
+
+srcache_store_private
+---------------------
+**syntax:** *srcache_store_private on|off*
+
+**default:** *srcache_store_private off*
+
+**context:** *http, server, location*
+
+**phase:** *output filter*
+
+Turning this directive on will force responses with the header `Cache-Control: private` to be stored into the cache when [srcache_response_cache_control](http://wiki.nginx.org/HttpSRCacheModule#srcache_response_cache_control) is turned `on` *and* other conditions are met. Default to `off`.
+
+This directive was first introduced in the `v0.12rc7` release.
+
+srcache_default_expire
+----------------------
+**syntax:** *srcache_default_expire &lt;time&gt;*
+
+**default:** *srcache_default_expire 60s*
+
+**context:** *http, server, location, location if*
+
+**phase:** *output filter*
+
+This directive controls the default expiration time period that is allowed for the [$srcache_expire](http://wiki.nginx.org/HttpSRCacheModule#.24srcache_expire) variable value when neither `Cache-Control: max-age=N` nor `Expires` are specified in the response headers.
+
+The `<time>` argument values are in seconds by default. But it's wise to always explicitly specify the time unit to avoid confusion. Time units supported are "s"(seconds), "ms"(milliseconds), "y"(years), "M"(months), "w"(weeks), "d"(days), "h"(hours), and "m"(minutes). For example,
+
+
+    srcache_default_expire 30m; # 30 minutes
+
+
+This time must be less than 597 hours.
+
+This directive was first introduced in the `v0.12rc7` release.
+
+srcache_max_expire
+------------------
+**syntax:** *srcache_max_expire &lt;time&gt;*
+
+**default:** *srcache_max_expire 0*
+
+**context:** *http, server, location, location if*
+
+**phase:** *output filter*
+
+This directive controls the maximal expiration time period that is allowed for the [$srcache_expire](http://wiki.nginx.org/HttpSRCacheModule#.24srcache_expire) variable value. This setting takes priority over other calculating methods.
+
+The `<time>` argument values are in seconds by default. But it's wise to always explicitly specify the time unit to avoid confusion. Time units supported are "s"(seconds), "ms"(milliseconds), "y"(years), "M"(months), "w"(weeks), "d"(days), "h"(hours), and "m"(minutes). For example,
+
+
+    srcache_max_expire 2h;  # 2 hours
+
+
+This time must be less than 597 hours.
+
+When `0` is specified, which is the default setting, then there will be *no* limit at all.
+
+This directive was first introduced in the `v0.12rc7` release.
+
+Variables
+=========
+$srcache_expire
+---------------
+**type:** *integer*
+
+**cacheable:** *no*
+
+**writable:** *no*
+
+This Nginx variable gives the recommended expiration time period (in seconds) for the current response being stored into the cache. The algorithm of computing the value is as follows:
+
+1. When the response header `Cache-Control: max-age=N` is specified, then `N` will be used as the expiration time,
+1. otherwise if the response header `Expires` is specified, then the expiration time will be obtained by subtracting the current time stamp from the time specified in the `Expires` header,
+1. when neither `Cache-Control: max-age=N` nor `Expires` headers are specified, use the value specified in the [srcache_default_expire](http://wiki.nginx.org/HttpSRCacheModule#srcache_default_expire) directive.
+
+The final value of this variable will be the value specified by the [srcache_max_expire](http://wiki.nginx.org/HttpSRCacheModule#srcache_max_expire) directive if the value obtained in the algorithm above exceeds the maximal value (if any).
+
+You don't have to use this variable for the expiration time.
+
+This variable was first introduced in the `v0.12rc7` release.
+
 Known Issues
 ============
 * On certain systems, enabling aio and/or sendfile may stop [srcache_store](http://wiki.nginx.org/HttpSRCacheModule#srcache_store) from working. You can disable them in the locations configured by [srcache_store](http://wiki.nginx.org/HttpSRCacheModule#srcache_store).
 
 Caveats
 =======
-* For now, ngx_srcache does not cache response headers. So it's necessary to use the [charset](http://wiki.nginx.org/HttpCharsetModule#charset), [default_type](http://wiki.nginx.org/HttpCoreModule#default_type), mime type settings, and [add_header](http://wiki.nginx.org/HttpHeadersModule#add_header) directives to explicitly set the `Content-Type` header and etc. Therefore, it's probably a bad idea to combine this module with backends that return varying response headers. Support for response header caching is a TODO and you're very welcome to submit patches for this :)
 * It's recommended to disable your backend server's gzip compression and use nginx's [HttpGzipModule](http://wiki.nginx.org/HttpGzipModule) to do the job. In case of [HttpProxyModule](http://wiki.nginx.org/HttpProxyModule), you can use the following configure setting to disable backend gzip compression:
 
     proxy_set_header  Accept-Encoding  "";
@@ -291,13 +584,13 @@ It's recommended to install this module as well as the Nginx core and many other
 
 Alternatively, you can build Nginx with this module all by yourself:
 
-* Grab the nginx source code from [nginx.org](http://nginx.org), for example, the version 1.0.6 (see [Nginx Compatibility](http://wiki.nginx.org/HttpSRCacheModule#Compatibility)),
+* Grab the nginx source code from [nginx.org](http://nginx.org), for example, the version 1.0.8 (see [Nginx Compatibility](http://wiki.nginx.org/HttpSRCacheModule#Compatibility)),
 * and then download the latest version of the release tarball of this module from srcache-nginx-module [file list](http://github.com/agentzh/srcache-nginx-module/downloads),
 * and finally build the Nginx source with this module
 
-        wget 'http://nginx.org/download/nginx-1.0.6.tar.gz'
-        tar -xzvf nginx-1.0.6.tar.gz
-        cd nginx-1.0.6/
+        wget 'http://nginx.org/download/nginx-1.0.8.tar.gz'
+        tar -xzvf nginx-1.0.8.tar.gz
+        cd nginx-1.0.8/
      
         # Here we assume you would install you nginx under /opt/nginx/.
         ./configure --prefix=/opt/nginx \
@@ -312,7 +605,8 @@ Compatibility
 
 The following versions of Nginx should work with this module:
 
-* 1.0.x (last tested: 1.0.6)
+* 1.1.x (last tested: 1.1.5)
+* 1.0.x (last tested: 1.0.8)
 * 0.9.x (last tested: 0.9.4)
 * 0.8.x (last tested: 0.8.54)
 * 0.7.x >= 0.7.46 (last tested: 0.7.68)
@@ -351,7 +645,8 @@ Some parts of the test suite requires modules [HttpRewriteModule](http://wiki.ng
 
 TODO
 ====
-* add support for headers caching.
+* add gzip support.
+* add new nginx variable `$srcache_key`.
 
 Getting involved
 ================
