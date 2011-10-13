@@ -10,8 +10,8 @@ Status
 
 Version
     This document describes srcache-nginx-module v0.13rc1
-    (<https://github.com/agentzh/srcache-nginx-module/downloads>) released
-    on 10 October 2011.
+    (<https://github.com/agentzh/srcache-nginx-module/tags>) released on 10
+    October 2011.
 
 Synopsis
         upstream my_memcached {
@@ -66,6 +66,8 @@ Synopsis
 Description
     This module provides a transparent caching layer for arbitrary nginx
     locations (like those use an upstream or even serve static disk files).
+    The caching behavior is mostly compatible with RFC 2616
+    (<http://www.ietf.org/rfc/rfc2616.txt>).
 
     Usually, [[HttpMemcModule]] is used together with this module to provide
     a concrete caching storage backend. But technically, any modules that
@@ -700,7 +702,7 @@ Installation
 
     *   and then download the latest version of the release tarball of this
         module from srcache-nginx-module file list
-        (<http://github.com/agentzh/srcache-nginx-module/downloads>),
+        (<http://github.com/agentzh/srcache-nginx-module/tags>),
 
     *   and finally build the Nginx source with this module
 

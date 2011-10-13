@@ -13,7 +13,7 @@ This module is production ready.
 Version
 =======
 
-This document describes srcache-nginx-module [v0.13rc1](https://github.com/agentzh/srcache-nginx-module/downloads) released on 10 October 2011.
+This document describes srcache-nginx-module [v0.13rc1](https://github.com/agentzh/srcache-nginx-module/tags) released on 10 October 2011.
 
 Synopsis
 ========
@@ -74,7 +74,7 @@ Synopsis
 Description
 ===========
 
-This module provides a transparent caching layer for arbitrary nginx locations (like those use an upstream or even serve static disk files).
+This module provides a transparent caching layer for arbitrary nginx locations (like those use an upstream or even serve static disk files). The caching behavior is mostly compatible with [RFC 2616](http://www.ietf.org/rfc/rfc2616.txt).
 
 Usually, [HttpMemcModule](http://wiki.nginx.org/HttpMemcModule) is used together with this module to provide a concrete caching storage backend. But technically, any modules that provide a REST interface can be used as the fetching and storage subrequests used by this module.
 
@@ -585,7 +585,7 @@ It's recommended to install this module as well as the Nginx core and many other
 Alternatively, you can build Nginx with this module all by yourself:
 
 * Grab the nginx source code from [nginx.org](http://nginx.org), for example, the version 1.0.8 (see [Nginx Compatibility](http://wiki.nginx.org/HttpSRCacheModule#Compatibility)),
-* and then download the latest version of the release tarball of this module from srcache-nginx-module [file list](http://github.com/agentzh/srcache-nginx-module/downloads),
+* and then download the latest version of the release tarball of this module from srcache-nginx-module [file list](http://github.com/agentzh/srcache-nginx-module/tags),
 * and finally build the Nginx source with this module
 
         wget 'http://nginx.org/download/nginx-1.0.8.tar.gz'
