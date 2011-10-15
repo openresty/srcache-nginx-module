@@ -13,7 +13,7 @@ This module is production ready.
 Version
 =======
 
-This document describes srcache-nginx-module [v0.13rc1](https://github.com/agentzh/srcache-nginx-module/tags) released on 10 October 2011.
+This document describes srcache-nginx-module [v0.13rc2](https://github.com/agentzh/srcache-nginx-module/tags) released on 15 October 2011.
 
 Synopsis
 ========
@@ -41,6 +41,7 @@ Synopsis
         set $key $uri$args;
         srcache_fetch GET /memc $key;
         srcache_store PUT /memc $key;
+        srcache_store_statuses 200 301 302;
   
         # proxy_pass/fastcgi_pass/drizzle_pass/echo/etc...
         # or even static files on the disk
@@ -285,6 +286,30 @@ Here's an example using Lua to set $nocache to avoid storing URIs that contain t
 
     srcache_store_skip $nocache;
 
+
+srcache_store_statuses
+----------------------
+**syntax:** *srcache_store_statuses &lt;status1&gt; &lt;status2&gt; ..*
+
+**default:** *srcache_store_statuses 200 301 302*
+
+**context:** *http, server, location, location if*
+
+**phase:** *output filter*
+
+This directive controls what responses to store to the cache according to their status code.
+
+By default, only `200`, `301`, and `302` responses will be stored to cache and any other responses will skip [srcache_store](http://wiki.nginx.org/HttpSRCacheModule#srcache_store).
+
+You can specify arbitrary positive numbers for the response status code that you'd like to cache, even including error code like `404` and `503`. For example:
+
+
+    srcache_store 200 201 301 302 404 503;
+
+
+At least one argument should be given to this directive.
+
+This directive was first introduced in the `v0.13rc2` release.
 
 srcache_header_buffer_size
 --------------------------
@@ -645,8 +670,8 @@ Some parts of the test suite requires modules [HttpRewriteModule](http://wiki.ng
 
 TODO
 ====
-* add gzip support.
-* add new nginx variable `$srcache_key`.
+* add gzip compression and decompression support.
+* add new nginx variable `$srcache_key` and new directives `srcache_key_ignore_args`, `srcache_key_filter_args`, and `srcache_key_sort_args`.
 
 Getting involved
 ================

@@ -10,7 +10,7 @@ This module is production ready.
 
 = Version =
 
-This document describes srcache-nginx-module [https://github.com/agentzh/srcache-nginx-module/tags v0.13rc1] released on 10 October 2011.
+This document describes srcache-nginx-module [https://github.com/agentzh/srcache-nginx-module/tags v0.13rc2] released on 15 October 2011.
 
 = Synopsis =
 
@@ -37,6 +37,7 @@ This document describes srcache-nginx-module [https://github.com/agentzh/srcache
         set $key $uri$args;
         srcache_fetch GET /memc $key;
         srcache_store PUT /memc $key;
+        srcache_store_statuses 200 301 302;
   
         # proxy_pass/fastcgi_pass/drizzle_pass/echo/etc...
         # or even static files on the disk
@@ -272,6 +273,29 @@ Here's an example using Lua to set $nocache to avoid storing URIs that contain t
 
     srcache_store_skip $nocache;
 </geshi>
+
+== srcache_store_statuses ==
+'''syntax:''' ''srcache_store_statuses <status1> <status2> ..''
+
+'''default:''' ''srcache_store_statuses 200 301 302''
+
+'''context:''' ''http, server, location, location if''
+
+'''phase:''' ''output filter''
+
+This directive controls what responses to store to the cache according to their status code.
+
+By default, only <code>200</code>, <code>301</code>, and <code>302</code> responses will be stored to cache and any other responses will skip [[#srcache_store|srcache_store]].
+
+You can specify arbitrary positive numbers for the response status code that you'd like to cache, even including error code like <code>404</code> and <code>503</code>. For example:
+
+<geshi lang="nginx">
+    srcache_store 200 201 301 302 404 503;
+</geshi>
+
+At least one argument should be given to this directive.
+
+This directive was first introduced in the <code>v0.13rc2</code> release.
 
 == srcache_header_buffer_size ==
 '''syntax:''' ''srcache_header_buffer_size <size>''
@@ -609,8 +633,8 @@ Because a single nginx server (by default, <code>localhost:1984</code>) is used 
 Some parts of the test suite requires modules [[HttpRewriteModule]], [[HttpEchoModule]], [[HttpRdsJsonModule]], and [[HttpDrizzleModule]] to be enabled as well when building Nginx.
 
 = TODO =
-* add gzip support.
-* add new nginx variable <code>$srcache_key</code>.
+* add gzip compression and decompression support.
+* add new nginx variable <code>$srcache_key</code> and new directives <code>srcache_key_ignore_args</code>, <code>srcache_key_filter_args</code>, and <code>srcache_key_sort_args</code>.
 
 = Getting involved =
 You'll be very welcomed to submit patches to the author or just ask for a commit bit to the source repository on GitHub.
