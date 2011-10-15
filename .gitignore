@@ -65,6 +65,8 @@ util/bench
 trace.out*
 try.sh
 build9
+src/fetch.[ch]
+src/store.[ch]
 t/servroot/
 buildroot/
 build1[01]

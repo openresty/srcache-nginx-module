@@ -843,8 +843,45 @@ ngx_http_srcache_store_response_header(ngx_http_request_t *r,
             status_line = &ngx_http_status_lines[status];
             len += ngx_http_status_lines[status].len;
 
+        } else if (status >= NGX_HTTP_MOVED_PERMANENTLY
+                   && status < NGX_HTTP_LAST_LEVEL_300)
+        {
+            /* 3XX */
+
+            if (status == NGX_HTTP_NOT_MODIFIED) {
+                r->header_only = 1;
+            }
+
+            status = status - NGX_HTTP_MOVED_PERMANENTLY + NGX_HTTP_LEVEL_200;
+            status_line = &ngx_http_status_lines[status];
+            len += ngx_http_status_lines[status].len;
+
+        } else if (status >= NGX_HTTP_BAD_REQUEST
+                   && status < NGX_HTTP_LAST_LEVEL_400)
+        {
+            /* 4XX */
+            status = status - NGX_HTTP_BAD_REQUEST
+                            + NGX_HTTP_LEVEL_200
+                            + NGX_HTTP_LEVEL_300;
+
+            status_line = &ngx_http_status_lines[status];
+            len += ngx_http_status_lines[status].len;
+
+        } else if (status >= NGX_HTTP_INTERNAL_SERVER_ERROR
+                   && status < NGX_HTTP_LAST_LEVEL_500)
+        {
+            /* 5XX */
+            status = status - NGX_HTTP_INTERNAL_SERVER_ERROR
+                            + NGX_HTTP_LEVEL_200
+                            + NGX_HTTP_LEVEL_300
+                            + NGX_HTTP_LEVEL_400;
+
+            status_line = &ngx_http_status_lines[status];
+            len += ngx_http_status_lines[status].len;
+
         } else {
-            return NGX_ERROR;
+            len += NGX_INT_T_LEN;
+            status_line = NULL;
         }
     }
 
@@ -1174,5 +1211,15 @@ ngx_http_srcache_hide_headers_hash(ngx_conf_t *cf,
     hash->temp_pool = NULL;
 
     return ngx_hash_init(hash, hide_headers.elts, hide_headers.nelts);
+}
+
+
+ngx_int_t
+ngx_http_srcache_cmp_int(const void *one, const void *two)
+{
+    const ngx_int_t           *a = one;
+    const ngx_int_t           *b = two;
+
+    return (*a < *b);
 }
 

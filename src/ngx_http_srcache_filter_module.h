@@ -40,6 +40,8 @@ typedef struct {
 
     ngx_uint_t                       cache_methods;
 
+    ngx_int_t                       *store_statuses;
+
     ngx_flag_t                       req_cache_control;
     ngx_flag_t                       resp_cache_control;
 
