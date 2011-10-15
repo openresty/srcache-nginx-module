@@ -194,8 +194,8 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
             && r->headers_out.status != NGX_HTTP_MOVED_PERMANENTLY)
         {
             ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                    "srcache_store bypassed because of unmatched status code %i "
-                    "(only 200, 301, or 302 are accepted by default)",
+                    "srcache_store bypassed because of unmatched status "
+                    "code %i (only 200, 301, or 302 are accepted by default)",
                     r->headers_out.status);
 
             return ngx_http_srcache_next_header_filter(r);

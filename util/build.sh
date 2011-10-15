@@ -29,8 +29,8 @@ ngx-build $force $version \
           --add-module=$root/../drizzle-nginx-module \
           --add-module=$root/../postgres-nginx-module \
           --add-module=$root/../memc-nginx-module \
-          --add-module=$root/../ndk-nginx-module \
-          --with-debug || exit 1
+          --add-module=$root/../ndk-nginx-module #\
+          #--with-debug || exit 1
           #--add-module=/home/agentz/git/dodo/utils/dodo-hook \
           #--add-module=$home/work/ngx_http_auth_request-0.1 #\
           #--with-rtsig_module
