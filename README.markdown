@@ -609,13 +609,13 @@ It's recommended to install this module as well as the Nginx core and many other
 
 Alternatively, you can build Nginx with this module all by yourself:
 
-* Grab the nginx source code from [nginx.org](http://nginx.org), for example, the version 1.0.8 (see [Nginx Compatibility](http://wiki.nginx.org/HttpSRCacheModule#Compatibility)),
+* Grab the nginx source code from [nginx.org](http://nginx.org), for example, the version 1.0.9 (see [Nginx Compatibility](http://wiki.nginx.org/HttpSRCacheModule#Compatibility)),
 * and then download the latest version of the release tarball of this module from srcache-nginx-module [file list](http://github.com/agentzh/srcache-nginx-module/tags),
 * and finally build the Nginx source with this module
 
-        wget 'http://nginx.org/download/nginx-1.0.8.tar.gz'
-        tar -xzvf nginx-1.0.8.tar.gz
-        cd nginx-1.0.8/
+        wget 'http://nginx.org/download/nginx-1.0.9.tar.gz'
+        tar -xzvf nginx-1.0.9.tar.gz
+        cd nginx-1.0.9/
      
         # Here we assume you would install you nginx under /opt/nginx/.
         ./configure --prefix=/opt/nginx \
@@ -631,7 +631,7 @@ Compatibility
 The following versions of Nginx should work with this module:
 
 * 1.1.x (last tested: 1.1.5)
-* 1.0.x (last tested: 1.0.8)
+* 1.0.x (last tested: 1.0.9)
 * 0.9.x (last tested: 0.9.4)
 * 0.8.x (last tested: 0.8.54)
 * 0.7.x >= 0.7.46 (last tested: 0.7.68)
