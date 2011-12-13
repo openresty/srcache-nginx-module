@@ -24,11 +24,8 @@ ngx_http_srcache_access_handler(ngx_http_request_t *r)
     size_t                          len;
     unsigned                        no_store;
 
-    if (r != r->main) {
-        return NGX_DECLINED;
-    }
-
-    /* being the main request */
+    /* access phase handlers are skipped in subrequests,
+     * so the current request must be a main request */
 
     conf = ngx_http_get_module_loc_conf(r, ngx_http_srcache_filter_module);
 

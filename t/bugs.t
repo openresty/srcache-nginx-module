@@ -208,3 +208,34 @@ Content-Length: 3
 bar
 --- error_code: 201
 
+
+
+=== TEST 9: skipped in subrequests
+--- config
+    location /sub {
+        default_type text/css;
+        srcache_fetch GET /memc $uri;
+        srcache_store PUT /memc $uri;
+
+        echo hello;
+    }
+
+    location /main {
+        echo_location /sub;
+    }
+
+    location /memc {
+        internal;
+
+        set $memc_key $query_string;
+        set $memc_exptime 300;
+        memc_pass 128.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
+    }
+--- request
+GET /main
+--- response_headers
+Content-Type: text/plain
+Content-Length:
+--- response_body
+hello
+
