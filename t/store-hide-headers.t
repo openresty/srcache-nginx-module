@@ -191,8 +191,10 @@ GET /flush
         srcache_store PUT /memc $uri;
         srcache_store_hide_header "Foo-Bar";
 
-        echo hello;
-        more_set_headers "Foo-Bar: hi world";
+        content_by_lua '
+            ngx.header["Foo-Bar"] = "hi world";
+            ngx.say("hello")
+        ';
     }
 
     location /memc {

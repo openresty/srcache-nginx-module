@@ -38,8 +38,10 @@ GET /flush
         srcache_fetch GET /memc $uri;
         srcache_store PUT /memc $uri;
 
-        echo hello;
-        more_set_headers "Cache-Control: public; max-age=0";
+        content_by_lua '
+            ngx.header.cache_control = "public; max-age=0"
+            ngx.say("hello")
+        ';
     }
 
     location /memc {
@@ -109,8 +111,10 @@ GET /flush
         srcache_store PUT /memc $uri;
         srcache_response_cache_control on;
 
-        echo hello;
-        more_set_headers "Cache-Control: public; max-age=0";
+        content_by_lua '
+            ngx.header["Cache-Control"] = "public; max-age=0"
+            ngx.say("hello")
+        ';
     }
 
     location /memc {
@@ -180,8 +184,10 @@ GET /flush
         srcache_store PUT /memc $uri;
         srcache_response_cache_control off;
 
-        echo hello;
-        more_set_headers "Cache-Control: public; max-age=0";
+        content_by_lua '
+            ngx.header["Cache-Control"] = "public; max-age=0"
+            ngx.say("hello")
+        ';
     }
 
     location /memc {
@@ -250,8 +256,10 @@ GET /flush
         srcache_fetch GET /memc $uri;
         srcache_store PUT /memc $uri;
 
-        echo hello;
-        more_set_headers "Cache-Control: public; max-age=7";
+        content_by_lua '
+            ngx.header["Cache-Control"] = "public; max-age=7";
+            ngx.say("hello")
+        ';
     }
 
     location /memc {

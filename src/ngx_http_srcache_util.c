@@ -4,6 +4,7 @@
 #include "ddebug.h"
 
 #include "ngx_http_srcache_util.h"
+#include "ngx_http_srcache_headers.h"
 
 
 static ngx_int_t ngx_http_srcache_set_content_length_header(
@@ -677,11 +678,15 @@ ngx_int_t
 ngx_http_srcache_process_header(ngx_http_request_t *r, ngx_buf_t *b)
 {
     ngx_int_t                       rc;
-    ngx_table_elt_t                *h;
+    ngx_table_elt_t                 header;
     ngx_http_srcache_ctx_t         *ctx;
     off_t                           len, rest;
     unsigned                        truncate;
     u_char                         *p;
+    ngx_http_srcache_header_t      *hh;
+    ngx_http_srcache_main_conf_t   *smcf;
+
+    smcf = ngx_http_get_module_main_conf(r, ngx_http_srcache_filter_module);
 
     ctx = ngx_http_get_module_ctx(r, ngx_http_srcache_filter_module);
 
@@ -713,38 +718,59 @@ ngx_http_srcache_process_header(ngx_http_request_t *r, ngx_buf_t *b)
 
             /* a header line has been parsed successfully */
 
-            h = ngx_list_push(&r->parent->headers_out.headers);
-            if (h == NULL) {
+            ngx_memzero(&header, sizeof(ngx_table_elt_t));
+
+            header.hash = r->header_hash;
+
+            header.key.len = r->header_name_end - r->header_name_start;
+            header.value.len = r->header_end - r->header_start;
+
+            header.key.data = ngx_pnalloc(r->pool,
+                               header.key.len + 1 + header.value.len + 1
+                               + header.key.len);
+
+            if (header.key.data == NULL) {
                 return NGX_ERROR;
             }
 
-            h->hash = r->header_hash;
+            header.value.data = header.key.data + header.key.len + 1;
+            header.lowcase_key = header.key.data + header.key.len + 1
+                               + header.value.len + 1;
 
-            h->key.len = r->header_name_end - r->header_name_start;
-            h->value.len = r->header_end - r->header_start;
+            ngx_cpystrn(header.key.data, r->header_name_start,
+                        header.key.len + 1);
 
-            h->key.data = ngx_pnalloc(r->pool,
-                               h->key.len + 1 + h->value.len + 1 + h->key.len);
-            if (h->key.data == NULL) {
-                return NGX_ERROR;
-            }
+            ngx_cpystrn(header.value.data, r->header_start,
+                        header.value.len + 1);
 
-            h->value.data = h->key.data + h->key.len + 1;
-            h->lowcase_key = h->key.data + h->key.len + 1 + h->value.len + 1;
-
-            ngx_cpystrn(h->key.data, r->header_name_start, h->key.len + 1);
-            ngx_cpystrn(h->value.data, r->header_start, h->value.len + 1);
-
-            if (h->key.len == r->lowcase_index) {
-                ngx_memcpy(h->lowcase_key, r->lowcase_header, h->key.len);
+            if (header.key.len == r->lowcase_index) {
+                ngx_memcpy(header.lowcase_key, r->lowcase_header,
+                           header.key.len);
 
             } else {
-                ngx_strlow(h->lowcase_key, h->key.data, h->key.len);
+                ngx_strlow(header.lowcase_key, header.key.data, header.key.len);
+            }
+
+            hh = ngx_hash_find(&smcf->headers_in_hash, header.hash,
+                               header.lowcase_key, header.key.len);
+
+            if (hh) {
+                if (hh->handler(r->parent, &header, hh->offset) != NGX_OK) {
+                    return NGX_ERROR;
+                }
+
+            } else {
+
+                if (ngx_http_srcache_process_header_line(r->parent, &header, 0)
+                    != NGX_OK)
+                {
+                    return NGX_ERROR;
+                }
             }
 
             ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                            "srcache_fetch header: \"%V: %V\"",
-                           &h->key, &h->value);
+                           &header.key, &header.value);
 
             ctx->header_buf->pos = ctx->header_buf->start;
             ctx->header_buf->last = ctx->header_buf->start;
@@ -919,6 +945,10 @@ ngx_http_srcache_store_response_header(ngx_http_request_t *r,
         }
     }
 
+    if (r->allow_ranges) {
+        len += sizeof("X-SRCache-Allow-Ranges: 1") - 1 + 2;
+    }
+
     part = &r->headers_out.headers.part;
     header = part->elts;
 
@@ -993,6 +1023,11 @@ ngx_http_srcache_store_response_header(ngx_http_request_t *r,
         b->last = ngx_cpymem(b->last, buf, sizeof(buf));
 
         *b->last++ = CR; *b->last++ = LF;
+    }
+
+    if (r->allow_ranges) {
+        b->last = ngx_cpymem(b->last, "X-SRCache-Allow-Ranges: 1\r\n",
+                sizeof("X-SRCache-Allow-Ranges: 1\r\n") - 1);
     }
 
     part = &r->headers_out.headers.part;

@@ -233,7 +233,7 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
 
     ctx->store_response = 1;
 
-    return ngx_http_srcache_next_header_filter(r);
+    return NGX_OK;
 }
 
 
@@ -361,8 +361,11 @@ ngx_http_srcache_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
 
         if (ctx->response_length == 0) {
             /* store the response header to ctx->body_to_cache */
-            rc = ngx_http_srcache_store_response_header(r, ctx);
-            if (rc == NGX_ERROR) {
+            if (ngx_http_srcache_store_response_header(r, ctx) == NGX_ERROR) {
+                return NGX_ERROR;
+            }
+
+            if (ngx_http_srcache_next_header_filter(r) == NGX_ERROR) {
                 return NGX_ERROR;
             }
         }

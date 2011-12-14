@@ -8,15 +8,12 @@
  */
 
 
-#include <ngx_config.h>
-#include <ngx_core.h>
-#include <ngx_http.h>
-
 #include "ngx_http_srcache_filter_module.h"
 #include "ngx_http_srcache_util.h"
 #include "ngx_http_srcache_var.h"
 #include "ngx_http_srcache_fetch.h"
 #include "ngx_http_srcache_store.h"
+#include "ngx_http_srcache_headers.h"
 
 
 unsigned  ngx_http_srcache_used;
@@ -29,7 +26,10 @@ static char *ngx_http_srcache_merge_loc_conf(ngx_conf_t *cf, void *parent,
 static ngx_int_t ngx_http_srcache_post_config(ngx_conf_t *cf);
 static char *ngx_http_srcache_conf_set_request(ngx_conf_t *cf,
         ngx_command_t *cmd, void *conf);
+
 static void * ngx_http_srcache_create_main_conf(ngx_conf_t *cf);
+static char *ngx_http_srcache_init_main_conf(ngx_conf_t *cf, void *conf);
+
 static char *
 ngx_http_srcache_store_statuses(ngx_conf_t *cf, ngx_command_t *cmd,
         void *conf);
@@ -213,7 +213,7 @@ static ngx_http_module_t  ngx_http_srcache_filter_module_ctx = {
     ngx_http_srcache_post_config,          /* postconfiguration */
 
     ngx_http_srcache_create_main_conf,     /* create main configuration */
-    NULL,                                  /* init main configuration */
+    ngx_http_srcache_init_main_conf,       /* init main configuration */
 
     NULL,                                  /* create server configuration */
     NULL,                                  /* merge server configuration */
@@ -457,10 +457,56 @@ ngx_http_srcache_create_main_conf(ngx_conf_t *cf)
     }
 
     /* set by ngx_pcalloc:
-     *      smcf->postponed_to_access_phase_end = 0
+     *      smcf->postponed_to_access_phase_end = 0;
+     *      smcf->headers_in_hash = { NULL, 0 };
      */
 
     return smcf;
+}
+
+
+static char *
+ngx_http_srcache_init_main_conf(ngx_conf_t *cf, void *conf)
+{
+    ngx_http_srcache_main_conf_t *smcf = conf;
+
+    ngx_array_t                     headers_in;
+    ngx_hash_key_t                 *hk;
+    ngx_hash_init_t                 hash;
+    ngx_http_srcache_header_t      *header;
+
+    /* srcache_headers_in_hash */
+
+    if (ngx_array_init(&headers_in, cf->temp_pool, 32, sizeof(ngx_hash_key_t))
+        != NGX_OK)
+    {
+        return NGX_CONF_ERROR;
+    }
+
+    for (header = ngx_http_srcache_headers_in; header->name.len; header++) {
+        hk = ngx_array_push(&headers_in);
+        if (hk == NULL) {
+            return NGX_CONF_ERROR;
+        }
+
+        hk->key = header->name;
+        hk->key_hash = ngx_hash_key_lc(header->name.data, header->name.len);
+        hk->value = header;
+    }
+
+    hash.hash = &smcf->headers_in_hash;
+    hash.key = ngx_hash_key_lc;
+    hash.max_size = 512;
+    hash.bucket_size = ngx_align(64, ngx_cacheline_size);
+    hash.name = "srcache_headers_in_hash";
+    hash.pool = cf->pool;
+    hash.temp_pool = NULL;
+
+    if (ngx_hash_init(&hash, headers_in.elts, headers_in.nelts) != NGX_OK) {
+        return NGX_CONF_ERROR;
+    }
+
+    return NGX_CONF_OK;
 }
 
 

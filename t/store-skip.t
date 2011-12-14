@@ -5,7 +5,7 @@ use Test::Nginx::Socket;
 
 #repeat_each(2);
 
-plan tests => repeat_each() * 2 * blocks();
+plan tests => repeat_each() * (2 * blocks() + 3);
 
 $ENV{TEST_NGINX_MEMCACHED_PORT} ||= 11211;
 
@@ -333,8 +333,32 @@ hello, world
 "HTTP/1.1 200 OK\r
 Content-Type: text/css\r
 Last-Modified: Thu, 23 Dec 2010 19:10:03 GMT\r
-Accept-Ranges: bytes\r
+X-SRCache-Allow-Ranges: 1\r
 \r
 hello, world
 "
+
+
+
+=== TEST 19: check the response
+--- config
+    location /foo.txt {
+        default_type text/css;
+        srcache_fetch GET /memc $uri;
+    }
+
+    location /memc {
+        internal;
+
+        set $memc_key key;
+        memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
+    }
+--- request
+    GET /foo.txt
+--- response_headers
+Accept-Ranges: bytes
+Last-Modified: Thu, 23 Dec 2010 19:10:03 GMT
+Content-Length: 13
+--- response_body
+hello, world
 

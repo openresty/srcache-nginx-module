@@ -38,8 +38,10 @@ GET /flush
         srcache_fetch GET /fetch;
         srcache_store PUT /store $srcache_expire;
 
-        echo hello;
-        more_set_headers "Cache-Control: max-age=60";
+        content_by_lua '
+            ngx.header["Cache-Control"] = "max-age=60"
+            ngx.say("hello")
+        ';
     }
 
     location /fetch {

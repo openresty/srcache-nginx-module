@@ -68,6 +68,7 @@ build9
 src/fetch.[ch]
 src/store.[ch]
 t/servroot/
+headers.[ch]
 buildroot/
 build1[01]
 go

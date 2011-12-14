@@ -1,5 +1,13 @@
 {
    <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:ngx_alloc
+   fun:ngx_create_pool
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
    Memcheck:Param
    socketcall.setsockopt(optval)
    fun:setsockopt

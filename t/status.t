@@ -267,6 +267,7 @@ Content-Type: text/plain
 --- response_body_like
 ^HTTP/1\.1 301 Moved Permanently\r
 Content-Type: text/html\r
+Location: /bah\r
 \r
 .*?301 Moved Permanently.*
 
@@ -332,6 +333,7 @@ Content-Type: text/plain
 --- response_body_like
 ^HTTP/1\.1 302 Moved Temporarily\r
 Content-Type: text/html\r
+Location: /bah\r
 \r
 .*?302 Found.*
 

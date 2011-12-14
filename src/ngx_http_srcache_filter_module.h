@@ -65,7 +65,8 @@ typedef struct {
 
 
 typedef struct {
-    unsigned    postponed_to_access_phase_end;
+    unsigned            postponed_to_access_phase_end;
+    ngx_hash_t          headers_in_hash;
 } ngx_http_srcache_main_conf_t;
 
 

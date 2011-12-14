@@ -405,8 +405,10 @@ GET /flush
         srcache_fetch GET /memc $uri;
         srcache_store PUT /memc $uri;
 
-        echo hello;
-        more_set_headers 'Cache-Control: private';
+        content_by_lua '
+            ngx.header["Cache-Control"] = "private"
+            ngx.say("hello")
+        ';
     }
 
     location /memc {

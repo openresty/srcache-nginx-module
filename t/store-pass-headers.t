@@ -39,8 +39,11 @@ GET /flush
         srcache_fetch GET /memc $uri;
         srcache_store PUT /memc $uri;
 
-        echo hello;
-        more_set_headers 'Set-Cookie: foo=baz' 'Proxy-Authenticate: blah';
+        content_by_lua '
+            ngx.header["Set-Cookie"] = "foo=baz"
+            ngx.header["Proxy-Authenticate"] = "blah"
+            ngx.say("hello")
+        ';
     }
 
     location /memc {
@@ -116,8 +119,11 @@ GET /flush
         srcache_store_pass_header Set-Cookie;
         srcache_store_pass_header Proxy-Authenticate;
 
-        echo hello;
-        more_set_headers 'Set-Cookie: foo=baz' 'Proxy-Authenticate: blah';
+        content_by_lua '
+            ngx.header["Set-Cookie"] = "foo=baz"
+            ngx.header["Proxy-Authenticate"] = "blah"
+            ngx.say("hello")
+        ';
     }
 
     location /memc {

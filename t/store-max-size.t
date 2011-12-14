@@ -334,7 +334,7 @@ hello, world
 "HTTP/1.1 200 OK\r
 Content-Type: text/css\r
 Last-Modified: Sat, 17 Jan 1998 11:35:33 GMT\r
-Accept-Ranges: bytes\r
+X-SRCache-Allow-Ranges: 1\r
 \r
 hello, world
 "
