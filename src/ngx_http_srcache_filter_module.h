@@ -15,6 +15,7 @@ typedef struct {
     ngx_str_t                   method_name;
     ngx_http_complex_value_t    location;
     ngx_http_complex_value_t    args;
+
 } ngx_http_srcache_request_t;
 
 
@@ -25,6 +26,7 @@ typedef struct {
     ngx_str_t                   args;
     ngx_http_request_body_t    *request_body;
     ssize_t                     content_length_n;
+
 } ngx_http_srcache_parsed_request_t;
 
 
@@ -67,6 +69,7 @@ typedef struct {
 typedef struct {
     unsigned            postponed_to_access_phase_end;
     ngx_hash_t          headers_in_hash;
+
 } ngx_http_srcache_main_conf_t;
 
 
@@ -80,6 +83,7 @@ struct ngx_http_srcache_ctx_s {
     ngx_chain_t                     *body_from_cache;
     ngx_chain_t                     *body_to_cache;
     size_t                           response_length;
+    size_t                           response_body_length;
     void                            *store_wev_handler_ctx;
     ngx_http_request_t              *fetch_sr;
 

@@ -117,6 +117,8 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
         return ngx_http_srcache_next_header_filter(r);
     }
 
+    /* slcf->store != NULL */
+
 #if 1
     if (!(r->method & slcf->cache_methods)) {
         ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
@@ -245,6 +247,7 @@ ngx_http_srcache_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
     ngx_chain_t                 *cl;
     ngx_flag_t                   last;
     ngx_http_srcache_loc_conf_t *slcf;
+    size_t                       len;
 
     dd_enter();
 
@@ -374,7 +377,9 @@ ngx_http_srcache_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
 
         for (cl = in; cl; cl = cl->next) {
             if (ngx_buf_in_memory(cl->buf)) {
-                ctx->response_length += ngx_buf_size(cl->buf);
+                len = ngx_buf_size(cl->buf);
+                ctx->response_length += len;
+                ctx->response_body_length += len;
             }
 
             if (cl->buf->last_buf) {
@@ -406,6 +411,22 @@ ngx_http_srcache_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
         }
 
         if (last && r == r->main) {
+
+#if 1
+            if (r->headers_out.content_length_n >
+                (off_t) ctx->response_body_length)
+            {
+                ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                              "srcache_store: skipped because response body "
+                              "truncated: %O < %uz",
+                              r->headers_out.content_length_n,
+                              ctx->response_body_length);
+
+                ctx->store_response = 0;
+                goto done;
+            }
+#endif
+
             rc = ngx_http_srcache_store_subrequest(r, ctx);
 
             if (rc != NGX_OK) {
@@ -413,6 +434,7 @@ ngx_http_srcache_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
                 goto done;
             }
         }
+
     } else {
         dd("NO store response");
     }
