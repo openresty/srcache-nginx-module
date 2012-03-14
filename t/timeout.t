@@ -16,7 +16,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 2: basic fetch (cache miss)
+=== TEST 1: basic fetch (cache miss)
 --- config
     error_page   500 502 503 504  /50x.html;
     location = /50x.html {

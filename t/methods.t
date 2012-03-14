@@ -5,7 +5,7 @@ use Test::Nginx::Socket;
 
 #repeat_each(2);
 
-plan tests => repeat_each() * 4 * blocks();
+plan tests => repeat_each() * (4 * blocks() + 1);
 
 $ENV{TEST_NGINX_MEMCACHED_PORT} ||= 11211;
 
@@ -194,6 +194,8 @@ HEAD /foo
 Content-Type: text/css
 Content-Length: 0
 --- response_body
+--- no_error_log
+[error]
 
 
 

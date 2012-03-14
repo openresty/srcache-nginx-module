@@ -31,6 +31,9 @@ ngx-build $force $version \
           --add-module=$root/../postgres-nginx-module \
           --add-module=$root/../memc-nginx-module \
           --add-module=$root/../ndk-nginx-module \
+          --with-select_module \
+          --with-poll_module \
+          --with-rtsig_module \
           --with-debug
           #--add-module=/home/agentz/git/dodo/utils/dodo-hook \
           #--add-module=$home/work/ngx_http_auth_request-0.1 #\

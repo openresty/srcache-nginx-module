@@ -174,6 +174,7 @@ ngx_http_srcache_access_handler(ngx_http_request_t *r)
                 cl = ngx_alloc_chain_link(r->pool);
                 cl->buf = ngx_calloc_buf(r->pool);
                 cl->buf->last_buf = 1;
+                cl->next = NULL;
 
                 rc = ngx_http_srcache_next_body_filter(r, cl);
 
@@ -215,6 +216,7 @@ ngx_http_srcache_access_handler(ngx_http_request_t *r)
 
         ph = cmcf->phase_engine.handlers;
         cur_ph = &ph[r->phase_handler];
+
         last_ph = &ph[cur_ph->next - 1];
 
         if (cur_ph < last_ph) {
