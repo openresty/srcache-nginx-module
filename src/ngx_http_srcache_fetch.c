@@ -217,7 +217,8 @@ ngx_http_srcache_access_handler(ngx_http_request_t *r)
         ph = cmcf->phase_engine.handlers;
         cur_ph = &ph[r->phase_handler];
 
-        last_ph = &ph[cur_ph->next - 1];
+        /* we should skip the post_access phase handler here too */
+        last_ph = &ph[cur_ph->next - 2];
 
         if (cur_ph < last_ph) {
             dd("swaping the contents of cur_ph and last_ph...");
