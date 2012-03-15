@@ -418,7 +418,7 @@ ngx_http_srcache_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
             {
                 ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
                               "srcache_store: skipped because response body "
-                              "truncated: %O < %uz",
+                              "truncated: %O > %uz",
                               r->headers_out.content_length_n,
                               ctx->response_body_length);
 

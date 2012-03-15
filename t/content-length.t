@@ -65,7 +65,7 @@ Content-Length: 10
 --- response_body
 hello
 --- error_log
-srcache_store: skipped because response body truncated: 10 < 6
+srcache_store: skipped because response body truncated: 10 > 6
 
 
 
