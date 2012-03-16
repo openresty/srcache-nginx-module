@@ -9,9 +9,9 @@ Status
     This module is production ready.
 
 Version
-    This document describes srcache-nginx-module v0.13rc2
-    (<https://github.com/agentzh/srcache-nginx-module/tags>) released on 15
-    October 2011.
+    This document describes srcache-nginx-module v0.13rc6
+    (<https://github.com/agentzh/srcache-nginx-module/tags>) released on 16
+    March 2012.
 
 Synopsis
         upstream my_memcached {
@@ -64,6 +64,28 @@ Synopsis
             # or even static files on the disk
         }
 
+        map $request_method $skip_fetch {
+            default     0;
+            POST        1;
+            PUT         1;
+        }
+
+        server {
+            listen 8080;
+
+            location /api/ {
+                set $key "$uri?$args";
+
+                srcache_fetch GET /memc $key;
+                srcache_store PUT /memc $key;
+
+                srcache_methods GET PUT POST;
+                srcache_fetch_skip $skip_fetch;
+
+                # proxy_pass/drizzle_pass/content_by_lua/echo/...
+            }
+        }
+
 Description
     This module provides a transparent caching layer for arbitrary nginx
     locations (like those use an upstream or even serve static disk files).
@@ -81,7 +103,7 @@ Description
     security reasons.
 
   Subrequest caching
-    For subrequests, we explicitly disallow the use of this module because
+    For *subrequests*, we explicitly disallow the use of this module because
     it's too difficult to get right. There used to be an implementation but
     it was buggy and I finally gave up fixing it and abandoned it.
 
@@ -205,7 +227,7 @@ Directives
 
     context: *http, server, location, location if*
 
-    phase: *post access*
+    phase: *post-access*
 
     This directive registers an access phase handler that will issue an
     Nginx subrequest to lookup the cache.
@@ -230,7 +252,7 @@ Directives
 
     context: *http, server, location, location if*
 
-    phase: *post access*
+    phase: *post-access*
 
     The "<flag>" argument supports nginx variables. When this argument's
     value is not empty *and* not equal to 0, then the fetching process will
@@ -258,6 +280,17 @@ Directives
         }
     where [[HttpLuaModule]] is used to calculate the value of the C<$skip> variable at the (earlier) rewrite phase. Similarly, the C<$key> variable can be computed by Lua using the L<set_by_lua|HttpLuaModule/"set_by_lua"> or L<rewrite_by_lua|HttpLuaModule/"rewrite_by_lua"> directive too.
 
+    The standard map directive can also be used to compute the value of the
+    $skip variable used in the sample above:
+
+        map $cookie_foo $skip {
+            default     0;
+            bar         1;
+        }
+
+    but your map statement should be put into the "http" config block in
+    your "nginx.conf" file though.
+
   srcache_store
     syntax: *srcache_store <method> <uri> <args>?*
 
@@ -265,7 +298,7 @@ Directives
 
     context: *http, server, location, location if*
 
-    phase: *output filter*
+    phase: *output-filter*
 
     This directive registers an output filter handler that will issue an
     Nginx subrequest to save the response of the current main request into a
@@ -309,6 +342,8 @@ Directives
 
     context: *http, server, location, location if*
 
+    phase: *output-header-filter*
+
     When the response body length is exceeding this size, this module will
     not try to store the response body into the cache using the subrequest
     template that is specified in srcache_store.
@@ -326,7 +361,7 @@ Directives
 
     context: *http, server, location, location if*
 
-    phase: *output filter*
+    phase: *output-header-filter*
 
     The "<flag>" argument supports Nginx variables. When this argument's
     value is not empty *and* not equal to 0, then the storing process will
@@ -350,7 +385,7 @@ Directives
 
     context: *http, server, location, location if*
 
-    phase: *output filter*
+    phase: *output-header-filter*
 
     This directive controls what responses to store to the cache according
     to their status code.
@@ -375,7 +410,7 @@ Directives
 
     context: *http, server, location, location if*
 
-    phase: *output filter*
+    phase: *output-header-filter*
 
     This directive controles the header buffer when serializing response
     headers for srcache_store. The default size is the page size, usually
@@ -394,7 +429,7 @@ Directives
 
     context: *http, server, location, location if*
 
-    phase: *output filter*
+    phase: *output-header-filter*
 
     By default, this module caches all the response headers except the
     following ones:
@@ -436,7 +471,7 @@ Directives
 
     context: *http, server, location, location if*
 
-    phase: *output filter*
+    phase: *output-header-filter*
 
     By default, this module caches all the response headers except the
     following ones:
@@ -479,7 +514,7 @@ Directives
 
     context: *http, server, location*
 
-    phase: *output filter*
+    phase: *post-access, output-header-filter*
 
     This directive specifies HTTP request methods that are considered by
     either srcache_fetch or srcache_store. HTTP request methods not listed
@@ -498,7 +533,7 @@ Directives
 
     context: *http, server, location, location if*
 
-    phase: *output filter*
+    phase: *output-header-filter*
 
     When this directive is turned "off" (which is the default), non-empty
     "Content-Encoding" response header will cause srcache_store skip storing
@@ -526,6 +561,8 @@ Directives
 
     context: *http, server, location*
 
+    phase: *post-access, output-header-filter*
+
     When this directive is turned "on", the request headers "Cache-Control"
     and "Pragma" will be honored by this module in the following ways:
 
@@ -549,6 +586,8 @@ Directives
     default: *srcache_response_cache_control on*
 
     context: *http, server, location*
+
+    phase: *output-header-filter*
 
     When this directive is turned "on", the response headers "Cache-Control"
     and "Expires" will be honored by this module in the following ways:
@@ -577,7 +616,7 @@ Directives
 
     context: *http, server, location*
 
-    phase: *output filter*
+    phase: *output-header-filter*
 
     Turning this directive on will force responses with the header
     "Cache-Control: no-store" to be stored into the cache when
@@ -593,7 +632,7 @@ Directives
 
     context: *http, server, location*
 
-    phase: *output filter*
+    phase: *output-header-filter*
 
     Turning this directive on will force responses with the header
     "Cache-Control: no-cache" to be stored into the cache when
@@ -609,7 +648,7 @@ Directives
 
     context: *http, server, location*
 
-    phase: *output filter*
+    phase: *output-header-filter*
 
     Turning this directive on will force responses with the header
     "Cache-Control: private" to be stored into the cache when
@@ -625,7 +664,7 @@ Directives
 
     context: *http, server, location, location if*
 
-    phase: *output filter*
+    phase: *output-header-filter*
 
     This directive controls the default expiration time period that is
     allowed for the $srcache_expire variable value when neither
@@ -650,7 +689,7 @@ Directives
 
     context: *http, server, location, location if*
 
-    phase: *output filter*
+    phase: *output-header-filter*
 
     This directive controls the maximal expiration time period that is
     allowed for the $srcache_expire variable value. This setting takes
@@ -713,6 +752,34 @@ Caveats
         disable backend gzip compression:
 
         proxy_set_header  Accept-Encoding  "";
+
+    *   Do *not* use [[HttpRewriteModule]]'s if directive in the same
+        location as this module's, because "if is evil". Instead, use
+        [[HttpMapModule]] or [[HttpLuaModule]] combined with this module's
+        srcache_store_skip and/or srcache_fetch_skip directives. For
+        example:
+
+        map $request_method $skip_fetch {
+            default     0;
+            POST        1;
+            PUT         1;
+        }
+
+        server {
+            listen 8080;
+
+            location /api/ {
+                set $key "$uri?$args";
+
+                srcache_fetch GET /memc $key;
+                srcache_store PUT /memc $key;
+
+                srcache_methods GET PUT POST;
+                srcache_fetch_skip $skip_fetch;
+
+                # proxy_pass/drizzle_pass/content_by_lua/echo/...
+            }
+        }
 
 Installation
     It's recommended to install this module as well as the Nginx core and

@@ -13,7 +13,7 @@ This module is production ready.
 Version
 =======
 
-This document describes srcache-nginx-module [v0.13rc2](https://github.com/agentzh/srcache-nginx-module/tags) released on 15 October 2011.
+This document describes srcache-nginx-module [v0.13rc6](https://github.com/agentzh/srcache-nginx-module/tags) released on 16 March 2012.
 
 Synopsis
 ========
@@ -72,6 +72,30 @@ Synopsis
     }
 
 
+
+    map $request_method $skip_fetch {
+        default     0;
+        POST        1;
+        PUT         1;
+    }
+
+    server {
+        listen 8080;
+
+        location /api/ {
+            set $key "$uri?$args";
+
+            srcache_fetch GET /memc $key;
+            srcache_store PUT /memc $key;
+
+            srcache_methods GET PUT POST;
+            srcache_fetch_skip $skip_fetch;
+
+            # proxy_pass/drizzle_pass/content_by_lua/echo/...
+        }
+    }
+
+
 Description
 ===========
 
@@ -84,7 +108,7 @@ For main requests, the [srcache_fetch](http://wiki.nginx.org/HttpSRCacheModule#s
 Subrequest caching
 ------------------
 
-For subrequests, we explicitly disallow the use of this module because it's too difficult to get right. There used to be an implementation but it was buggy and I finally gave up fixing it and abandoned it.
+For *subrequests*, we explicitly **disallow** the use of this module because it's too difficult to get right. There used to be an implementation but it was buggy and I finally gave up fixing it and abandoned it.
 
 However, if you're using [HttpLuaModule](http://wiki.nginx.org/HttpLuaModule), it's easy to do subrequest caching in Lua all by yourself. That is, first issue a subrequest to an [HttpMemcModule](http://wiki.nginx.org/HttpMemcModule) location to do an explicit cache lookup, if cache hit, just use the cached data returned; otherwise, fall back to the true backend, and finally do a cache insertion to feed the data into the cache.
 
@@ -174,7 +198,7 @@ srcache_fetch
 
 **context:** *http, server, location, location if*
 
-**phase:** *post access*
+**phase:** *post-access*
 
 This directive registers an access phase handler that will issue an Nginx subrequest to lookup the cache.
 
@@ -192,7 +216,7 @@ srcache_fetch_skip
 
 **context:** *http, server, location, location if*
 
-**phase:** *post access*
+**phase:** *post-access*
 
 The `<flag>` argument supports nginx variables. When this argument's value is not empty *and* not equal to `0`, then the fetching process will be unconditionally skipped.
 
@@ -219,6 +243,17 @@ For example, to skip caching requests which have a cookie named `foo` with the v
 
 where [HttpLuaModule](http://wiki.nginx.org/HttpLuaModule) is used to calculate the value of the `$skip` variable at the (earlier) rewrite phase. Similarly, the `$key` variable can be computed by Lua using the [set_by_lua](http://wiki.nginx.org/HttpLuaModule#set_by_lua) or [rewrite_by_lua](http://wiki.nginx.org/HttpLuaModule#rewrite_by_lua) directive too.
 
+The standard [map](http://wiki.nginx.org/HttpMapModule#map) directive can also be used to compute the value of the `$skip` variable used in the sample above:
+
+
+    map $cookie_foo $skip {
+        default     0;
+        bar         1;
+    }
+
+
+but your [map](http://wiki.nginx.org/HttpMapModule#map) statement should be put into the `http` config block in your `nginx.conf` file though.
+
 srcache_store
 -------------
 **syntax:** *srcache_store &lt;method&gt; &lt;uri&gt; &lt;args&gt;?*
@@ -227,7 +262,7 @@ srcache_store
 
 **context:** *http, server, location, location if*
 
-**phase:** *output filter*
+**phase:** *output-filter*
 
 This directive registers an output filter handler that will issue an Nginx subrequest to save the response of the current main request into a cache backend. The status code of the subrequest will be ignored.
 
@@ -257,6 +292,8 @@ srcache_store_max_size
 
 **context:** *http, server, location, location if*
 
+**phase:** *output-header-filter*
+
 When the response body length is exceeding this size, this module will not try to store the response body into the cache using the subrequest template that is specified in [srcache_store](http://wiki.nginx.org/HttpSRCacheModule#srcache_store).
 
 This is particular useful when using cache storage backend that does have a hard upper limit on the input data. For example, for Memcached server, the limit is usually `1 MB`.
@@ -271,7 +308,7 @@ srcache_store_skip
 
 **context:** *http, server, location, location if*
 
-**phase:** *output filter*
+**phase:** *output-header-filter*
 
 The `<flag>` argument supports Nginx variables. When this argument's value is not empty *and* not equal to `0`, then the storing process will be unconditionally skipped.
 
@@ -295,7 +332,7 @@ srcache_store_statuses
 
 **context:** *http, server, location, location if*
 
-**phase:** *output filter*
+**phase:** *output-header-filter*
 
 This directive controls what responses to store to the cache according to their status code.
 
@@ -319,7 +356,7 @@ srcache_header_buffer_size
 
 **context:** *http, server, location, location if*
 
-**phase:** *output filter*
+**phase:** *output-header-filter*
 
 This directive controles the header buffer when serializing response headers for [srcache_store](http://wiki.nginx.org/HttpSRCacheModule#srcache_store). The default size is the page size, usually `4k` or `8k` depending on specific platforms.
 
@@ -335,7 +372,7 @@ srcache_store_hide_header
 
 **context:** *http, server, location, location if*
 
-**phase:** *output filter*
+**phase:** *output-header-filter*
 
 By default, this module caches all the response headers except the following ones:
 
@@ -370,7 +407,7 @@ srcache_store_pass_header
 
 **context:** *http, server, location, location if*
 
-**phase:** *output filter*
+**phase:** *output-header-filter*
 
 By default, this module caches all the response headers except the following ones:
 
@@ -405,7 +442,7 @@ srcache_methods
 
 **context:** *http, server, location*
 
-**phase:** *output filter*
+**phase:** *post-access, output-header-filter*
 
 This directive specifies HTTP request methods that are considered by either [srcache_fetch](http://wiki.nginx.org/HttpSRCacheModule#srcache_fetch) or [srcache_store](http://wiki.nginx.org/HttpSRCacheModule#srcache_store). HTTP request methods not listed will be skipped completely from the cache.
 
@@ -421,7 +458,7 @@ srcache_ignore_content_encoding
 
 **context:** *http, server, location, location if*
 
-**phase:** *output filter*
+**phase:** *output-header-filter*
 
 When this directive is turned `off` (which is the default), non-empty `Content-Encoding` response header will cause [srcache_store](http://wiki.nginx.org/HttpSRCacheModule#srcache_store) skip storing the whole response into the cache and issue a warning into nginx's `error.log` file like this:
 
@@ -448,6 +485,8 @@ srcache_request_cache_control
 
 **context:** *http, server, location*
 
+**phase:** *post-access, output-header-filter*
+
 When this directive is turned `on`, the request headers `Cache-Control` and `Pragma` will be honored by this module in the following ways:
 
 1. [srcache_fetch](http://wiki.nginx.org/HttpSRCacheModule#srcache_fetch), i.e., the cache lookup operation, will be skipped when request headers `Cache-Control: no-cache` and/or `Pragma: no-cache` are present.
@@ -466,6 +505,8 @@ srcache_response_cache_control
 **default:** *srcache_response_cache_control on*
 
 **context:** *http, server, location*
+
+**phase:** *output-header-filter*
 
 When this directive is turned `on`, the response headers `Cache-Control` and `Expires` will be honored by this module in the following ways:
 
@@ -489,7 +530,7 @@ srcache_store_no_store
 
 **context:** *http, server, location*
 
-**phase:** *output filter*
+**phase:** *output-header-filter*
 
 Turning this directive on will force responses with the header `Cache-Control: no-store` to be stored into the cache when [srcache_response_cache_control](http://wiki.nginx.org/HttpSRCacheModule#srcache_response_cache_control) is turned `on` *and* other conditions are met. Default to `off`.
 
@@ -503,7 +544,7 @@ srcache_store_no_cache
 
 **context:** *http, server, location*
 
-**phase:** *output filter*
+**phase:** *output-header-filter*
 
 Turning this directive on will force responses with the header `Cache-Control: no-cache` to be stored into the cache when [srcache_response_cache_control](http://wiki.nginx.org/HttpSRCacheModule#srcache_response_cache_control) is turned `on` *and* other conditions are met. Default to `off`.
 
@@ -517,7 +558,7 @@ srcache_store_private
 
 **context:** *http, server, location*
 
-**phase:** *output filter*
+**phase:** *output-header-filter*
 
 Turning this directive on will force responses with the header `Cache-Control: private` to be stored into the cache when [srcache_response_cache_control](http://wiki.nginx.org/HttpSRCacheModule#srcache_response_cache_control) is turned `on` *and* other conditions are met. Default to `off`.
 
@@ -531,7 +572,7 @@ srcache_default_expire
 
 **context:** *http, server, location, location if*
 
-**phase:** *output filter*
+**phase:** *output-header-filter*
 
 This directive controls the default expiration time period that is allowed for the [$srcache_expire](http://wiki.nginx.org/HttpSRCacheModule#.24srcache_expire) variable value when neither `Cache-Control: max-age=N` nor `Expires` are specified in the response headers.
 
@@ -553,7 +594,7 @@ srcache_max_expire
 
 **context:** *http, server, location, location if*
 
-**phase:** *output filter*
+**phase:** *output-header-filter*
 
 This directive controls the maximal expiration time period that is allowed for the [$srcache_expire](http://wiki.nginx.org/HttpSRCacheModule#.24srcache_expire) variable value. This setting takes priority over other calculating methods.
 
@@ -600,6 +641,30 @@ Caveats
 * It's recommended to disable your backend server's gzip compression and use nginx's [HttpGzipModule](http://wiki.nginx.org/HttpGzipModule) to do the job. In case of [HttpProxyModule](http://wiki.nginx.org/HttpProxyModule), you can use the following configure setting to disable backend gzip compression:
 
     proxy_set_header  Accept-Encoding  "";
+
+* Do *not* use [HttpRewriteModule](http://wiki.nginx.org/HttpRewriteModule)'s [if](http://wiki.nginx.org/HttpRewriteModule#if) directive in the same location as this module's, because "[if](http://wiki.nginx.org/HttpRewriteModule#if) is evil". Instead, use [HttpMapModule](http://wiki.nginx.org/HttpMapModule) or [HttpLuaModule](http://wiki.nginx.org/HttpLuaModule) combined with this module's [srcache_store_skip](http://wiki.nginx.org/HttpSRCacheModule#srcache_store_skip) and/or [srcache_fetch_skip](http://wiki.nginx.org/HttpSRCacheModule#srcache_fetch_skip) directives. For example:
+
+    map $request_method $skip_fetch {
+        default     0;
+        POST        1;
+        PUT         1;
+    }
+ 
+    server {
+        listen 8080;
+ 
+        location /api/ {
+            set $key "$uri?$args";
+ 
+            srcache_fetch GET /memc $key;
+            srcache_store PUT /memc $key;
+ 
+            srcache_methods GET PUT POST;
+            srcache_fetch_skip $skip_fetch;
+ 
+            # proxy_pass/drizzle_pass/content_by_lua/echo/...
+        }
+    }
 
 
 Installation

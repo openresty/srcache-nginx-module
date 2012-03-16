@@ -10,7 +10,7 @@ This module is production ready.
 
 = Version =
 
-This document describes srcache-nginx-module [https://github.com/agentzh/srcache-nginx-module/tags v0.13rc2] released on 15 October 2011.
+This document describes srcache-nginx-module [https://github.com/agentzh/srcache-nginx-module/tags v0.13rc6] released on 16 March 2012.
 
 = Synopsis =
 
@@ -68,6 +68,30 @@ This document describes srcache-nginx-module [https://github.com/agentzh/srcache
     }
 </geshi>
 
+<geshi lang="nginx">
+    map $request_method $skip_fetch {
+        default     0;
+        POST        1;
+        PUT         1;
+    }
+
+    server {
+        listen 8080;
+
+        location /api/ {
+            set $key "$uri?$args";
+
+            srcache_fetch GET /memc $key;
+            srcache_store PUT /memc $key;
+
+            srcache_methods GET PUT POST;
+            srcache_fetch_skip $skip_fetch;
+
+            # proxy_pass/drizzle_pass/content_by_lua/echo/...
+        }
+    }
+</geshi>
+
 = Description =
 
 This module provides a transparent caching layer for arbitrary nginx locations (like those use an upstream or even serve static disk files). The caching behavior is mostly compatible with [http://www.ietf.org/rfc/rfc2616.txt RFC 2616].
@@ -78,7 +102,7 @@ For main requests, the [[#srcache_fetch|srcache_fetch]] directive works at the e
 
 == Subrequest caching ==
 
-For subrequests, we explicitly disallow the use of this module because it's too difficult to get right. There used to be an implementation but it was buggy and I finally gave up fixing it and abandoned it.
+For ''subrequests'', we explicitly '''disallow''' the use of this module because it's too difficult to get right. There used to be an implementation but it was buggy and I finally gave up fixing it and abandoned it.
 
 However, if you're using [[HttpLuaModule]], it's easy to do subrequest caching in Lua all by yourself. That is, first issue a subrequest to an [[HttpMemcModule]] location to do an explicit cache lookup, if cache hit, just use the cached data returned; otherwise, fall back to the true backend, and finally do a cache insertion to feed the data into the cache.
 
@@ -165,7 +189,7 @@ where we define a connection pool which holds up to 512 keep-alive connections f
 
 '''context:''' ''http, server, location, location if''
 
-'''phase:''' ''post access''
+'''phase:''' ''post-access''
 
 This directive registers an access phase handler that will issue an Nginx subrequest to lookup the cache.
 
@@ -182,7 +206,7 @@ You can use the [[#srcache_fetch_skip|srcache_fetch_skip]] directive to disable 
 
 '''context:''' ''http, server, location, location if''
 
-'''phase:''' ''post access''
+'''phase:''' ''post-access''
 
 The <code><flag></code> argument supports nginx variables. When this argument's value is not empty ''and'' not equal to <code>0</code>, then the fetching process will be unconditionally skipped.
 
@@ -209,6 +233,17 @@ For example, to skip caching requests which have a cookie named <code>foo</code>
 </geshi>
 where [[HttpLuaModule]] is used to calculate the value of the <code>$skip</code> variable at the (earlier) rewrite phase. Similarly, the <code>$key</code> variable can be computed by Lua using the [[HttpLuaModule#set_by_lua|set_by_lua]] or [[HttpLuaModule#rewrite_by_lua|rewrite_by_lua]] directive too.
 
+The standard [[HttpMapModule#map|map]] directive can also be used to compute the value of the <code>$skip</code> variable used in the sample above:
+
+<geshi lang="nginx">
+    map $cookie_foo $skip {
+        default     0;
+        bar         1;
+    }
+</geshi>
+
+but your [[HttpMapModule#map|map]] statement should be put into the <code>http</code> config block in your <code>nginx.conf</code> file though.
+
 == srcache_store ==
 '''syntax:''' ''srcache_store <method> <uri> <args>?''
 
@@ -216,7 +251,7 @@ where [[HttpLuaModule]] is used to calculate the value of the <code>$skip</code>
 
 '''context:''' ''http, server, location, location if''
 
-'''phase:''' ''output filter''
+'''phase:''' ''output-filter''
 
 This directive registers an output filter handler that will issue an Nginx subrequest to save the response of the current main request into a cache backend. The status code of the subrequest will be ignored.
 
@@ -245,6 +280,8 @@ This directive works in an output filter.
 
 '''context:''' ''http, server, location, location if''
 
+'''phase:''' ''output-header-filter''
+
 When the response body length is exceeding this size, this module will not try to store the response body into the cache using the subrequest template that is specified in [[#srcache_store|srcache_store]].
 
 This is particular useful when using cache storage backend that does have a hard upper limit on the input data. For example, for Memcached server, the limit is usually <code>1 MB</code>.
@@ -258,7 +295,7 @@ When <code>0</code> is specified (the default value), there's no limit check at 
 
 '''context:''' ''http, server, location, location if''
 
-'''phase:''' ''output filter''
+'''phase:''' ''output-header-filter''
 
 The <code><flag></code> argument supports Nginx variables. When this argument's value is not empty ''and'' not equal to <code>0</code>, then the storing process will be unconditionally skipped.
 
@@ -281,7 +318,7 @@ Here's an example using Lua to set $nocache to avoid storing URIs that contain t
 
 '''context:''' ''http, server, location, location if''
 
-'''phase:''' ''output filter''
+'''phase:''' ''output-header-filter''
 
 This directive controls what responses to store to the cache according to their status code.
 
@@ -304,7 +341,7 @@ This directive was first introduced in the <code>v0.13rc2</code> release.
 
 '''context:''' ''http, server, location, location if''
 
-'''phase:''' ''output filter''
+'''phase:''' ''output-header-filter''
 
 This directive controles the header buffer when serializing response headers for [[#srcache_store|srcache_store]]. The default size is the page size, usually <code>4k</code> or <code>8k</code> depending on specific platforms.
 
@@ -319,7 +356,7 @@ This directive was first introduced in the <code>v0.12rc7</code> release.
 
 '''context:''' ''http, server, location, location if''
 
-'''phase:''' ''output filter''
+'''phase:''' ''output-header-filter''
 
 By default, this module caches all the response headers except the following ones:
 
@@ -353,7 +390,7 @@ See also [[#srcache_store_pass_header|srcache_store_pass_header]].
 
 '''context:''' ''http, server, location, location if''
 
-'''phase:''' ''output filter''
+'''phase:''' ''output-header-filter''
 
 By default, this module caches all the response headers except the following ones:
 
@@ -387,7 +424,7 @@ See also [[#srcache_store_hide_header|srcache_store_hide_header]].
 
 '''context:''' ''http, server, location''
 
-'''phase:''' ''output filter''
+'''phase:''' ''post-access, output-header-filter''
 
 This directive specifies HTTP request methods that are considered by either [[#srcache_fetch|srcache_fetch]] or [[#srcache_store|srcache_store]]. HTTP request methods not listed will be skipped completely from the cache.
 
@@ -402,7 +439,7 @@ This directive was first introduced in the <code>v0.12rc7</code> release.
 
 '''context:''' ''http, server, location, location if''
 
-'''phase:''' ''output filter''
+'''phase:''' ''output-header-filter''
 
 When this directive is turned <code>off</code> (which is the default), non-empty <code>Content-Encoding</code> response header will cause [[#srcache_store|srcache_store]] skip storing the whole response into the cache and issue a warning into nginx's <code>error.log</code> file like this:
 
@@ -428,6 +465,8 @@ This directive was first introduced in the <code>v0.12rc7</code> release.
 
 '''context:''' ''http, server, location''
 
+'''phase:''' ''post-access, output-header-filter''
+
 When this directive is turned <code>on</code>, the request headers <code>Cache-Control</code> and <code>Pragma</code> will be honored by this module in the following ways:
 
 # [[#srcache_fetch|srcache_fetch]], i.e., the cache lookup operation, will be skipped when request headers <code>Cache-Control: no-cache</code> and/or <code>Pragma: no-cache</code> are present.
@@ -445,6 +484,8 @@ See also [[#srcache_response_cache_control|srcache_response_cache_control]].
 '''default:''' ''srcache_response_cache_control on''
 
 '''context:''' ''http, server, location''
+
+'''phase:''' ''output-header-filter''
 
 When this directive is turned <code>on</code>, the response headers <code>Cache-Control</code> and <code>Expires</code> will be honored by this module in the following ways:
 
@@ -467,7 +508,7 @@ See also [[#srcache_request_cache_control|srcache_request_cache_control]].
 
 '''context:''' ''http, server, location''
 
-'''phase:''' ''output filter''
+'''phase:''' ''output-header-filter''
 
 Turning this directive on will force responses with the header <code>Cache-Control: no-store</code> to be stored into the cache when [[#srcache_response_cache_control|srcache_response_cache_control]] is turned <code>on</code> ''and'' other conditions are met. Default to <code>off</code>.
 
@@ -480,7 +521,7 @@ This directive was first introduced in the <code>v0.12rc7</code> release.
 
 '''context:''' ''http, server, location''
 
-'''phase:''' ''output filter''
+'''phase:''' ''output-header-filter''
 
 Turning this directive on will force responses with the header <code>Cache-Control: no-cache</code> to be stored into the cache when [[#srcache_response_cache_control|srcache_response_cache_control]] is turned <code>on</code> ''and'' other conditions are met. Default to <code>off</code>.
 
@@ -493,7 +534,7 @@ This directive was first introduced in the <code>v0.12rc7</code> release.
 
 '''context:''' ''http, server, location''
 
-'''phase:''' ''output filter''
+'''phase:''' ''output-header-filter''
 
 Turning this directive on will force responses with the header <code>Cache-Control: private</code> to be stored into the cache when [[#srcache_response_cache_control|srcache_response_cache_control]] is turned <code>on</code> ''and'' other conditions are met. Default to <code>off</code>.
 
@@ -506,7 +547,7 @@ This directive was first introduced in the <code>v0.12rc7</code> release.
 
 '''context:''' ''http, server, location, location if''
 
-'''phase:''' ''output filter''
+'''phase:''' ''output-header-filter''
 
 This directive controls the default expiration time period that is allowed for the [[#$srcache_expire|$srcache_expire]] variable value when neither <code>Cache-Control: max-age=N</code> nor <code>Expires</code> are specified in the response headers.
 
@@ -527,7 +568,7 @@ This directive was first introduced in the <code>v0.12rc7</code> release.
 
 '''context:''' ''http, server, location, location if''
 
-'''phase:''' ''output filter''
+'''phase:''' ''output-header-filter''
 
 This directive controls the maximal expiration time period that is allowed for the [[#$srcache_expire|$srcache_expire]] variable value. This setting takes priority over other calculating methods.
 
@@ -570,6 +611,30 @@ This variable was first introduced in the <code>v0.12rc7</code> release.
 * It's recommended to disable your backend server's gzip compression and use nginx's [[HttpGzipModule]] to do the job. In case of [[HttpProxyModule]], you can use the following configure setting to disable backend gzip compression:
 <geshi lang="nginx">
     proxy_set_header  Accept-Encoding  "";
+</geshi>
+* Do ''not'' use [[HttpRewriteModule]]'s [[HttpRewriteModule#if|if]] directive in the same location as this module's, because "[[HttpRewriteModule#if|if]] is evil". Instead, use [[HttpMapModule]] or [[HttpLuaModule]] combined with this module's [[#srcache_store_skip|srcache_store_skip]] and/or [[#srcache_fetch_skip|srcache_fetch_skip]] directives. For example:
+<geshi lang="nginx">
+    map $request_method $skip_fetch {
+        default     0;
+        POST        1;
+        PUT         1;
+    }
+ 
+    server {
+        listen 8080;
+ 
+        location /api/ {
+            set $key "$uri?$args";
+ 
+            srcache_fetch GET /memc $key;
+            srcache_store PUT /memc $key;
+ 
+            srcache_methods GET PUT POST;
+            srcache_fetch_skip $skip_fetch;
+ 
+            # proxy_pass/drizzle_pass/content_by_lua/echo/...
+        }
+    }
 </geshi>
 
 = Installation =
