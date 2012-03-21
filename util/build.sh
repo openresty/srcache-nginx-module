@@ -20,7 +20,11 @@ ngx-build $force $version \
             --without-http_autoindex_module \
             --without-http_auth_basic_module \
             --without-http_userid_module \
+            --add-module=$root/../ndk-nginx-module \
+            --add-module=$root/../set-misc-nginx-module \
+          --add-module=$home/work/nginx/ngx_http_redis-0.3.5 \
           --add-module=$root/../xss-nginx-module \
+          --add-module=$root/../redis2-nginx-module \
           --add-module=$root/../eval-nginx-module \
           --add-module=$root/../echo-nginx-module \
           --add-module=$root/../headers-more-nginx-module \
@@ -30,7 +34,6 @@ ngx-build $force $version \
           --add-module=$root/../drizzle-nginx-module \
           --add-module=$root/../postgres-nginx-module \
           --add-module=$root/../memc-nginx-module \
-          --add-module=$root/../ndk-nginx-module \
           --with-select_module \
           --with-poll_module \
           --with-rtsig_module \
