@@ -219,6 +219,69 @@ Description
     where we define a connection pool which holds up to 512 keep-alive
     connections for our "moon" upstream (cluster).
 
+  Caching with Redis
+    One annoyance with Memcached backed caching is Memcached server's 1 MB
+    value size limit. So it is often desired to use some more permissive
+    backend storage services like Redis to serve as this module's backend.
+
+    Here is a working example by using Redis:
+
+        location /api {
+            default_type text/css;
+
+            set $key $uri;
+            set_escape_uri $escaped_key $key;
+
+            srcache_fetch GET /redis $key;
+            srcache_store PUT /redis2 key=$escaped_key&exptime=120;
+
+            # fastcgi_pass/proxy_pass/drizzle_pass/postgres_pass/echo/etc
+        }
+
+        location = /redis {
+            internal;
+
+            set $redis_key $args;
+            redis_pass 127.0.0.1:6379;
+        }
+
+        location = /redis2 {
+            internal;
+
+            set_unescape_uri $exptime $arg_exptime;
+            set_unescape_uri $key $arg_key;
+
+            redis2_query set $key $echo_request_body;
+            redis2_query expire $key $exptime;
+            redis2_pass 127.0.0.1:6379;
+        }
+
+    This example makes use of the $echo_request_body variable provided by
+    [[HttpEchoModule]]. Note that you need the latest version of
+    [[HttpEchoModule]], "v0.38rc2" because earlier versions may not work
+    reliably.
+
+    Also, you need both [[HttpRedisModule]] and [[HttpRedis2Module]]. The
+    former is used in the srcache_fetch subrequest and the latter is used in
+    the srcache_store subrequest.
+
+    [[HttpRedisModule]]'s latest version (as of this writing), 0.3.5, has a
+    bug that could cause problems. A patch is provided here:
+
+       https://groups.google.com/group/openresty/browse_thread/thread/b5ddf1b24d3c9677
+
+    Finally, the Nginx core also has a bug that could prevent
+    [[HttpRedis2Module]]'s pipelining support from working properly in
+    certain extreme conditions. And the following patch fixes this:
+
+       http://mailman.nginx.org/pipermail/nginx-devel/2012-March/002040.html
+
+    Note that, however, if you are using the [ngx_openresty
+    (<http://openresty.org/>)] 1.0.11.27 bundle or later, then you only need
+    to prepare [[HttpRedisModule]] and the patch mentioned above, because
+    other patches and components are already in the bundle properly except
+    [[HttpRedisModule]].
+
 Directives
   srcache_fetch
     syntax: *srcache_fetch <method> <uri> <args>?*
