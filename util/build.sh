@@ -8,8 +8,8 @@ home=~
 force=$2
 
 ngx-build $force $version \
-            --with-cc-opt="-O3" \
-            --with-ld-opt="-Wl,-rpath,/opt/postgres/lib:/opt/drizzle/lib:/usr/local/lib:/home/lz/lib:/opt/luajit/lib" \
+            --with-cc-opt="-O0" \
+            --with-ld-opt="-Wl,-rpath,/usr/local/openresty-debug/luajit/lib:/opt/postgres/lib:/opt/drizzle/lib:/usr/local/lib:/home/lz/lib" \
             --without-mail_pop3_module \
             --without-mail_imap_module \
             --without-mail_smtp_module \
