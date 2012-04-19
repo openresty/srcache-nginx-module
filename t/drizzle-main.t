@@ -5,7 +5,7 @@ use Test::Nginx::Socket;
 
 #repeat_each(100);
 
-plan tests => repeat_each() * 3 * blocks();
+plan tests => repeat_each() * 4 * blocks();
 
 $ENV{TEST_NGINX_MEMCACHED_PORT} ||= 11211;
 $ENV{TEST_NGINX_MYSQL_PORT}     ||= 3306;
@@ -27,6 +27,8 @@ Content-Type: text/plain
 --- request
 GET /flush
 --- response_body eval: "OK\r\n"
+--- no_error_log
+[error]
 
 
 
@@ -62,6 +64,8 @@ GET /cats
 Content-Type: application/json
 --- response_body chomp
 [{"id":2,"name":null},{"id":3,"name":"bob"}]
+--- no_error_log
+[error]
 
 
 
@@ -97,4 +101,6 @@ GET /cats
 Content-Type: application/json
 --- response_body chomp
 [{"id":2,"name":null},{"id":3,"name":"bob"}]
+--- no_error_log
+[error]
 
