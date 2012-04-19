@@ -332,7 +332,7 @@ hello, world
 --- response_body eval
 "HTTP/1.1 200 OK\r
 Content-Type: text/css\r
-Last-Modified: Thu, 23 Dec 2010 19:10:03 GMT\r
+Last-Modified: Fri, 24 Dec 2010 03:10:03 GMT\r
 X-SRCache-Allow-Ranges: 1\r
 \r
 hello, world
@@ -357,7 +357,7 @@ hello, world
     GET /foo.txt
 --- response_headers
 Accept-Ranges: bytes
-Last-Modified: Thu, 23 Dec 2010 19:10:03 GMT
+Last-Modified: Fri, 24 Dec 2010 03:10:03 GMT
 Content-Length: 13
 --- response_body
 hello, world

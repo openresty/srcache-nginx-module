@@ -55,7 +55,7 @@ GET /foo
 --- response_headers
 Content-Type: text/css
 Content-Length: 6
-Last-Modified: Thu, 03 Mar 2011 21:21:59 GMT
+Last-Modified: Fri, 04 Mar 2011 05:21:59 GMT
 --- response_body
 hello
 
@@ -83,7 +83,7 @@ GET /foo
 --- response_headers
 Content-Type: text/css
 Content-Length: 6
-Last-Modified: Thu, 03 Mar 2011 21:21:59 GMT
+Last-Modified: Fri, 04 Mar 2011 05:21:59 GMT
 --- response_body
 hello
 
@@ -129,7 +129,7 @@ GET /foo
 --- response_headers
 Content-Type: text/css
 Content-Length: 6
-Last-Modified: Thu, 03 Mar 2011 21:21:59 GMT
+Last-Modified: Fri, 04 Mar 2011 05:21:59 GMT
 --- response_body
 hello
 
