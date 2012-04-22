@@ -13,6 +13,7 @@ $ENV{TEST_NGINX_REDIS_PORT} ||= 6379;
 #no_long_string();
 no_shuffle();
 
+log_level('warn');
 run_tests();
 
 __DATA__
