@@ -281,7 +281,7 @@ ngx_http_srcache_adjust_subrequest(ngx_http_request_t *sr,
         sr->request_body = body;
 
         rc = ngx_http_srcache_set_content_length_header(sr,
-                body->buf ? ngx_buf_size(body->buf) : 0);
+                    parsed_sr->content_length_n);
 
         if (rc != NGX_OK) {
             return NGX_HTTP_INTERNAL_SERVER_ERROR;

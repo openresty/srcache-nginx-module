@@ -239,3 +239,32 @@ Content-Length:
 --- response_body
 hello
 
+
+
+=== TEST 10: multi-buffer response resulted in incorrect request length header
+--- config
+    location /foo {
+        default_type text/css;
+        srcache_store POST /store;
+
+        echo hello;
+        echo world;
+    }
+
+    location /store {
+        content_by_lua '
+            ngx.log(ngx.WARN, "srcache_store: request Content-Length: ", ngx.var.http_content_length)
+            -- local body = ngx.req.get_body_data()
+            -- ngx.log(ngx.WARN, "srcache_store: request body len: ", #body)
+        ';
+    }
+--- request
+GET /foo
+--- response_headers
+!Content-Length
+--- response_body
+hello
+world
+--- error_log
+srcache_store: request Content-Length: 55
+
