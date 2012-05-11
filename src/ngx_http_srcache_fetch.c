@@ -152,25 +152,31 @@ ngx_http_srcache_access_handler(ngx_http_request_t *r)
 
                 rc = ngx_http_srcache_fetch_header_filter(r);
 
+                dd("srcache fetch header returned %d", (int) rc);
+
                 if (rc == NGX_ERROR || rc > NGX_OK || r->header_only) {
                     return rc;
                 }
 
-                rc = ngx_http_srcache_next_body_filter(r, ctx->body_from_cache);
+                if (!r->filter_finalize) {
+                    rc = ngx_http_srcache_next_body_filter(r,
+                            ctx->body_from_cache);
 
-                if (rc == NGX_ERROR) {
-                    r->connection->error = 1;
-                    return NGX_ERROR;
-                }
+                    if (rc == NGX_ERROR) {
+                        r->connection->error = 1;
+                        return NGX_ERROR;
+                    }
 
-                if (rc > NGX_OK) {
-                    return rc;
+                    if (rc > NGX_OK) {
+                        return rc;
+                    }
                 }
 
                 dd("sent body from cache: %d", (int) rc);
                 dd("finalize from here...");
 
-                ngx_http_finalize_request(r, NGX_OK);
+                ngx_http_finalize_request(r, rc);
+
                 /* dd("r->main->count (post): %d", (int) r->main->count); */
                 return NGX_DONE;
             }
