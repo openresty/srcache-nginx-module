@@ -137,7 +137,7 @@ ngx_http_srcache_access_handler(ngx_http_request_t *r)
 
             dd("sending header");
 
-            if (ctx->body_from_cache && !(r->method & NGX_HTTP_HEAD)) {
+            if (ctx->body_from_cache) {
                 len = 0;
 
                 for (cl = ctx->body_from_cache; cl->next; cl = cl->next) {
@@ -168,43 +168,14 @@ ngx_http_srcache_access_handler(ngx_http_request_t *r)
                 }
 
                 dd("sent body from cache: %d", (int) rc);
+                dd("finalize from here...");
 
-            } else {
-                r->headers_out.content_length_n = 0;
-
-                rc = ngx_http_srcache_fetch_header_filter(r);
-
-                if (rc == NGX_ERROR || rc > NGX_OK || r->header_only) {
-                    return rc;
-                }
-
-                dd("sent header from cache: %d", (int) rc);
-
-                dd("send last buf for the main request");
-
-                cl = ngx_alloc_chain_link(r->pool);
-                cl->buf = ngx_calloc_buf(r->pool);
-                cl->buf->last_buf = 1;
-                cl->next = NULL;
-
-                rc = ngx_http_srcache_next_body_filter(r, cl);
-
-                if (rc == NGX_ERROR) {
-                    r->connection->error = 1;
-                    return NGX_ERROR;
-                }
-
-                if (rc > NGX_OK) {
-                    return rc;
-                }
-
-                dd("sent last buf from cache: %d", (int) rc);
+                ngx_http_finalize_request(r, NGX_OK);
+                /* dd("r->main->count (post): %d", (int) r->main->count); */
+                return NGX_DONE;
             }
 
-            dd("finalize from here...");
-            ngx_http_finalize_request(r, NGX_OK);
-            /* dd("r->main->count (post): %d", (int) r->main->count); */
-            return NGX_DONE;
+            return NGX_DECLINED;
         }
 
     } else {

@@ -192,7 +192,7 @@ hello
 HEAD /foo
 --- response_headers
 Content-Type: text/css
-Content-Length: 0
+Content-Length: 6
 --- response_body
 --- no_error_log
 [error]
