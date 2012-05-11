@@ -194,6 +194,7 @@ static ngx_int_t
 ngx_http_srcache_process_last_modified(ngx_http_request_t *r,
     ngx_table_elt_t *h, ngx_uint_t offset)
 {
+#if 1
     ngx_table_elt_t  *ho;
 
     ho = ngx_list_push(&r->headers_out.headers);
@@ -204,6 +205,13 @@ ngx_http_srcache_process_last_modified(ngx_http_request_t *r,
     *ho = *h;
 
     r->headers_out.last_modified = ho;
+#endif
+
+    r->headers_out.last_modified_time = ngx_http_parse_time(h->value.data,
+                                                            h->value.len);
+
+    dd("setting last-modified-time: %d",
+         (int) r->headers_out.last_modified_time);
 
     return NGX_OK;
 }

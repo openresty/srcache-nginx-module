@@ -11,6 +11,12 @@
 static ngx_int_t ngx_http_srcache_fetch_subrequest(ngx_http_request_t *r,
         ngx_http_srcache_loc_conf_t *conf, ngx_http_srcache_ctx_t *ctx);
 
+static ngx_int_t ngx_http_srcache_fetch_header_filter(ngx_http_request_t *r);
+
+static ngx_int_t ngx_http_srcache_test_not_modified(ngx_http_request_t *r);
+
+static ngx_int_t ngx_http_srcache_test_precondition(ngx_http_request_t *r);
+
 
 ngx_int_t
 ngx_http_srcache_access_handler(ngx_http_request_t *r)
@@ -144,15 +150,20 @@ ngx_http_srcache_access_handler(ngx_http_request_t *r)
 
                 r->headers_out.content_length_n = len;
 
-                rc = ngx_http_srcache_next_header_filter(r);
+                rc = ngx_http_srcache_fetch_header_filter(r);
 
-                if (rc == NGX_ERROR || rc >= NGX_HTTP_SPECIAL_RESPONSE) {
+                if (rc == NGX_ERROR || rc > NGX_OK || r->header_only) {
                     return rc;
                 }
 
                 rc = ngx_http_srcache_next_body_filter(r, ctx->body_from_cache);
 
-                if (rc == NGX_ERROR || rc >= NGX_HTTP_SPECIAL_RESPONSE) {
+                if (rc == NGX_ERROR) {
+                    r->connection->error = 1;
+                    return NGX_ERROR;
+                }
+
+                if (rc > NGX_OK) {
                     return rc;
                 }
 
@@ -161,9 +172,9 @@ ngx_http_srcache_access_handler(ngx_http_request_t *r)
             } else {
                 r->headers_out.content_length_n = 0;
 
-                rc = ngx_http_srcache_next_header_filter(r);
+                rc = ngx_http_srcache_fetch_header_filter(r);
 
-                if (rc == NGX_ERROR || rc >= NGX_HTTP_SPECIAL_RESPONSE) {
+                if (rc == NGX_ERROR || rc > NGX_OK || r->header_only) {
                     return rc;
                 }
 
@@ -178,7 +189,12 @@ ngx_http_srcache_access_handler(ngx_http_request_t *r)
 
                 rc = ngx_http_srcache_next_body_filter(r, cl);
 
-                if (rc == NGX_ERROR || rc >= NGX_HTTP_SPECIAL_RESPONSE) {
+                if (rc == NGX_ERROR) {
+                    r->connection->error = 1;
+                    return NGX_ERROR;
+                }
+
+                if (rc > NGX_OK) {
                     return rc;
                 }
 
@@ -393,5 +409,85 @@ ngx_http_srcache_fetch_subrequest(ngx_http_request_t *r,
 }
 
 
+static ngx_int_t
+ngx_http_srcache_fetch_header_filter(ngx_http_request_t *r)
+{
+    if (r->headers_out.status != NGX_HTTP_OK
+        || r->headers_out.last_modified_time == -1)
+    {
+        return ngx_http_srcache_next_header_filter(r);
+    }
 
+    if (r->headers_in.if_unmodified_since) {
+        return ngx_http_srcache_test_precondition(r);
+    }
+
+    if (r->headers_in.if_modified_since) {
+        return ngx_http_srcache_test_not_modified(r);
+    }
+
+    return ngx_http_srcache_next_header_filter(r);
+}
+
+
+static ngx_int_t
+ngx_http_srcache_test_not_modified(ngx_http_request_t *r)
+{
+    time_t                     ims;
+    ngx_http_core_loc_conf_t  *clcf;
+
+    clcf = ngx_http_get_module_loc_conf(r, ngx_http_core_module);
+
+    if (clcf->if_modified_since == NGX_HTTP_IMS_OFF) {
+        return ngx_http_srcache_next_header_filter(r);
+    }
+
+    ims = ngx_http_parse_time(r->headers_in.if_modified_since->value.data,
+                              r->headers_in.if_modified_since->value.len);
+
+    ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                   "http ims:%d lm:%d", ims, r->headers_out.last_modified_time);
+
+    if (ims != r->headers_out.last_modified_time) {
+
+        if (clcf->if_modified_since == NGX_HTTP_IMS_EXACT
+            || ims < r->headers_out.last_modified_time)
+        {
+            return ngx_http_srcache_next_header_filter(r);
+        }
+    }
+
+    r->headers_out.status = NGX_HTTP_NOT_MODIFIED;
+    r->headers_out.status_line.len = 0;
+    r->headers_out.content_type.len = 0;
+    ngx_http_clear_content_length(r);
+    ngx_http_clear_accept_ranges(r);
+
+    if (r->headers_out.content_encoding) {
+        r->headers_out.content_encoding->hash = 0;
+        r->headers_out.content_encoding = NULL;
+    }
+
+    return ngx_http_srcache_next_header_filter(r);
+}
+
+
+static ngx_int_t
+ngx_http_srcache_test_precondition(ngx_http_request_t *r)
+{
+    time_t  iums;
+
+    iums = ngx_http_parse_time(r->headers_in.if_unmodified_since->value.data,
+                               r->headers_in.if_unmodified_since->value.len);
+
+    ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                 "http iums:%d lm:%d", iums, r->headers_out.last_modified_time);
+
+    if (iums >= r->headers_out.last_modified_time) {
+        return ngx_http_srcache_next_header_filter(r);
+    }
+
+    return ngx_http_filter_finalize_request(r, NULL,
+                                            NGX_HTTP_PRECONDITION_FAILED);
+}
 
