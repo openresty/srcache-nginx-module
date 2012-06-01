@@ -120,14 +120,7 @@ ngx_http_srcache_access_handler(ngx_http_request_t *r)
         if (ctx->request_done) {
             dd("request done");
 
-            if (
-#if defined(nginx_version) && nginx_version >= 8012
-                ngx_http_post_request(r, NULL)
-#else
-                ngx_http_post_request(r)
-#endif
-                    != NGX_OK)
-            {
+            if (ngx_http_post_request(r, NULL) != NGX_OK) {
                 return NGX_ERROR;
             }
 
