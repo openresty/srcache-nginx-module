@@ -201,6 +201,7 @@ Last-Modified: Thu, 10 May 2012 07:50:59 GMT
 
 === TEST 7: cache hit (I-U-S conditional GET, 412)
 --- config
+    server_tokens off;
     location /cats {
         srcache_fetch GET /memc $uri;
         srcache_store PUT /memc $uri;
@@ -223,7 +224,7 @@ GET /cats
 If-Unmodified-Since: Thu, 10 May 2012 07:50:58 GMT
 --- response_headers
 Content-Type: text/html
-Content-Length: 204
+Content-Length: 182
 !Last-Modified
 --- response_body_like: 412 Precondition Failed
 --- error_code: 412
