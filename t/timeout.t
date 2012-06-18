@@ -3,7 +3,7 @@
 use lib 'lib';
 use Test::Nginx::Socket;
 
-#repeat_each(2);
+repeat_each(2);
 
 plan tests => repeat_each() * 4 * blocks();
 
@@ -50,7 +50,7 @@ bad bad
 GET /foo
 --- response_headers
 Content-Type: text/css
-Content-Length: 6
+!Content-Length
 --- response_body
 hello
 

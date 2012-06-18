@@ -39,7 +39,7 @@ GET /flush
         srcache_fetch GET /memc $uri;
         srcache_store PUT /memc $uri;
 
-        echo hello;
+        content_by_lua 'ngx.say("hello")';
     }
 
     location /memc {
