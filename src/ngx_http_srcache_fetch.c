@@ -373,8 +373,6 @@ ngx_http_srcache_fetch_subrequest(ngx_http_request_t *r,
 
     ngx_http_set_ctx(sr, sr_ctx, ngx_http_srcache_filter_module);
 
-    ctx->fetch_sr = sr;
-
     return NGX_OK;
 }
 

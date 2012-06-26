@@ -85,7 +85,6 @@ struct ngx_http_srcache_ctx_s {
     size_t                           response_length;
     size_t                           response_body_length;
     void                            *store_wev_handler_ctx;
-    ngx_http_request_t              *fetch_sr;
 
     ngx_int_t                      (*process_header)(ngx_http_request_t *r,
                                         ngx_buf_t *b);
