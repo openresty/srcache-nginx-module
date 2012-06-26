@@ -47,8 +47,8 @@ ngx_http_srcache_access_handler(ngx_http_request_t *r)
 
     if (!(r->method & conf->cache_methods)) {
         ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                "srcache_fetch and srcache_store skipped due to request "
-                "method %V", &r->method_name);
+                       "srcache_fetch and srcache_store skipped due to request "
+                       "method %V", &r->method_name);
 
         return NGX_DECLINED;
     }
@@ -57,8 +57,8 @@ ngx_http_srcache_access_handler(ngx_http_request_t *r)
         && ngx_http_srcache_request_no_cache(r, &no_store) == NGX_OK)
     {
         ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                "srcache_fetch skipped due to request headers "
-                "\"Cache-Control: no-cache\" or \"Pragma: no-cache\"");
+                       "srcache_fetch skipped due to request headers "
+                       "\"Cache-Control: no-cache\" or \"Pragma: no-cache\"");
 
         if (!no_store) {
             /* register a ctx to give a chance to srcache_store to run */
@@ -74,8 +74,8 @@ ngx_http_srcache_access_handler(ngx_http_request_t *r)
 
         } else {
             ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                    "srcache_store skipped due to request header "
-                    "\"Cache-Control: no-store\"");
+                           "srcache_store skipped due to request header "
+                           "\"Cache-Control: no-store\"");
         }
 
         return NGX_DECLINED;
@@ -87,8 +87,8 @@ ngx_http_srcache_access_handler(ngx_http_request_t *r)
             && (skip.len != 1 || skip.data[0] != '0'))
     {
         ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                "srcache_fetch skipped due to the true value fed into "
-                "srcache_fetch_skip: \"%V\"", &skip);
+                       "srcache_fetch skipped due to the true value fed into "
+                       "srcache_fetch_skip: \"%V\"", &skip);
 
         /* register a ctx to give a chance to srcache_store to run */
 
@@ -189,7 +189,7 @@ ngx_http_srcache_access_handler(ngx_http_request_t *r)
 
     smcf = ngx_http_get_module_main_conf(r, ngx_http_srcache_filter_module);
 
-    if (! smcf->postponed_to_access_phase_end) {
+    if (!smcf->postponed_to_access_phase_end) {
         ngx_http_core_main_conf_t       *cmcf;
         ngx_http_phase_handler_t         tmp;
         ngx_http_phase_handler_t        *ph;
@@ -373,7 +373,6 @@ ngx_http_srcache_fetch_subrequest(ngx_http_request_t *r,
 
     ngx_http_set_ctx(sr, sr_ctx, ngx_http_srcache_filter_module);
 
-    ctx->fetch_sr = sr;
     ctx->issued_fetch_subrequest = 1;
 
     return NGX_OK;
@@ -452,7 +451,8 @@ ngx_http_srcache_test_precondition(ngx_http_request_t *r)
                                r->headers_in.if_unmodified_since->value.len);
 
     ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                 "http iums:%d lm:%d", iums, r->headers_out.last_modified_time);
+                   "http iums:%d lm:%d", iums,
+                   r->headers_out.last_modified_time);
 
     if (iums >= r->headers_out.last_modified_time) {
         return ngx_http_srcache_next_header_filter(r);
