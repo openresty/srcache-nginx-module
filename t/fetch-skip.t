@@ -5,7 +5,7 @@ use Test::Nginx::Socket;
 
 #repeat_each(2);
 
-plan tests => repeat_each() * (2 * blocks() + 10);
+plan tests => repeat_each() * (3 * blocks() + 10);
 
 $ENV{TEST_NGINX_MEMCACHED_PORT} ||= 11211;
 
@@ -20,10 +20,13 @@ __DATA__
     location /flush {
         set $memc_cmd 'flush_all';
         memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
+        add_header X-Fetch-Status $srcache_fetch_status;
     }
 --- request
 GET /flush
 --- response_body eval: "OK\r\n"
+--- response_headers
+X-Fetch-Status: BYPASS
 
 
 
@@ -36,6 +39,7 @@ GET /flush
         srcache_fetch_skip $skip;
 
         echo hello;
+        add_header X-Fetch-Status $srcache_fetch_status;
     }
 
     location /memc {
@@ -52,6 +56,8 @@ GET /flush
     GET /foo
 --- response_body
 hello
+--- response_headers
+X-Fetch-Status: MISS
 
 
 
@@ -62,11 +68,14 @@ hello
         set $memc_key key;
         set $memc_value hello;
         memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
+        add_header X-Fetch-Status $srcache_fetch_status;
     }
 --- request
     GET /memc
 --- response_body chomp
 hello
+--- response_headers
+X-Fetch-Status: BYPASS
 
 
 
@@ -75,10 +84,13 @@ hello
     location /flush {
         set $memc_cmd 'flush_all';
         memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
+        add_header X-Fetch-Status $srcache_fetch_status;
     }
 --- request
 GET /flush
 --- response_body eval: "OK\r\n"
+--- response_headers
+X-Fetch-Status: BYPASS
 
 
 
@@ -90,6 +102,7 @@ GET /flush
         srcache_fetch_skip 0;
 
         echo hello;
+        add_header X-Fetch-Status $srcache_fetch_status;
     }
 
     location /memc {
@@ -105,6 +118,8 @@ GET /flush
     GET /foo
 --- response_body
 hello
+--- response_headers
+X-Fetch-Status: MISS
 
 
 
@@ -115,11 +130,14 @@ hello
         set $memc_key key;
         set $memc_value hello;
         memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
+        add_header X-Fetch-Status $srcache_fetch_status;
     }
 --- request
     GET /memc
 --- response_body chomp
 hello
+--- response_headers
+X-Fetch-Status: BYPASS
 
 
 
@@ -128,10 +146,13 @@ hello
     location /flush {
         set $memc_cmd 'flush_all';
         memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
+        add_header X-Fetch-Status $srcache_fetch_status;
     }
 --- request
 GET /flush
 --- response_body eval: "OK\r\n"
+--- response_headers
+X-Fetch-Status: BYPASS
 
 
 
@@ -141,6 +162,7 @@ GET /flush
         default_type text/css;
         srcache_fetch GET /memc $uri;
         srcache_fetch_skip 1;
+        add_header X-Fetch-Status $srcache_fetch_status;
 
         echo hello;
     }
@@ -158,6 +180,8 @@ GET /flush
     GET /foo
 --- response_body
 hello
+--- response_headers
+X-Fetch-Status: BYPASS
 
 
 
@@ -168,11 +192,14 @@ hello
         set $memc_key key;
         set $memc_value hello;
         memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
+        add_header X-Fetch-Status $srcache_fetch_status;
     }
 --- request
     GET /memc
 --- response_body_like: 404 Not Found
 --- error_code: 404
+--- response_headers
+!X-Fetch-Status
 
 
 
@@ -181,10 +208,13 @@ hello
     location /flush {
         set $memc_cmd 'flush_all';
         memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
+        add_header X-Fetch-Status $srcache_fetch_status;
     }
 --- request
 GET /flush
 --- response_body eval: "OK\r\n"
+--- response_headers
+X-Fetch-Status: BYPASS
 
 
 
@@ -194,6 +224,7 @@ GET /flush
         default_type text/css;
         srcache_fetch GET /memc $uri;
         srcache_fetch_skip true;
+        add_header X-Fetch-Status $srcache_fetch_status;
     }
 
     location /memc {
@@ -212,6 +243,8 @@ hello
     GET /foo.txt
 --- response_body
 hello
+--- response_headers
+X-Fetch-Status: BYPASS
 
 
 
@@ -222,11 +255,14 @@ hello
         set $memc_key key;
         set $memc_value hello;
         memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
+        add_header X-Fetch-Status $srcache_fetch_status;
     }
 --- request
     GET /memc
 --- response_body_like: 404 Not Found
 --- error_code: 404
+--- response_headers
+!X-Fetch-Status
 
 
 
@@ -235,10 +271,13 @@ hello
     location /flush {
         set $memc_cmd 'flush_all';
         memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
+        add_header X-Fetch-Status $srcache_fetch_status;
     }
 --- request
 GET /flush
 --- response_body eval: "OK\r\n"
+--- response_headers
+X-Fetch-Status: BYPASS
 
 
 
@@ -248,6 +287,7 @@ GET /flush
     location /foo.txt {
         default_type text/css;
         srcache_fetch GET /memc $uri;
+        add_header X-Fetch-Status $srcache_fetch_status;
     }
 
     location /memc {
@@ -266,6 +306,8 @@ abc
     GET /foo.txt
 --- response_body
 abc
+--- response_headers
+X-Fetch-Status: BYPASS
 
 
 
@@ -276,11 +318,14 @@ abc
         set $memc_key key;
         set $memc_value hello;
         memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
+        add_header X-Fetch-Status $srcache_fetch_status;
     }
 --- request
     GET /memc
 --- response_body_like: 404 Not Found
 --- error_code: 404
+--- response_headers
+!X-Fetch-Status
 
 
 
@@ -289,10 +334,13 @@ abc
     location /flush {
         set $memc_cmd 'flush_all';
         memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
+        add_header X-Fetch-Status $srcache_fetch_status;
     }
 --- request
 GET /flush
 --- response_body eval: "OK\r\n"
+--- response_headers
+X-Fetch-Status: BYPASS
 
 
 
@@ -303,6 +351,7 @@ GET /flush
         default_type text/css;
         srcache_fetch GET /memc $uri;
         srcache_fetch_skip 0;
+        add_header X-Fetch-Status $srcache_fetch_status;
     }
 
     location /memc {
@@ -321,6 +370,8 @@ hello, world
     GET /foo.txt
 --- response_body
 hello, world
+--- response_headers
+X-Fetch-Status: MISS
 
 
 
@@ -331,11 +382,14 @@ hello, world
         set $memc_key key;
         set $memc_value hello;
         memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
+        add_header X-Fetch-Status $srcache_fetch_status;
     }
 --- request
     GET /memc
 --- response_body chomp
 hello
+--- response_headers
+X-Fetch-Status: BYPASS
 
 
 
@@ -344,10 +398,12 @@ hello
     location /flush {
         set $memc_cmd 'flush_all';
         memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
+        add_header X-Fetch-Status $srcache_fetch_status;
     }
 --- response_headers
 Content-Type: text/plain
 Content-Length: 4
+X-Fetch-Status: BYPASS
 --- request
 GET /flush
 --- response_body eval: "OK\r\n"
@@ -360,6 +416,7 @@ GET /flush
         default_type text/css;
         srcache_fetch GET /memc $uri;
         srcache_store PUT /memc $uri;
+        add_header X-Fetch-Status $srcache_fetch_status;
 
         echo hello;
     }
@@ -376,6 +433,7 @@ GET /foo
 --- response_headers
 Content-Type: text/css
 Content-Length:
+X-Fetch-Status: MISS
 --- response_body
 hello
 
@@ -387,6 +445,7 @@ hello
         default_type text/css;
         srcache_fetch GET /memc $uri;
         srcache_store PUT /memc $uri;
+        add_header X-Fetch-Status $srcache_fetch_status;
 
         echo world;
     }
@@ -403,6 +462,7 @@ GET /foo
 --- response_headers
 Content-Type: text/css
 Content-Length: 6
+X-Fetch-Status: HIT
 --- response_body
 hello
 
@@ -417,6 +477,7 @@ hello
         srcache_fetch_skip 1;
 
         echo world;
+        add_header X-Fetch-Status $srcache_fetch_status;
     }
 
     location /memc {
@@ -433,6 +494,7 @@ cache-control: No-Cache
 --- response_headers
 Content-Type: text/css
 Content-Length: 
+X-Fetch-Status: BYPASS
 --- response_body
 world
 
@@ -446,6 +508,7 @@ world
         srcache_store PUT /memc $uri;
 
         echo world;
+        add_header X-Fetch-Status $srcache_fetch_status;
     }
 
     location /memc {
@@ -460,6 +523,7 @@ GET /foo
 --- response_headers
 Content-Type: text/css
 Content-Length: 6
+X-Fetch-Status: HIT
 --- response_body
 world
 

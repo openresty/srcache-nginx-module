@@ -517,11 +517,12 @@ ngx_http_srcache_post_config(ngx_conf_t *cf)
     ngx_http_handler_pt             *h;
     ngx_http_core_main_conf_t       *cmcf;
 
+    rc = ngx_http_srcache_add_variables(cf);
+    if (rc != NGX_OK) {
+        return rc;
+    }
+
     if (ngx_http_srcache_used) {
-        rc = ngx_http_srcache_add_variables(cf);
-        if (rc != NGX_OK) {
-            return rc;
-        }
 
         dd("using ngx-srcache");
 

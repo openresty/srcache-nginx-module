@@ -7,6 +7,13 @@
 #include <nginx.h>
 
 
+enum {
+    NGX_HTTP_SRCACHE_FETCH_BYPASS = 0,
+    NGX_HTTP_SRCACHE_FETCH_MISS   = 1,
+    NGX_HTTP_SRCACHE_FETCH_HIT    = 2
+};
+
+
 extern ngx_module_t  ngx_http_srcache_filter_module;
 
 
@@ -107,6 +114,7 @@ struct ngx_http_srcache_ctx_s {
     unsigned        parsing_cached_headers:1;
     unsigned        store_response:1;
     unsigned        store_skip:1;
+    unsigned        issued_fetch_subrequest:1;
 };
 
 

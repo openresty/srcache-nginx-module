@@ -5,7 +5,7 @@ use Test::Nginx::Socket;
 
 #repeat_each(2);
 
-plan tests => repeat_each() * 4 * blocks();
+plan tests => repeat_each() * (5 * blocks());
 
 $ENV{TEST_NGINX_MEMCACHED_PORT} ||= 11211;
 
@@ -21,10 +21,12 @@ __DATA__
     location /flush {
         set $memc_cmd 'flush_all';
         memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
+        add_header X-Fetch-Status $srcache_fetch_status;
     }
 --- response_headers
 Content-Type: text/plain
 Content-Length: 4
+X-Fetch-Status: BYPASS
 --- request
 GET /flush
 --- response_body eval: "OK\r\n"
@@ -39,6 +41,7 @@ GET /flush
         srcache_store PUT /memc $uri;
 
         echo hello;
+        add_header X-Fetch-Status $srcache_fetch_status;
     }
 
     location /memc {
@@ -53,6 +56,7 @@ GET /foo
 --- response_headers
 Content-Type: text/css
 Content-Length:
+X-Fetch-Status: MISS
 --- response_body
 hello
 
@@ -66,6 +70,7 @@ hello
         srcache_store PUT /memc $uri;
 
         echo world;
+        add_header X-Fetch-Status $srcache_fetch_status;
     }
 
     location /memc {
@@ -80,6 +85,7 @@ GET /foo
 --- response_headers
 Content-Type: text/css
 Content-Length: 6
+X-Fetch-Status: HIT
 --- response_body
 hello
 
@@ -95,6 +101,7 @@ hello
         srcache_store PUT $loc $key;
 
         echo world;
+        add_header X-Fetch-Status $srcache_fetch_status;
     }
 
     location /memc {
@@ -109,6 +116,7 @@ GET /foo
 --- response_headers
 Content-Type: text/css
 Content-Length: 6
+X-Fetch-Status: HIT
 --- response_body
 hello
 
