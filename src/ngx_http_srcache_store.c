@@ -37,10 +37,10 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
 
     if (r != r->main && ctx == NULL) {
         ps = r->post_subrequest;
-        if (ps != NULL &&
-                    (ps->handler == ngx_http_srcache_fetch_post_subrequest ||
-                    ps->handler == ngx_http_srcache_store_post_subrequest) &&
-                    ps->data != NULL)
+        if (ps != NULL
+            && (ps->handler == ngx_http_srcache_fetch_post_subrequest
+                || ps->handler == ngx_http_srcache_store_post_subrequest)
+            && ps->data != NULL)
         {
             /* the subrequest ctx has been cleared by
              * ngx_http_internal_redirect, resume it from the post_subrequest
@@ -129,7 +129,8 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
     }
 #endif
 
-    if (!slcf->ignore_content_encoding && r->headers_out.content_encoding
+    if (!slcf->ignore_content_encoding
+        && r->headers_out.content_encoding
         && r->headers_out.content_encoding->value.len)
     {
         ngx_log_error(NGX_LOG_WARN, r->connection->log, 0,
@@ -208,8 +209,8 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
     if (slcf->store_max_size != 0
         && r->headers_out.content_length_n > 0
         && r->headers_out.content_length_n + 15
-               /* just an approxiation for the response header size */
-            > (off_t) slcf->store_max_size)
+           /* just an approxiation for the response header size */
+           > (off_t) slcf->store_max_size)
     {
         ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "srcache_store bypassed because of too large "
@@ -392,7 +393,7 @@ ngx_http_srcache_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
         slcf = ngx_http_get_module_loc_conf(r, ngx_http_srcache_filter_module);
 
         if (slcf->store_max_size != 0
-                && ctx->response_length > slcf->store_max_size)
+            && ctx->response_length > slcf->store_max_size)
         {
             ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                            "srcache_store bypassed because response body "
