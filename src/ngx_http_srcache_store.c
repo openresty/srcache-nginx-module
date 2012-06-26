@@ -72,8 +72,8 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
         }
 
         ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                "srcache_fetch: subrequest returned status %d",
-                r->headers_out.status);
+                       "srcache_fetch: subrequest returned status %d",
+                       r->headers_out.status);
 
         if (r->headers_out.status != NGX_HTTP_OK) {
             dd("ignoring body because status == %d",
@@ -88,7 +88,7 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
         }
 
         ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                "srcache_fetch decides to send the response in cache");
+                       "srcache_fetch decides to send the response in cache");
 
         r->filter_need_in_memory = 1;
 
@@ -104,8 +104,8 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
         ctx->ignore_body = 1;
 
         ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                "srcache_store: subrequest returned status %d",
-                r->headers_out.status);
+                       "srcache_store: subrequest returned status %d",
+                       r->headers_out.status);
 
         return NGX_OK;
     }
@@ -122,8 +122,8 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
 #if 1
     if (!(r->method & slcf->cache_methods)) {
         ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                "srcache_store skipped due to request method %V",
-                &r->method_name);
+                       "srcache_store skipped due to request method %V",
+                       &r->method_name);
 
         return ngx_http_srcache_next_header_filter(r);
     }
@@ -133,10 +133,10 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
         && r->headers_out.content_encoding->value.len)
     {
         ngx_log_error(NGX_LOG_WARN, r->connection->log, 0,
-                "srcache_store skipped due to response header "
-                "\"Content-Encoding: %V\" (maybe you forgot to disable "
-                "compression on the backend?)",
-                &r->headers_out.content_encoding->value);
+                      "srcache_store skipped due to response header "
+                      "\"Content-Encoding: %V\" (maybe you forgot to disable "
+                      "compression on the backend?)",
+                      &r->headers_out.content_encoding->value);
 
         return ngx_http_srcache_next_header_filter(r);
     }
@@ -145,7 +145,8 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
         && ngx_http_srcache_response_no_cache(r, slcf, ctx) == NGX_OK)
     {
         ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                "srcache_store skipped due to response header Cache-Control");
+                       "srcache_store skipped due to response header "
+                       "Cache-Control");
 
         return ngx_http_srcache_next_header_filter(r);
     }
@@ -156,8 +157,8 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
         && (skip.len != 1 || skip.data[0] != '0'))
     {
         ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                "srcache_store skipped due to the true value fed into "
-                "srcache_store_skip: \"%V\"", &skip);
+                       "srcache_store skipped due to the true value fed into "
+                       "srcache_store_skip: \"%V\"", &skip);
 
         ctx->store_skip = 1;
 
@@ -178,9 +179,9 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
 
             if (r->headers_out.status > (ngx_uint_t) *sp) {
                 ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                        "srcache_store bypassed because of unmatched status "
-                        "code %i with srcache_store_statuses",
-                        r->headers_out.status);
+                               "srcache_store bypassed because of unmatched "
+                               "status code %i with srcache_store_statuses",
+                               r->headers_out.status);
 
                 return ngx_http_srcache_next_header_filter(r);
             }
@@ -196,9 +197,9 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
             && r->headers_out.status != NGX_HTTP_MOVED_PERMANENTLY)
         {
             ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                    "srcache_store bypassed because of unmatched status "
-                    "code %i (only 200, 301, or 302 are accepted by default)",
-                    r->headers_out.status);
+                           "srcache_store bypassed because of unmatched status "
+                           "code %i (only 200, 301, or 302 are accepted by "
+                           "default)", r->headers_out.status);
 
             return ngx_http_srcache_next_header_filter(r);
         }
@@ -211,9 +212,9 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
             > (off_t) slcf->store_max_size)
     {
         ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                "srcache_store bypassed because of too large Content-Length "
-                "response header: %O (limit is: %z)",
-                r->headers_out.content_length_n, slcf->store_max_size);
+                       "srcache_store bypassed because of too large "
+                       "Content-Length response header: %O (limit is: %z)",
+                       r->headers_out.content_length_n, slcf->store_max_size);
 
         return ngx_http_srcache_next_header_filter(r);
     }
@@ -222,14 +223,14 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
 
     if (r != r->main) {
         ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
-                "ngx_srcache not working in subrequests (yet)");
+                      "ngx_srcache not working in subrequests (yet)");
 
         /* not allowd in subrquests */
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-            "srcache_store decides to store the response");
+                   "srcache_store decides to store the response");
 
     r->filter_need_in_memory = 1;
 
@@ -394,9 +395,9 @@ ngx_http_srcache_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
                 && ctx->response_length > slcf->store_max_size)
         {
             ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                    "srcache_store bypassed because response body exceeded "
-                    "maximum size: %z (limit is: %z)",
-                    ctx->response_length, slcf->store_max_size);
+                           "srcache_store bypassed because response body "
+                           "exceeded maximum size: %z (limit is: %z)",
+                           ctx->response_length, slcf->store_max_size);
 
             ctx->store_response = 0;
 
@@ -494,7 +495,7 @@ ngx_http_srcache_store_subrequest(ngx_http_request_t *r,
 
     } else {
         ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
-                "srcache_store: no request body for the subrequest");
+                      "srcache_store: no request body for the subrequest");
 
         return NGX_ERROR;
     }

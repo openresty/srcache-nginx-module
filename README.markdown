@@ -1,3 +1,8 @@
+<!---
+Don't edit this file manually! Instead you should generate it by using:
+    wiki2markdown.pl doc/HttpSRCacheModule.wiki
+-->
+
 Name
 ====
 
