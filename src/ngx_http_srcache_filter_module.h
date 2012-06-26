@@ -14,6 +14,12 @@ enum {
 };
 
 
+enum {
+    NGX_HTTP_SRCACHE_STORE_BYPASS = 0,
+    NGX_HTTP_SRCACHE_STORE_STORE  = 1
+};
+
+
 extern ngx_module_t  ngx_http_srcache_filter_module;
 
 

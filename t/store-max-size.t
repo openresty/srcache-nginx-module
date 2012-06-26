@@ -5,7 +5,7 @@ use Test::Nginx::Socket;
 
 #repeat_each(2);
 
-plan tests => repeat_each() * 2 * blocks();
+plan tests => repeat_each() * (2 * blocks() + 5);
 
 $ENV{TEST_NGINX_MEMCACHED_PORT} ||= 11211;
 
@@ -35,6 +35,7 @@ GET /flush
         srcache_store_max_size 49;
 
         echo hello;
+        add_header X-Store-Status $srcache_store_status;
     }
 
     location /memc {
@@ -49,6 +50,8 @@ GET /flush
     GET /foo
 --- response_body
 hello
+--- response_headers
+X-Store-Status: STORE
 
 
 
@@ -90,6 +93,7 @@ GET /flush
         srcache_store_max_size 50;
 
         echo hello;
+        add_header X-Store-Status $srcache_store_status;
     }
 
     location /memc {
@@ -104,6 +108,8 @@ GET /flush
     GET /foo
 --- response_body
 hello
+--- response_headers
+X-Store-Status: STORE
 
 
 
@@ -145,6 +151,8 @@ GET /flush
         srcache_store_max_size 48;
 
         echo hello;
+        add_header X-Store-Status $srcache_store_status;
+        log_by_lua 'ngx.log(ngx.WARN, "store status: ", ngx.var.srcache_store_status)';
     }
 
     location /memc {
@@ -159,6 +167,10 @@ GET /flush
     GET /foo
 --- response_body
 hello
+--- response_headers
+X-Store-Status: STORE
+--- error_log
+store status: BYPASS
 
 
 
@@ -199,6 +211,7 @@ GET /flush
             ngx.header.content_length = 40;
             ngx.say("hello")
         ';
+        add_header X-Store-Status $srcache_store_status;
     }
 
     location /memc {
@@ -213,6 +226,8 @@ GET /flush
     GET /foo.txt
 --- response_body
 hello
+--- response_headers
+X-Store-Status: BYPASS
 
 
 

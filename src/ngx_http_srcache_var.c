@@ -11,12 +11,20 @@ static ngx_int_t ngx_http_srcache_expire_variable(ngx_http_request_t *r,
     ngx_http_variable_value_t *v, uintptr_t data);
 static ngx_int_t ngx_http_srcache_fetch_status_variable(ngx_http_request_t *r,
     ngx_http_variable_value_t *v, uintptr_t data);
+static ngx_int_t ngx_http_srcache_store_status_variable(ngx_http_request_t *r,
+    ngx_http_variable_value_t *v, uintptr_t data);
 
 
 static ngx_str_t  ngx_http_srcache_fetch_status[] = {
     ngx_string("BYPASS"),
     ngx_string("MISS"),
     ngx_string("HIT")
+};
+
+
+static ngx_str_t  ngx_http_srcache_store_status[] = {
+    ngx_string("BYPASS"),
+    ngx_string("STORE"),
 };
 
 
@@ -28,6 +36,10 @@ static ngx_http_variable_t ngx_http_srcache_variables[] = {
 
     { ngx_string("srcache_fetch_status"), NULL,
       ngx_http_srcache_fetch_status_variable, 0,
+      NGX_HTTP_VAR_NOCACHEABLE, 0 },
+
+    { ngx_string("srcache_store_status"), NULL,
+      ngx_http_srcache_store_status_variable, 0,
       NGX_HTTP_VAR_NOCACHEABLE, 0 },
 
     { ngx_null_string, NULL, NULL, 0, 0, 0 }
@@ -108,6 +120,34 @@ ngx_http_srcache_fetch_status_variable(ngx_http_request_t *r,
 
     v->len = ngx_http_srcache_fetch_status[status].len;
     v->data = ngx_http_srcache_fetch_status[status].data;
+
+    return NGX_OK;
+}
+
+
+static ngx_int_t
+ngx_http_srcache_store_status_variable(ngx_http_request_t *r,
+    ngx_http_variable_value_t *v, uintptr_t data)
+{
+    ngx_uint_t                    status;
+    ngx_http_srcache_ctx_t       *ctx;
+
+    ctx = ngx_http_get_module_ctx(r, ngx_http_srcache_filter_module);
+
+    if (ctx && ctx->store_response) {
+        status = NGX_HTTP_SRCACHE_STORE_STORE;
+
+    } else {
+        status = NGX_HTTP_SRCACHE_STORE_BYPASS;
+
+    }
+
+    v->valid = 1;
+    v->no_cacheable = 1;
+    v->not_found = 0;
+
+    v->len = ngx_http_srcache_store_status[status].len;
+    v->data = ngx_http_srcache_store_status[status].data;
 
     return NGX_OK;
 }

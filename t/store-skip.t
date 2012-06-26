@@ -5,7 +5,7 @@ use Test::Nginx::Socket;
 
 #repeat_each(2);
 
-plan tests => repeat_each() * (2 * blocks() + 3);
+plan tests => repeat_each() * (2 * blocks() + 6);
 
 $ENV{TEST_NGINX_MEMCACHED_PORT} ||= 11211;
 
@@ -36,6 +36,7 @@ GET /flush
         srcache_store_skip $skip;
 
         echo hello;
+        add_header X-Store-Status $srcache_store_status;
     }
 
     location /memc {
@@ -50,6 +51,8 @@ GET /flush
     GET /foo
 --- response_body
 hello
+--- response_headers
+X-Store-Status: STORE
 
 
 
@@ -89,6 +92,7 @@ GET /flush
         default_type text/css;
         srcache_store PUT /memc $uri;
         srcache_store_skip 0;
+        add_header X-Store-Status $srcache_store_status;
 
         echo hello;
     }
@@ -105,6 +109,8 @@ GET /flush
     GET /foo
 --- response_body
 hello
+--- response_headers
+X-Store-Status: STORE
 
 
 
@@ -146,6 +152,7 @@ GET /flush
         srcache_store_skip 1;
 
         echo hello;
+        add_header X-Store-Status $srcache_store_status;
     }
 
     location /memc {
@@ -160,6 +167,8 @@ GET /flush
     GET /foo
 --- response_body
 hello
+--- response_headers
+X-Store-Status: BYPASS
 
 
 

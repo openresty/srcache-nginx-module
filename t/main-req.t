@@ -5,7 +5,7 @@ use Test::Nginx::Socket;
 
 #repeat_each(2);
 
-plan tests => repeat_each() * (5 * blocks());
+plan tests => repeat_each() * (5 * blocks() + 3);
 
 $ENV{TEST_NGINX_MEMCACHED_PORT} ||= 11211;
 
@@ -22,11 +22,13 @@ __DATA__
         set $memc_cmd 'flush_all';
         memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
         add_header X-Fetch-Status $srcache_fetch_status;
+        add_header X-Store-Status $srcache_store_status;
     }
 --- response_headers
 Content-Type: text/plain
 Content-Length: 4
 X-Fetch-Status: BYPASS
+X-Store-Status: BYPASS
 --- request
 GET /flush
 --- response_body eval: "OK\r\n"
@@ -42,6 +44,7 @@ GET /flush
 
         echo hello;
         add_header X-Fetch-Status $srcache_fetch_status;
+        add_header X-Store-Status $srcache_store_status;
     }
 
     location /memc {
@@ -57,6 +60,7 @@ GET /foo
 Content-Type: text/css
 Content-Length:
 X-Fetch-Status: MISS
+X-Store-Status: STORE
 --- response_body
 hello
 
@@ -71,6 +75,7 @@ hello
 
         echo world;
         add_header X-Fetch-Status $srcache_fetch_status;
+        add_header X-Store-Status $srcache_store_status;
     }
 
     location /memc {
@@ -86,6 +91,7 @@ GET /foo
 Content-Type: text/css
 Content-Length: 6
 X-Fetch-Status: HIT
+X-Store-Status: BYPASS
 --- response_body
 hello
 
