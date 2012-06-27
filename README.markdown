@@ -840,9 +840,7 @@ Zhang "agentzh" Yichun (章亦春) <agentzh@gmail.com>
 
 Copyright & License
 ===================
-Copyright (c) 2010, 2011 Taobao Inc., Alibaba Group ( <http://www.taobao.com> ).
-
-Copyright (c) 2010, 2011, Zhang "agentzh" Yichun (章亦春) <agentzh@gmail.com>.
+Copyright (c) 2010-2012 Zhang "agentzh" Yichun (章亦春) <agentzh@gmail.com>.
 
 This module is licensed under the terms of the BSD license.
 
