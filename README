@@ -9,9 +9,9 @@ Status
     This module is production ready.
 
 Version
-    This document describes srcache-nginx-module v0.13rc6
-    (<https://github.com/agentzh/srcache-nginx-module/tags>) released on 16
-    March 2012.
+    This document describes srcache-nginx-module v0.14
+    (<https://github.com/agentzh/srcache-nginx-module/tags>) released on 27
+    June 2012.
 
 Synopsis
         upstream my_memcached {
@@ -803,6 +803,47 @@ Variables
 
     This variable was first introduced in the "v0.12rc7" release.
 
+  $srcache_fetch_status
+    type: *string*
+
+    cacheable: *no*
+
+    writable: *no*
+
+    This Nginx variable is evaluated to the status of the "fetch" phase for
+    the caching system. Three values are possible, "HIT", "MISS", and
+    "BYPASS".
+
+    When the "fetch" subrequest returns status code other than 200 or its
+    response data is not well-formed, then this variable is evaluated to the
+    value "MISS".
+
+    The value of this variable is only meaningful after the "access" request
+    processing phase, or "BYPASS" is always given.
+
+    This variable was first introduced in the "v0.14" release.
+
+  $srcache_store_status
+    type: *string*
+
+    cacheable: *no*
+
+    writable: *no*
+
+    This Nginx variable gives the current caching status for the "store"
+    phase. Two possible values, "STORE" and "BYPASS" can be obtained.
+
+    Because the responses for the "store" subrequest are always discarded,
+    so the value of this variable will always be "STORE" as long as the
+    "store" subrequest is actually issued.
+
+    The value of this variable is only meaningful at least when the request
+    headers of the current (main) request are being sent. The final result
+    can only be obtained after all the response body has been sent if the
+    "Content-Length" response header is not specified for the main request.
+
+    This variable was first introduced in the "v0.14" release.
+
 Known Issues
     *   On certain systems, enabling aio and/or sendfile may stop
         srcache_store from working. You can disable them in the locations
@@ -854,7 +895,7 @@ Installation
     Alternatively, you can build Nginx with this module all by yourself:
 
     *   Grab the nginx source code from nginx.org (<http://nginx.org>), for
-        example, the version 1.0.9 (see Nginx Compatibility),
+        example, the version 1.2.1 (see Nginx Compatibility),
 
     *   and then download the latest version of the release tarball of this
         module from srcache-nginx-module file list
@@ -862,9 +903,9 @@ Installation
 
     *   and finally build the Nginx source with this module
 
-            wget 'http://nginx.org/download/nginx-1.0.9.tar.gz'
-            tar -xzvf nginx-1.0.9.tar.gz
-            cd nginx-1.0.9/
+            wget 'http://nginx.org/download/nginx-1.2.1.tar.gz'
+            tar -xzvf nginx-1.2.1.tar.gz
+            cd nginx-1.2.1/
 
             # Here we assume you would install you nginx under /opt/nginx/.
             ./configure --prefix=/opt/nginx \
@@ -875,6 +916,8 @@ Installation
 
 Compatibility
     The following versions of Nginx should work with this module:
+
+    *   1.2.x (last tested: 1.2.1)
 
     *   1.1.x (last tested: 1.1.5)
 

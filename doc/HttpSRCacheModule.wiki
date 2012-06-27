@@ -10,7 +10,7 @@ This module is production ready.
 
 = Version =
 
-This document describes srcache-nginx-module [https://github.com/agentzh/srcache-nginx-module/tags v0.13rc6] released on 16 March 2012.
+This document describes srcache-nginx-module [https://github.com/agentzh/srcache-nginx-module/tags v0.14] released on 27 June 2012.
 
 = Synopsis =
 
@@ -656,6 +656,37 @@ You don't have to use this variable for the expiration time.
 
 This variable was first introduced in the <code>v0.12rc7</code> release.
 
+
+== $srcache_fetch_status ==
+'''type:''' ''string''
+
+'''cacheable:''' ''no''
+
+'''writable:''' ''no''
+
+This Nginx variable is evaluated to the status of the "fetch" phase for the caching system. Three values are possible, <code>HIT</code>, <code>MISS</code>, and <code>BYPASS</code>.
+
+When the "fetch" subrequest returns status code other than <code>200</code> or its response data is not well-formed, then this variable is evaluated to the value <code>MISS</code>.
+
+The value of this variable is only meaningful after the <code>access</code> request processing phase, or <code>BYPASS</code> is always given.
+
+This variable was first introduced in the <code>v0.14</code> release.
+
+== $srcache_store_status ==
+'''type:''' ''string''
+
+'''cacheable:''' ''no''
+
+'''writable:''' ''no''
+
+This Nginx variable gives the current caching status for the "store" phase. Two possible values, <code>STORE</code> and <code>BYPASS</code> can be obtained.
+
+Because the responses for the "store" subrequest are always discarded, so the value of this variable will always be <code>STORE</code> as long as the "store" subrequest is actually issued.
+
+The value of this variable is only meaningful at least when the request headers of the current (main) request are being sent. The final result can only be obtained after all the response body has been sent if the <code>Content-Length</code> response header is not specified for the main request.
+
+This variable was first introduced in the <code>v0.14</code> release.
+
 = Known Issues =
 * On certain systems, enabling aio and/or sendfile may stop [[#srcache_store|srcache_store]] from working. You can disable them in the locations configured by [[#srcache_store|srcache_store]].
 
@@ -695,13 +726,13 @@ It's recommended to install this module as well as the Nginx core and many other
 
 Alternatively, you can build Nginx with this module all by yourself:
 
-* Grab the nginx source code from [http://nginx.org nginx.org], for example, the version 1.0.9 (see [[#Compatibility|Nginx Compatibility]]),
+* Grab the nginx source code from [http://nginx.org nginx.org], for example, the version 1.2.1 (see [[#Compatibility|Nginx Compatibility]]),
 * and then download the latest version of the release tarball of this module from srcache-nginx-module [http://github.com/agentzh/srcache-nginx-module/tags file list],
 * and finally build the Nginx source with this module
 <geshi lang="nginx">
-        wget 'http://nginx.org/download/nginx-1.0.9.tar.gz'
-        tar -xzvf nginx-1.0.9.tar.gz
-        cd nginx-1.0.9/
+        wget 'http://nginx.org/download/nginx-1.2.1.tar.gz'
+        tar -xzvf nginx-1.2.1.tar.gz
+        cd nginx-1.2.1/
      
         # Here we assume you would install you nginx under /opt/nginx/.
         ./configure --prefix=/opt/nginx \
@@ -715,6 +746,7 @@ Alternatively, you can build Nginx with this module all by yourself:
 
 The following versions of Nginx should work with this module:
 
+* 1.2.x (last tested: 1.2.1)
 * 1.1.x (last tested: 1.1.5)
 * 1.0.x (last tested: 1.0.9)
 * 0.9.x (last tested: 0.9.4)
