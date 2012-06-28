@@ -26,7 +26,7 @@ Synopsis
 
     upstream my_memcached {
         server 10.62.136.7:11211;
-        keepalive 512 single; # this requires the ngx_http_upstream_keepalive module
+        keepalive 512; # this requires the ngx_http_upstream_keepalive module
     }
 
     location = /memc {
@@ -235,15 +235,11 @@ This example makes use of the [$echo_request_body](http://wiki.nginx.org/HttpEch
 
 Also, you need both [HttpRedisModule](http://wiki.nginx.org/HttpRedisModule) and [HttpRedis2Module](http://wiki.nginx.org/HttpRedis2Module). The former is used in the [srcache_fetch](http://wiki.nginx.org/HttpSRCacheModule#srcache_fetch) subrequest and the latter is used in the [srcache_store](http://wiki.nginx.org/HttpSRCacheModule#srcache_store) subrequest.
 
-[HttpRedisModule](http://wiki.nginx.org/HttpRedisModule)'s latest version (as of this writing), `0.3.5`, has a bug that could cause problems. A patch is provided here:
-
-   https://groups.google.com/group/openresty/browse_thread/thread/b5ddf1b24d3c9677
-
-Finally, the Nginx core also has a bug that could prevent [HttpRedis2Module](http://wiki.nginx.org/HttpRedis2Module)'s pipelining support from working properly in certain extreme conditions. And the following patch fixes this:
+The Nginx core also has a bug that could prevent [HttpRedis2Module](http://wiki.nginx.org/HttpRedis2Module)'s pipelining support from working properly in certain extreme conditions. And the following patch fixes this:
 
    http://mailman.nginx.org/pipermail/nginx-devel/2012-March/002040.html
 
-Note that, however, if you are using the [[ngx_openresty](http://openresty.org/)] 1.0.11.27 bundle or later, then you only need to prepare [HttpRedisModule](http://wiki.nginx.org/HttpRedisModule) and the patch mentioned above, because other patches and components are already in the bundle properly except [HttpRedisModule](http://wiki.nginx.org/HttpRedisModule).
+Note that, however, if you are using the [ngx_openresty](http://openresty.org/) 1.0.15.3 bundle or later, then you already have everything that you need here in the bundle.
 
 Directives
 ==========
@@ -690,7 +686,6 @@ You don't have to use this variable for the expiration time.
 
 This variable was first introduced in the `v0.12rc7` release.
 
-
 $srcache_fetch_status
 ---------------------
 **type:** *string*
@@ -788,12 +783,11 @@ The following versions of Nginx should work with this module:
 
 * 1.2.x (last tested: 1.2.1)
 * 1.1.x (last tested: 1.1.5)
-* 1.0.x (last tested: 1.0.9)
+* 1.0.x (last tested: 1.0.11)
 * 0.9.x (last tested: 0.9.4)
-* 0.8.x (last tested: 0.8.54)
-* 0.7.x >= 0.7.46 (last tested: 0.7.68)
+* 0.8.x >= 0.8.54 (last tested: 0.8.54)
 
-Earlier versions of Nginx like 0.6.x and 0.5.x, as well as latest nginx 0.8.42+ will *not* work.
+Earlier versions of Nginx like 0.7.x, 0.6.x and 0.5.x will *not* work.
 
 If you find that any particular version of Nginx above 0.7.44 does not work with this module, please consider reporting a bug.
 
@@ -807,9 +801,6 @@ Although a lot of effort has been put into testing and code tuning, there must b
 Source Repository
 =================
 Available on github at [agentzh/srcache-nginx-module](http://github.com/agentzh/srcache-nginx-module).
-
-ChangeLog
-=========
 
 Test Suite
 ==========
@@ -840,7 +831,7 @@ Zhang "agentzh" Yichun (章亦春) <agentzh@gmail.com>
 
 Copyright & License
 ===================
-Copyright (c) 2010-2012 Zhang "agentzh" Yichun (章亦春) <agentzh@gmail.com>.
+Copyright (c) 2010-2012, Zhang "agentzh" Yichun (章亦春) <agentzh@gmail.com>.
 
 This module is licensed under the terms of the BSD license.
 
