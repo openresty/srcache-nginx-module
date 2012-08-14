@@ -345,12 +345,12 @@ hello, world
     }
 --- request
     GET /memc
---- response_body eval
-"HTTP/1.1 200 OK\r
+--- response_body_like eval
+qr{^HTTP/1.1 200 OK\r
 Content-Type: text/css\r
 Last-Modified: Sat, 17 Jan 1998 19:35:33 GMT\r
 X-SRCache-Allow-Ranges: 1\r
-\r
-hello, world
-"
+(?:ETag: "[^"]+"\r
+)?\r
+hello, world$}
 

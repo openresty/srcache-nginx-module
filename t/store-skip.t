@@ -339,13 +339,13 @@ hello, world
 --- request
     GET /memc
 --- response_body eval
-"HTTP/1.1 200 OK\r
+qr{HTTP/1.1 200 OK\r
 Content-Type: text/css\r
 Last-Modified: Fri, 24 Dec 2010 03:10:03 GMT\r
 X-SRCache-Allow-Ranges: 1\r
-\r
-hello, world
-"
+(?:ETag: "4d140f0b-d"\r
+)?\r
+hello, world$}
 
 
 
