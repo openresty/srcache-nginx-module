@@ -7,15 +7,15 @@ version=$1
 home=~
 force=$2
 
+            #--without-http_memcached_module \
 ngx-build $force $version \
             --with-cc-opt="-O0" \
-            --with-ld-opt="-Wl,-rpath,/usr/local/openresty-debug/luajit/lib:/opt/postgres/lib:/opt/drizzle/lib:/usr/local/lib:/home/lz/lib" \
+            --with-ld-opt="-Wl,-rpath,$LUAJIT_LIB:/opt/postgres/lib:/opt/drizzle/lib:/usr/local/lib:/home/lz/lib" \
             --without-mail_pop3_module \
             --without-mail_imap_module \
             --without-mail_smtp_module \
             --without-http_upstream_ip_hash_module \
             --without-http_empty_gif_module \
-            --without-http_memcached_module \
             --without-http_referer_module \
             --without-http_autoindex_module \
             --without-http_auth_basic_module \

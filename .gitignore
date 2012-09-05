@@ -70,7 +70,8 @@ src/store.[ch]
 t/servroot/
 headers.[ch]
 buildroot/
-build1[012]
+build1[0-3]
 go
 all
 analyze
+addr2line
