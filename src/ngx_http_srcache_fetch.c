@@ -274,10 +274,18 @@ ngx_http_srcache_fetch_post_subrequest(ngx_http_request_t *r, void *data,
         pr_ctx->from_cache = 0;
     }
 
+    if (r->headers_out.status >= NGX_HTTP_SPECIAL_RESPONSE
+        || rc == NGX_ERROR
+        || rc >= NGX_HTTP_SPECIAL_RESPONSE)
+    {
+        dd("HERE");
+        pr_ctx->from_cache = 0;
+    }
+
     pr_ctx->waiting_subrequest = 0;
     pr_ctx->request_done = 1;
 
-    return rc;
+    return NGX_OK;
 }
 
 
