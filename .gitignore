@@ -75,3 +75,5 @@ go
 all
 analyze
 addr2line
+*.plist
+Makefile
