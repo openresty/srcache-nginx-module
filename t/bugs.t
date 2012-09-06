@@ -5,7 +5,7 @@ use Test::Nginx::Socket;
 
 #repeat_each(2);
 
-plan tests => repeat_each() * (4 * blocks() + 2);
+plan tests => repeat_each() * (4 * blocks() + 4);
 
 $ENV{TEST_NGINX_MEMCACHED_PORT} ||= 11211;
 
@@ -482,6 +482,113 @@ finalize: 0
 --- tcp_listen: 19112
 --- tcp_reply eval
 "VALUE foo 0 1024\r\nHTTP/1.1 200 OK\r\n\r\nhello world"
+--- response_headers
+Content-Type: text/css
+--- response_body
+I do like you
+--- no_error_log
+[error]
+
+
+
+=== TEST 15: exit(ngx.ERROR) in srcache_store
+--- config
+    memc_read_timeout 200ms;
+    location /foo {
+        satisfy any;
+
+        default_type text/css;
+
+        srcache_store PUT /sub;
+
+        echo I do like you;
+    }
+
+    location /sub {
+        content_by_lua '
+            ngx.exit(ngx.ERROR)
+        ';
+    }
+--- request
+GET /foo
+--- stap
+F(ngx_http_upstream_finalize_request) {
+    printf("upstream fin req: error=%d eof=%d rc=%d\n",
+        $r->upstream->peer->connection->read->error,
+        $r->upstream->peer->connection->read->eof,
+        $rc)
+    print_ubacktrace()
+}
+F(ngx_connection_error) {
+    printf("conn err: %d: %s\n", $err, user_string($text))
+    #print_ubacktrace()
+}
+F(ngx_http_srcache_store_post_subrequest) {
+    printf("post subreq: rc=%d, status=%d\n", $rc, $r->headers_out->status)
+    #print_ubacktrace()
+}
+F(ngx_http_finalize_request) {
+    printf("finalize: %d\n", $rc)
+}
+
+--- stap_out
+finalize: 0
+finalize: -1
+post subreq: rc=-1, status=0
+finalize: 0
+--- response_headers
+Content-Type: text/css
+--- response_body
+I do like you
+--- no_error_log
+[error]
+
+
+
+=== TEST 16: exit(500) in srcache_store
+--- config
+    memc_read_timeout 200ms;
+    location /foo {
+        satisfy any;
+
+        default_type text/css;
+
+        srcache_store PUT /sub;
+
+        echo I do like you;
+    }
+
+    location /sub {
+        return 500;
+    }
+--- request
+GET /foo
+--- stap
+F(ngx_http_upstream_finalize_request) {
+    printf("upstream fin req: error=%d eof=%d rc=%d\n",
+        $r->upstream->peer->connection->read->error,
+        $r->upstream->peer->connection->read->eof,
+        $rc)
+    print_ubacktrace()
+}
+F(ngx_connection_error) {
+    printf("conn err: %d: %s\n", $err, user_string($text))
+    #print_ubacktrace()
+}
+F(ngx_http_srcache_store_post_subrequest) {
+    printf("post subreq: rc=%d, status=%d\n", $rc, $r->headers_out->status)
+    #print_ubacktrace()
+}
+F(ngx_http_finalize_request) {
+    printf("finalize: %d\n", $rc)
+}
+
+--- stap_out
+finalize: 0
+finalize: 500
+post subreq: rc=500, status=0
+finalize: 0
+
 --- response_headers
 Content-Type: text/css
 --- response_body
