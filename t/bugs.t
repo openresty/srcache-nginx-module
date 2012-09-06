@@ -9,6 +9,7 @@ plan tests => repeat_each() * (4 * blocks() + 4);
 
 $ENV{TEST_NGINX_MEMCACHED_PORT} ||= 11211;
 
+no_long_string();
 no_shuffle();
 
 run_tests();
@@ -316,7 +317,7 @@ F(ngx_http_finalize_request) {
 --- stap_out
 finalize: -4
 conn err: 110: upstream timed out
-upstream fin req: error=0 eof=0 rc=0
+upstream fin req: error=0 eof=0 rc=504
 finalize: 0
 post subreq: rc=0, status=504
 finalize: 0
@@ -474,7 +475,7 @@ F(ngx_http_finalize_request) {
 }
 --- stap_out
 finalize: -4
-upstream fin req: error=0 eof=1 rc=0
+upstream fin req: error=0 eof=1 rc=502
 finalize: 0
 post subreq: rc=0, status=502
 finalize: 0
