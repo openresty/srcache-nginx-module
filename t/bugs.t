@@ -430,7 +430,7 @@ I do like you
 
 
 
-=== TEST 14: read timed out when receiving upstream response body in srcache_fetch
+=== TEST 14: upstream closes the connection prematurely in srcache_fetch
 --- config
     memc_read_timeout 200ms;
     location /foo {
