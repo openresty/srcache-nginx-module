@@ -109,6 +109,9 @@ struct ngx_http_srcache_ctx_s {
 
     ngx_http_srcache_postponed_request_t  *postponed_requests;
 
+    ngx_uint_t      http_status; /* the HTTP status code that has been
+                                    actually sent */
+
     unsigned        waiting_subrequest:1;
     unsigned        request_done:1;
     unsigned        from_cache:1;

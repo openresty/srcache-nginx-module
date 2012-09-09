@@ -54,3 +54,63 @@ Content-Type: text/css
 --- response_body
 hello
 
+
+
+=== TEST 2: main req upstream truncation (with content-length)
+--- config
+    location = /t {
+        srcache_store PUT /err;
+
+        proxy_read_timeout 100ms;
+        proxy_pass http://127.0.0.1:11945/echo;
+    }
+
+    location = /err {
+        content_by_lua '
+            ngx.log(ngx.ERR, "location /err is called")
+        ';
+    }
+
+--- tcp_listen: 11945
+--- tcp_no_close
+--- tcp_reply eval
+"HTTP/1.0 200 OK\r\nContent-Length: 120\r\n\r\nhello world"
+
+--- request
+GET /t
+--- response_body
+--- no_error_log
+location /err is called
+--- error_log
+srcache_store: skipped because response body truncated: 120 > 0
+
+
+
+=== TEST 3: main req upstream truncation (without content-length)
+--- config
+    location = /t {
+        srcache_store PUT /err;
+
+        proxy_read_timeout 100ms;
+        proxy_pass http://127.0.0.1:11945/echo;
+    }
+
+    location = /err {
+        content_by_lua '
+            ngx.log(ngx.ERR, "location /err is called")
+        ';
+    }
+
+--- tcp_listen: 11945
+--- tcp_no_close
+--- tcp_reply eval
+"HTTP/1.0 200 OK\r\n\r\nhello world"
+
+--- request
+GET /t
+--- response_body
+--- no_error_log
+location /err is called
+--- error_log
+srcache_store: skipped due to new error status code 502 (old: 200)
+

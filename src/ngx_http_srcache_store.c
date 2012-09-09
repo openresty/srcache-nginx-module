@@ -235,6 +235,7 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
 
     r->filter_need_in_memory = 1;
 
+    ctx->http_status = r->headers_out.status;
     ctx->store_response = 1;
 
     return NGX_OK;
@@ -423,6 +424,20 @@ ngx_http_srcache_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
                               "truncated: %O > %uz",
                               r->headers_out.content_length_n,
                               ctx->response_body_length);
+
+                ctx->store_response = 0;
+                goto done;
+            }
+
+            if (r->headers_out.status >= NGX_HTTP_SPECIAL_RESPONSE
+                && r->headers_out.status != ctx->http_status)
+            {
+                /* data truncation or body receive timeout */
+
+                ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                              "srcache_store: skipped due to new error status "
+                              "code %ui (old: %ui)",
+                              r->headers_out.status, ctx->http_status);
 
                 ctx->store_response = 0;
                 goto done;
