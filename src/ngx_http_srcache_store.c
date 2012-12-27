@@ -120,7 +120,7 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
     /* slcf->store != NULL */
 
 #if 1
-    if (!(r->method & slcf->cache_methods)) {
+    if (!(r->method & (slcf->cache_methods & ~NGX_HTTP_HEAD))) {
         ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "srcache_store skipped due to request method %V",
                        &r->method_name);
