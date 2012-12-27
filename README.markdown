@@ -502,6 +502,8 @@ This directive specifies HTTP request methods that are considered by either [src
 
 The following HTTP methods are allowed: `GET`, `HEAD`, `POST`, `PUT`, and `DELETE`. The `GET` and `HEAD` methods are always implicitly included in the list regardless of their presence in this directive.
 
+Note that `HEAD` requests are always skipped by [srcache_store](http://wiki.nginx.org/HttpSRCacheModule#srcache_store) because their responses never carry a response body.
+
 This directive was first introduced in the `v0.12rc7` release.
 
 srcache_ignore_content_encoding
@@ -759,17 +761,17 @@ Installation
 
 It is recommended to install this module as well as the Nginx core and many other goodies via the [ngx_openresty bundle](http://openresty.org). It is the easiest way and most safe way to set things up. See OpenResty's [installation instructions](http://openresty.org/#Installation) for details.
 
-If you are using Nginx distributions that are not shipped with the [ngx_openresty bundle](http://openresty.org), then you are highly recommended to apply the [nonbuffered-upstream-truncation patch](https://raw.github.com/agentzh/ngx_openresty/master/patches/nginx-1.2.3-nonbuffered-upstream-truncation.patch) to your Nginx source tree.
+If you are using Nginx distributions that are not shipped with the [ngx_openresty bundle](http://openresty.org), then you are highly recommended to apply the [nonbuffered-upstream-truncation patch](https://raw.github.com/agentzh/ngx_openresty/master/patches/nginx-1.2.6-nonbuffered-upstream-truncation.patch) to your Nginx source tree.
 
 Alternatively, you can build Nginx with this module all by yourself:
 
-* Grab the nginx source code from [nginx.org](http://nginx.org), for example, the version 1.2.3 (see [Nginx Compatibility](http://wiki.nginx.org/HttpSRCacheModule#Compatibility)),
+* Grab the nginx source code from [nginx.org](http://nginx.org), for example, the version 1.2.6 (see [Nginx Compatibility](http://wiki.nginx.org/HttpSRCacheModule#Compatibility)),
 * and then download the latest version of the release tarball of this module from srcache-nginx-module [file list](http://github.com/agentzh/srcache-nginx-module/tags),
 * and finally build the Nginx source with this module
 
-        wget 'http://nginx.org/download/nginx-1.2.3.tar.gz'
-        tar -xzvf nginx-1.2.3.tar.gz
-        cd nginx-1.2.3/
+        wget 'http://nginx.org/download/nginx-1.2.6.tar.gz'
+        tar -xzvf nginx-1.2.6.tar.gz
+        cd nginx-1.2.6/
      
         # Here we assume you would install you nginx under /opt/nginx/.
         ./configure --prefix=/opt/nginx \
@@ -784,8 +786,8 @@ Compatibility
 
 The following versions of Nginx should work with this module:
 
-* 1.3.x (last tested: 1.3.4)
-* 1.2.x (last tested: 1.2.3)
+* 1.3.x (last tested: 1.3.7)
+* 1.2.x (last tested: 1.2.6)
 * 1.1.x (last tested: 1.1.5)
 * 1.0.x (last tested: 1.0.11)
 * 0.9.x (last tested: 0.9.4)
