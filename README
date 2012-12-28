@@ -9,8 +9,8 @@ Status
     This module is production ready.
 
 Version
-    This document describes srcache-nginx-module v0.16
-    (<https://github.com/agentzh/srcache-nginx-module/tags>) released on 9
+    This document describes srcache-nginx-module v0.17
+    (<https://github.com/agentzh/srcache-nginx-module/tags>) released on 27
     September 2012.
 
 Synopsis
@@ -580,8 +580,8 @@ Directives
     and "DELETE". The "GET" and "HEAD" methods are always implicitly
     included in the list regardless of their presence in this directive.
 
-    Note that "HEAD" requests are always skipped by srcache_store because
-    their responses never carry a response body.
+    Note that since the "v0.17" release "HEAD" requests are always skipped
+    by srcache_store because their responses never carry a response body.
 
     This directive was first introduced in the "v0.12rc7" release.
 

@@ -10,7 +10,7 @@ This module is production ready.
 
 = Version =
 
-This document describes srcache-nginx-module [https://github.com/agentzh/srcache-nginx-module/tags v0.16] released on 9 September 2012.
+This document describes srcache-nginx-module [https://github.com/agentzh/srcache-nginx-module/tags v0.17] released on 27 September 2012.
 
 = Synopsis =
 
@@ -478,7 +478,7 @@ This directive specifies HTTP request methods that are considered by either [[#s
 
 The following HTTP methods are allowed: <code>GET</code>, <code>HEAD</code>, <code>POST</code>, <code>PUT</code>, and <code>DELETE</code>. The <code>GET</code> and <code>HEAD</code> methods are always implicitly included in the list regardless of their presence in this directive.
 
-Note that <code>HEAD</code> requests are always skipped by [[#srcache_store|srcache_store]] because their responses never carry a response body.
+Note that since the <code>v0.17</code> release <code>HEAD</code> requests are always skipped by [[#srcache_store|srcache_store]] because their responses never carry a response body.
 
 This directive was first introduced in the <code>v0.12rc7</code> release.
 
