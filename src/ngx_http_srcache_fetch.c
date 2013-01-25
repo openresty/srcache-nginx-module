@@ -266,20 +266,33 @@ ngx_http_srcache_fetch_post_subrequest(ngx_http_request_t *r, void *data,
         return NGX_ERROR;
     }
 
-    if (ctx && ctx->parsing_cached_headers) {
+    if (ctx == NULL) {
+        return NGX_OK;
+    }
+
+    if (ctx->parsing_cached_headers) {
         ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
                       "srcache_fetch: cache sent truncated status line "
                       "or headers");
 
         pr_ctx->from_cache = 0;
-    }
 
-    if (r->headers_out.status >= NGX_HTTP_SPECIAL_RESPONSE
+    } else if (r->headers_out.status >= NGX_HTTP_SPECIAL_RESPONSE
         || rc == NGX_ERROR
         || rc >= NGX_HTTP_SPECIAL_RESPONSE)
     {
         dd("HERE");
         pr_ctx->from_cache = 0;
+
+    } else if (!ctx->seen_subreq_eof) {
+
+#if 1
+        ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                      "srcache_fetch: cache sent truncated "
+                      "response body");
+
+        pr_ctx->from_cache = 0;
+#endif
     }
 
     pr_ctx->waiting_subrequest = 0;

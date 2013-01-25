@@ -167,6 +167,7 @@ GET /flush
     GET /foo
 --- response_body
 hello
+--- wait: 0.1
 --- response_headers
 X-Store-Status: STORE
 --- error_log

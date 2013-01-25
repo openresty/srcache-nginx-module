@@ -597,3 +597,29 @@ I do like you
 --- no_error_log
 [error]
 
+
+
+=== TEST 9: skipped in subrequests
+--- config
+    location /t {
+        srcache_fetch GET /f;
+        echo hello;
+    }
+
+    location /f {
+        echo "HTTP/1.1 200 OK\r\n\r\ncached data";
+        body_filter_by_lua '
+            if ngx.arg[2] then
+                ngx.arg[2] = false
+            end
+        ';
+    }
+--- request
+GET /t
+--- response_body
+hello
+--- error_log
+srcache_fetch: cache sent truncated response body
+--- no_error_log
+[alert]
+

@@ -294,7 +294,7 @@ ngx_http_srcache_adjust_subrequest(ngx_http_request_t *sr,
 
 ngx_int_t
 ngx_http_srcache_add_copy_chain(ngx_pool_t *pool, ngx_chain_t **chain,
-        ngx_chain_t *in)
+    ngx_chain_t *in, unsigned *plast)
 {
     ngx_chain_t     *cl, **ll;
     size_t           len;
@@ -305,10 +305,16 @@ ngx_http_srcache_add_copy_chain(ngx_pool_t *pool, ngx_chain_t **chain,
         ll = &cl->next;
     }
 
+    *plast = 0;
+
     while (in) {
         cl = ngx_alloc_chain_link(pool);
         if (cl == NULL) {
             return NGX_ERROR;
+        }
+
+        if (in->buf->last_buf || in->buf->last_in_chain) {
+            *plast = 1;
         }
 
         if (ngx_buf_special(in->buf)) {

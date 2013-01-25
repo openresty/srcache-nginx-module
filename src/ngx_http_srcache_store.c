@@ -248,9 +248,9 @@ ngx_http_srcache_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
     ngx_http_srcache_ctx_t      *ctx, *pr_ctx;
     ngx_int_t                    rc;
     ngx_chain_t                 *cl;
-    ngx_flag_t                   last;
     ngx_http_srcache_loc_conf_t *slcf;
     size_t                       len;
+    unsigned                     last;
 
     dd_enter();
 
@@ -351,10 +351,15 @@ ngx_http_srcache_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
         }
 
         rc = ngx_http_srcache_add_copy_chain(r->pool,
-                &pr_ctx->body_from_cache, in);
+                                             &pr_ctx->body_from_cache, in,
+                                             &last);
 
         if (rc != NGX_OK) {
             return NGX_ERROR;
+        }
+
+        if (last) {
+            ctx->seen_subreq_eof = 1;
         }
 
         ngx_http_srcache_discard_bufs(r->pool, in);
@@ -376,18 +381,11 @@ ngx_http_srcache_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
             }
         }
 
-        last = 0;
-
         for (cl = in; cl; cl = cl->next) {
             if (ngx_buf_in_memory(cl->buf)) {
                 len = ngx_buf_size(cl->buf);
                 ctx->response_length += len;
                 ctx->response_body_length += len;
-            }
-
-            if (cl->buf->last_buf) {
-                last = 1;
-                break;
             }
         }
 
@@ -406,7 +404,8 @@ ngx_http_srcache_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
             goto done;
         }
 
-        rc = ngx_http_srcache_add_copy_chain(r->pool, &ctx->body_to_cache, in);
+        rc = ngx_http_srcache_add_copy_chain(r->pool, &ctx->body_to_cache,
+                                             in, &last);
 
         if (rc != NGX_OK) {
             ctx->store_response = 0;
