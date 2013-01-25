@@ -18,7 +18,7 @@ This module is production ready.
 Version
 =======
 
-This document describes srcache-nginx-module [v0.17](https://github.com/agentzh/srcache-nginx-module/tags) released on 27 September 2012.
+This document describes srcache-nginx-module [v0.18](https://github.com/agentzh/srcache-nginx-module/tags) released on 25 January 2013.
 
 Synopsis
 ========
@@ -761,8 +761,6 @@ Installation
 
 It is recommended to install this module as well as the Nginx core and many other goodies via the [ngx_openresty bundle](http://openresty.org). It is the easiest way and most safe way to set things up. See OpenResty's [installation instructions](http://openresty.org/#Installation) for details.
 
-If you are using Nginx distributions that are not shipped with the [ngx_openresty bundle](http://openresty.org), then you are highly recommended to apply the [nonbuffered-upstream-truncation patch](https://raw.github.com/agentzh/ngx_openresty/master/patches/nginx-1.2.6-nonbuffered-upstream-truncation.patch) to your Nginx source tree.
-
 Alternatively, you can build Nginx with this module all by yourself:
 
 * Grab the nginx source code from [nginx.org](http://nginx.org), for example, the version 1.2.6 (see [Nginx Compatibility](http://wiki.nginx.org/HttpSRCacheModule#Compatibility)),
@@ -847,11 +845,11 @@ You'll be very welcomed to submit patches to the author or just ask for a commit
 
 Author
 ======
-Yichun "agentzh" Zhang (章亦春) <agentzh@gmail.com>
+Yichun "agentzh" Zhang (章亦春) <agentzh@gmail.com>, CloudFlare Inc.
 
 Copyright & License
 ===================
-Copyright (c) 2010-2012, Yichun "agentzh" Zhang (章亦春) <agentzh@gmail.com>.
+Copyright (c) 2010-2013, Yichun "agentzh" Zhang (章亦春) <agentzh@gmail.com>, CloudFlare Inc.
 
 This module is licensed under the terms of the BSD license.
 
