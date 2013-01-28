@@ -73,5 +73,4 @@ fun:main
    fun:malloc
    fun:ngx_alloc
    fun:ngx_event_process_init
-   fun:ngx_single_process_cycle
 }
