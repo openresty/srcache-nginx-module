@@ -1,7 +1,14 @@
+
+/*
+ * Copyright (C) Yichun Zhang (agentzh)
+ */
+
+
 #ifndef DDEBUG
 #define DDEBUG 0
 #endif
 #include "ddebug.h"
+
 
 #include "ngx_http_srcache_fetch.h"
 #include "ngx_http_srcache_store.h"
@@ -437,7 +444,8 @@ ngx_http_srcache_test_not_modified(ngx_http_request_t *r)
                               r->headers_in.if_modified_since->value.len);
 
     ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                   "http ims:%d lm:%d", ims, r->headers_out.last_modified_time);
+                   "srcache ims:%d lm:%d", ims,
+                   r->headers_out.last_modified_time);
 
     if (ims != r->headers_out.last_modified_time) {
 
@@ -472,7 +480,7 @@ ngx_http_srcache_test_precondition(ngx_http_request_t *r)
                                r->headers_in.if_unmodified_since->value.len);
 
     ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                   "http iums:%d lm:%d", iums,
+                   "srcache iums:%d lm:%d", iums,
                    r->headers_out.last_modified_time);
 
     if (iums >= r->headers_out.last_modified_time) {
@@ -483,3 +491,4 @@ ngx_http_srcache_test_precondition(ngx_http_request_t *r)
                                             NGX_HTTP_PRECONDITION_FAILED);
 }
 
+/* vi:set ft=c ts=4 sw=4 et fdm=marker: */

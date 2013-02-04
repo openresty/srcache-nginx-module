@@ -1,7 +1,14 @@
+
+/*
+ * Copyright (C) Yichun Zhang (agentzh)
+ */
+
+
 #ifndef DDEBUG
 #define DDEBUG 0
 #endif
 #include "ddebug.h"
+
 
 #include "ngx_http_srcache_util.h"
 #include "ngx_http_srcache_headers.h"
@@ -225,7 +232,7 @@ ngx_http_srcache_parse_method_name(ngx_str_t **method_name_ptr)
 
     case 9:
         if (ngx_http_srcache_strcmp_const(method_name->data, "PROPPATCH")
-                == 0)
+            == 0)
         {
             *method_name_ptr = &ngx_http_srcache_proppatch_method;
             return NGX_HTTP_PROPPATCH;
@@ -243,7 +250,7 @@ ngx_http_srcache_parse_method_name(ngx_str_t **method_name_ptr)
 
 ngx_int_t
 ngx_http_srcache_adjust_subrequest(ngx_http_request_t *sr,
-        ngx_http_srcache_parsed_request_t *parsed_sr)
+    ngx_http_srcache_parsed_request_t *parsed_sr)
 {
     ngx_http_core_main_conf_t  *cmcf;
     ngx_http_request_t         *r;
@@ -256,7 +263,7 @@ ngx_http_srcache_adjust_subrequest(ngx_http_request_t *sr,
     r = sr->parent;
 
     dd("subrequest method: %d %.*s", (int) sr->method,
-            (int) sr->method_name.len, sr->method_name.data);
+       (int) sr->method_name.len, sr->method_name.data);
 
     sr->header_in = r->header_in;
 
@@ -270,7 +277,7 @@ ngx_http_srcache_adjust_subrequest(ngx_http_request_t *sr,
     /* we do not inherit the parent request's variables */
     cmcf = ngx_http_get_module_main_conf(sr, ngx_http_core_module);
     sr->variables = ngx_pcalloc(sr->pool, cmcf->variables.nelts
-                                        * sizeof(ngx_http_variable_value_t));
+                                * sizeof(ngx_http_variable_value_t));
 
     if (sr->variables == NULL) {
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
@@ -281,7 +288,7 @@ ngx_http_srcache_adjust_subrequest(ngx_http_request_t *sr,
         sr->request_body = body;
 
         rc = ngx_http_srcache_set_content_length_header(sr,
-                    parsed_sr->content_length_n);
+                                                parsed_sr->content_length_n);
 
         if (rc != NGX_OK) {
             return NGX_HTTP_INTERNAL_SERVER_ERROR;
@@ -350,7 +357,7 @@ ngx_http_srcache_add_copy_chain(ngx_pool_t *pool, ngx_chain_t **chain,
 
 ngx_int_t
 ngx_http_srcache_post_request_at_head(ngx_http_request_t *r,
-        ngx_http_posted_request_t *pr)
+    ngx_http_posted_request_t *pr)
 {
     dd_enter();
 
@@ -381,7 +388,9 @@ ngx_http_srcache_set_content_length_header(ngx_http_request_t *r, off_t len)
     r->headers_in.content_length_n = len;
 
     if (ngx_list_init(&r->headers_in.headers, r->pool, 20,
-                sizeof(ngx_table_elt_t)) != NGX_OK) {
+                      sizeof(ngx_table_elt_t))
+        != NGX_OK)
+    {
         return NGX_ERROR;
     }
 
@@ -415,8 +424,8 @@ ngx_http_srcache_set_content_length_header(ngx_http_request_t *r, off_t len)
             'n'), 'g'), 't'), 'h');
 
     dd("r content length: %.*s",
-            (int)r->headers_in.content_length->value.len,
-            r->headers_in.content_length->value.data);
+       (int)r->headers_in.content_length->value.len,
+       r->headers_in.content_length->value.data);
 
     pr = r->parent;
 
@@ -441,9 +450,10 @@ ngx_http_srcache_set_content_length_header(ngx_http_request_t *r, off_t len)
             i = 0;
         }
 
-        if (header[i].key.len == sizeof("Content-Length") - 1 &&
-                ngx_strncasecmp(header[i].key.data, (u_char *) "Content-Length",
-                sizeof("Content-Length") - 1) == 0)
+        if (header[i].key.len == sizeof("Content-Length") - 1
+            && ngx_strncasecmp(header[i].key.data,
+                               (u_char *) "Content-Length",
+                               sizeof("Content-Length") - 1) == 0)
         {
             continue;
         }
@@ -493,14 +503,14 @@ ngx_http_srcache_request_no_cache(ngx_http_request_t *r, unsigned *no_store)
 
         if (h[i].key.len == sizeof("Cache-Control") - 1
             && ngx_strncasecmp(h[i].key.data, (u_char *) "Cache-Control",
-                sizeof("Cache-Control") - 1) == 0)
+                               sizeof("Cache-Control") - 1) == 0)
         {
             p = h[i].value.data;
             last = p + h[i].value.len;
 
             if (!*no_store
                 && ngx_strlcasestrn(p, last, (u_char *) "no-store", 8 - 1)
-                    != NULL)
+                   != NULL)
             {
                 *no_store = 1;
             }
@@ -515,7 +525,7 @@ ngx_http_srcache_request_no_cache(ngx_http_request_t *r, unsigned *no_store)
 
         if (h[i].key.len == sizeof("Pragma") - 1
             && ngx_strncasecmp(h[i].key.data, (u_char *) "Pragma",
-                sizeof("Pragma") - 1) == 0)
+                               sizeof("Pragma") - 1) == 0)
         {
             p = h[i].value.data;
             last = p + h[i].value.len;
@@ -712,7 +722,7 @@ ngx_http_srcache_process_header(ngx_http_request_t *r, ngx_buf_t *b)
         }
 
         ctx->header_buf->last = ngx_copy(ctx->header_buf->last, b->pos,
-                (size_t) len);
+                                         (size_t) len);
 
         p = ctx->header_buf->pos;
 
@@ -732,8 +742,9 @@ ngx_http_srcache_process_header(ngx_http_request_t *r, ngx_buf_t *b)
             header.value.len = r->header_end - r->header_start;
 
             header.key.data = ngx_pnalloc(r->pool,
-                               header.key.len + 1 + header.value.len + 1
-                               + header.key.len);
+                                          header.key.len + 1
+                                          + header.value.len + 1
+                                          + header.key.len);
 
             if (header.key.data == NULL) {
                 return NGX_ERROR;
@@ -741,7 +752,7 @@ ngx_http_srcache_process_header(ngx_http_request_t *r, ngx_buf_t *b)
 
             header.value.data = header.key.data + header.key.len + 1;
             header.lowcase_key = header.key.data + header.key.len + 1
-                               + header.value.len + 1;
+                                 + header.value.len + 1;
 
             ngx_cpystrn(header.key.data, r->header_name_start,
                         header.key.len + 1);
@@ -831,7 +842,7 @@ ngx_http_srcache_process_header(ngx_http_request_t *r, ngx_buf_t *b)
 
 ngx_int_t
 ngx_http_srcache_store_response_header(ngx_http_request_t *r,
-        ngx_http_srcache_ctx_t *ctx)
+    ngx_http_srcache_ctx_t *ctx)
 {
     ngx_chain_t             *cl;
     size_t                   len;
@@ -1264,3 +1275,4 @@ ngx_http_srcache_cmp_int(const void *one, const void *two)
     return (*a < *b);
 }
 
+/* vi:set ft=c ts=4 sw=4 et fdm=marker: */

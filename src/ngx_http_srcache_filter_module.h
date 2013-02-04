@@ -1,5 +1,11 @@
-#ifndef NGX_HTTP_SRCACHE_FILTER_MODULE_H
-#define NGX_HTTP_SRCACHE_FILTER_MODULE_H
+
+/*
+ * Copyright (C) Yichun Zhang (agentzh)
+ */
+
+
+#ifndef _NGX_HTTP_SRCACHE_FILTER_MODULE_H_INCLUDED_
+#define _NGX_HTTP_SRCACHE_FILTER_MODULE_H_INCLUDED_
 
 
 #include <ngx_core.h>
@@ -137,5 +143,6 @@ struct ngx_http_srcache_postponed_request_s {
 };
 
 
-#endif
+#endif  /* _NGX_HTTP_SRCACHE_FILTER_MODULE_H_INCLUDED_ */
 
+/* vi:set ft=c ts=4 sw=4 et fdm=marker: */

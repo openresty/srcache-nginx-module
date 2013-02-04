@@ -1,7 +1,14 @@
+
+/*
+ * Copyright (C) Yichun Zhang (agentzh)
+ */
+
+
 #ifndef DDEBUG
 #define DDEBUG 0
 #endif
 #include "ddebug.h"
+
 
 #include "ngx_http_srcache_headers.h"
 
@@ -309,3 +316,4 @@ ngx_http_srcache_process_content_encoding(ngx_http_request_t *r,
 
 #endif
 
+/* vi:set ft=c ts=4 sw=4 et fdm=marker: */

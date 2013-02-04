@@ -1,5 +1,11 @@
-#ifndef NGX_HTTP_SRCACHE_UTIL_H
-#define NGX_HTTP_SRCACHE_UTIL_H
+
+/*
+ * Copyright (C) Yichun Zhang (agentzh)
+ */
+
+
+#ifndef _NGX_HTTP_SRCACHE_UTIL_H_INCLUDED_
+#define _NGX_HTTP_SRCACHE_UTIL_H_INCLUDED_
 
 #include "ngx_http_srcache_filter_module.h"
 
@@ -50,5 +56,6 @@ ngx_int_t ngx_http_srcache_hide_headers_hash(ngx_conf_t *cf,
 ngx_int_t ngx_http_srcache_cmp_int(const void *one, const void *two);
 
 
-#endif /* NGX_HTTP_SRCACHE_UTIL_H */
+#endif /* _NGX_HTTP_SRCACHE_UTIL_H_INCLUDED_ */
 
+/* vi:set ft=c ts=4 sw=4 et fdm=marker: */

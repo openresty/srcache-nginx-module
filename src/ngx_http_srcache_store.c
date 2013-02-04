@@ -1,7 +1,14 @@
+
+/*
+ * Copyright (C) Yichun Zhang (agentzh)
+ */
+
+
 #ifndef DDEBUG
 #define DDEBUG 0
 #endif
 #include "ddebug.h"
+
 
 #include "ngx_http_srcache_store.h"
 #include "ngx_http_srcache_fetch.h"
@@ -608,3 +615,4 @@ ngx_http_srcache_filter_init(ngx_conf_t *cf)
     return NGX_OK;
 }
 
+/* vi:set ft=c ts=4 sw=4 et fdm=marker: */
