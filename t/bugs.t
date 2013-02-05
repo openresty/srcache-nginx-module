@@ -599,7 +599,7 @@ I do like you
 
 
 
-=== TEST 9: skipped in subrequests
+=== TEST 17: skipped in subrequests
 --- config
     location /t {
         srcache_fetch GET /f;
