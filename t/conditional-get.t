@@ -76,7 +76,7 @@ hello
 
         default_type text/css;
 
-        echo world;
+        proxy_pass http://agentzh.org:12345/;
     }
 
     location /memc {
@@ -107,7 +107,7 @@ hello
 
         default_type text/css;
 
-        echo world;
+        proxy_pass http://agentzh.org:12345/;
     }
 
     location /memc {
@@ -125,6 +125,11 @@ If-Modified-Since: Thu, 10 May 2012 07:50:59 GMT
 !Content-Type
 !Content-Length
 Last-Modified: Thu, 10 May 2012 07:50:59 GMT
+--- stap2
+F(ngx_http_core_content_phase) {
+    printf("r content handler: %s\n", usymname($r->content_handler))
+}
+
 --- error_code: 304
 --- response_body
 --- no_error_log
@@ -140,7 +145,7 @@ Last-Modified: Thu, 10 May 2012 07:50:59 GMT
 
         default_type text/css;
 
-        echo world;
+        proxy_pass http://agentzh.org:12345/;
     }
 
     location /memc {
@@ -174,7 +179,7 @@ hello
 
         default_type text/css;
 
-        echo world;
+        proxy_pass http://agentzh.org:12345/;
     }
 
     location /memc {
@@ -208,7 +213,7 @@ Last-Modified: Thu, 10 May 2012 07:50:59 GMT
 
         default_type text/css;
 
-        echo world;
+        proxy_pass http://agentzh.org:12345/;
     }
 
     location /memc {
@@ -241,7 +246,7 @@ Content-Length: 182
 
         default_type text/css;
 
-        echo world;
+        proxy_pass http://agentzh.org:12345/;
     }
 
     location /memc {
@@ -274,7 +279,7 @@ hello
 
         default_type text/css;
 
-        echo world;
+        proxy_pass http://agentzh.org:12345/;
     }
 
     location /memc {

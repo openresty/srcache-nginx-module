@@ -65,7 +65,7 @@ hello
         srcache_fetch GET /memc $uri;
         srcache_store PUT /memc $uri;
 
-        echo world;
+        proxy_pass http://agentzh.org:12345/;
     }
 
     location /memc {
@@ -121,7 +121,7 @@ world
         srcache_store PUT /memc $uri;
         srcache_methods POST;
 
-        echo world;
+        proxy_pass http://agentzh.org:12345/;
     }
 
     location /memc {
@@ -150,7 +150,7 @@ hello
         srcache_store PUT /memc $uri;
         srcache_methods POST PUT;
 
-        echo world;
+        proxy_pass http://agentzh.org:12345/;
     }
 
     location /memc {
@@ -178,7 +178,7 @@ hello
         srcache_store PUT /memc $uri;
         srcache_methods POST;
 
-        echo world;
+        proxy_pass http://agentzh.org:12345/;
     }
 
     location /memc {
@@ -320,7 +320,7 @@ hello
         srcache_fetch GET /memc $uri;
         srcache_store PUT /memc $uri;
 
-        echo world;
+        proxy_pass http://agentzh.org:12345/;
     }
 
     location /memc {

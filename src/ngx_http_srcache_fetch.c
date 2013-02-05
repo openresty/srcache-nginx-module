@@ -154,9 +154,15 @@ ngx_http_srcache_access_handler(ngx_http_request_t *r)
 
                 dd("srcache fetch header returned %d", (int) rc);
 
-                if (rc == NGX_ERROR || rc > NGX_OK || r->header_only) {
+                if (rc == NGX_ERROR || rc > NGX_OK) {
                     return rc;
                 }
+
+#if 1
+                if (r->header_only) {
+                    return NGX_HTTP_OK;
+                }
+#endif
 
                 if (!r->filter_finalize) {
                     rc = ngx_http_srcache_next_body_filter(r,
