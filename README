@@ -9,9 +9,9 @@ Status
     This module is production ready.
 
 Version
-    This document describes srcache-nginx-module v0.18
-    (<https://github.com/agentzh/srcache-nginx-module/tags>) released on 25
-    January 2013.
+    This document describes srcache-nginx-module v0.19
+    (<https://github.com/agentzh/srcache-nginx-module/tags>) released on 4
+    February 2013.
 
 Synopsis
         upstream my_memcached {
@@ -884,6 +884,21 @@ Caveats
                 # proxy_pass/drizzle_pass/content_by_lua/echo/...
             }
         }
+
+Trouble Shooting
+    To debug issues, you should always check your Nginx "error.log" file
+    first. If no error messages are printed, you need to enable the Nginx
+    debugging logs to get more details, as explained in
+    [[Debugging#Debugging_log]].
+
+    Several common pitfalls for beginners:
+
+    *   The original response carries a "Cache-Control" header that
+        explicitly disables caching and you do not configure directives like
+        srcache_response_cache_control.
+
+    *   The original response is already gzip compressed, which is not
+        cached by default (see srcache_ignore_content_encoding).
 
 Installation
     It is recommended to install this module as well as the Nginx core and
