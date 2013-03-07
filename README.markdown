@@ -336,7 +336,10 @@ Since the `v0.12rc7` release, both the response status line, response headers, a
 
 You can use the [srcache_store_pass_header](http://wiki.nginx.org/HttpSRCacheModule#srcache_store_pass_header) and/or [srcache_store_hide_header](http://wiki.nginx.org/HttpSRCacheModule#srcache_store_hide_header) directives to control what headers to cache and what not.
 
-This directive works in an output filter.
+The original response's data chunks get emitted as soon as 
+they arrive. `srcache_store` just copies and collects the data in an output filter without postponing them from being sent downstream.
+
+But please note that even though all the response data will be sent immediately, the current Nginx request lifetime will not finish until the srcache_store subrequest completes. That means a delay in closing the TCP connection on the server side (when HTTP keepalive is disabled, but proper HTTP clients should close the connection actively on the client side, which adds no extra delay or other issues at all) or serving the next request sent on the same TCP connection (when HTTP keepalive is in action).
 
 srcache_store_max_size
 ----------------------
@@ -773,13 +776,13 @@ It is recommended to install this module as well as the Nginx core and many othe
 
 Alternatively, you can build Nginx with this module all by yourself:
 
-* Grab the nginx source code from [nginx.org](http://nginx.org), for example, the version 1.2.6 (see [Nginx Compatibility](http://wiki.nginx.org/HttpSRCacheModule#Compatibility)),
+* Grab the nginx source code from [nginx.org](http://nginx.org), for example, the version 1.2.7 (see [Nginx Compatibility](http://wiki.nginx.org/HttpSRCacheModule#Compatibility)),
 * and then download the latest version of the release tarball of this module from srcache-nginx-module [file list](http://github.com/agentzh/srcache-nginx-module/tags),
 * and finally build the Nginx source with this module
 
-        wget 'http://nginx.org/download/nginx-1.2.6.tar.gz'
-        tar -xzvf nginx-1.2.6.tar.gz
-        cd nginx-1.2.6/
+        wget 'http://nginx.org/download/nginx-1.2.7.tar.gz'
+        tar -xzvf nginx-1.2.7.tar.gz
+        cd nginx-1.2.7/
      
         # Here we assume you would install you nginx under /opt/nginx/.
         ./configure --prefix=/opt/nginx \
@@ -795,7 +798,7 @@ Compatibility
 The following versions of Nginx should work with this module:
 
 * 1.3.x (last tested: 1.3.7)
-* 1.2.x (last tested: 1.2.6)
+* 1.2.x (last tested: 1.2.7)
 * 1.1.x (last tested: 1.1.5)
 * 1.0.x (last tested: 1.0.11)
 * 0.9.x (last tested: 0.9.4)
