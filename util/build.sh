@@ -7,6 +7,13 @@ version=$1
 home=~
 force=$2
 
+ngx_redis_version=0.3.6
+ngx_redis_path=$home/work/nginx/ngx_http_redis-$ngx_redis_version
+
+cd $ngx_redis_path
+patch -N -p1 < $root/../ngx_openresty/patches/ngx_http_redis-$ngx_redis_version-variables_in_redis_pass.patch
+cd $root
+
             #--without-http_memcached_module \
 ngx-build $force $version \
             --with-cc-opt="-O0" \
@@ -22,7 +29,7 @@ ngx-build $force $version \
             --without-http_userid_module \
             --add-module=$root/../ndk-nginx-module \
             --add-module=$root/../set-misc-nginx-module \
-          --add-module=$home/work/nginx/ngx_http_redis-0.3.6 \
+          --add-module=$ngx_redis_path \
           --add-module=$root/../xss-nginx-module \
           --add-module=$root/../redis2-nginx-module \
           --add-module=$root/../eval-nginx-module \
