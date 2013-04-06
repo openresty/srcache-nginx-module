@@ -79,12 +79,12 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
         }
 
         ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                       "srcache_fetch: subrequest returned status %d",
+                       "srcache_fetch: subrequest returned status %ui",
                        r->headers_out.status);
 
         if (r->headers_out.status != NGX_HTTP_OK) {
             dd("ignoring body because status == %d",
-                    (int) r->headers_out.status);
+               (int) r->headers_out.status);
 
             ctx->ignore_body = 1;
 
@@ -111,7 +111,7 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
         ctx->ignore_body = 1;
 
         ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                       "srcache_store: subrequest returned status %d",
+                       "srcache_store: subrequest returned status %ui",
                        r->headers_out.status);
 
         return NGX_OK;
