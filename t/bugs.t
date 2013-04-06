@@ -318,8 +318,8 @@ F(ngx_http_finalize_request) {
 finalize: -4
 conn err: 110: upstream timed out
 upstream fin req: error=0 eof=0 rc=504
-finalize: 0
-post subreq: rc=0, status=504
+finalize: 504
+post subreq: rc=504, status=200
 finalize: 0
 
 --- tcp_listen: 19112
@@ -475,9 +475,9 @@ F(ngx_http_finalize_request) {
 }
 --- stap_out
 finalize: -4
-upstream fin req: error=0 eof=1 rc=502
-finalize: 0
-post subreq: rc=0, status=502
+upstream fin req: error=0 eof=1 rc=-1
+finalize: -1
+post subreq: rc=-1, status=200
 finalize: 0
 
 --- tcp_listen: 19112

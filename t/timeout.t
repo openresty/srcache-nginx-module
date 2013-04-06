@@ -5,7 +5,7 @@ use Test::Nginx::Socket;
 
 repeat_each(2);
 
-plan tests => repeat_each() * 4 * blocks();
+plan tests => repeat_each() * (4 * blocks() - 2);
 
 $ENV{TEST_NGINX_MEMCACHED_PORT} ||= 11211;
 
@@ -78,11 +78,11 @@ hello
 
 --- request
 GET /t
---- response_body
+--- ignore_response
 --- no_error_log
 location /err is called
---- error_log
-srcache_store: skipped because response body truncated: 120 > 0
+--- no_error_log
+srcache_store: subrequest returned status
 
 
 
@@ -108,9 +108,13 @@ srcache_store: skipped because response body truncated: 120 > 0
 
 --- request
 GET /t
---- response_body
+--- ignore_response
 --- no_error_log
 location /err is called
+srcache_store: subrequest returned status
+[alert]
+[crit]
+
 --- error_log
-srcache_store: skipped due to new error status code 502 (old: 200)
+upstream timed out
 

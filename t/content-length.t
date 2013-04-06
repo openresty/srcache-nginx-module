@@ -5,7 +5,7 @@ use Test::Nginx::Socket;
 
 #repeat_each(2);
 
-plan tests => repeat_each() * (blocks() * 5);
+plan tests => repeat_each() * (blocks() * 5 - 4);
 
 $ENV{TEST_NGINX_MEMCACHED_PORT} ||= 11211;
 
@@ -62,10 +62,9 @@ GET /foo
 --- response_headers
 Content-Type: text/css
 Content-Length: 10
---- response_body
-hello
---- error_log
-srcache_store: skipped because response body truncated: 10 > 6
+--- ignore_response
+--- no_error_log
+srcache_store: subrequest returned status
 
 
 

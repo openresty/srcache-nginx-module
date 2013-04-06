@@ -5,7 +5,7 @@ use Test::Nginx::Socket;
 
 #repeat_each(2);
 
-plan tests => repeat_each() * (5 * blocks() + 3);
+plan tests => repeat_each() * (5 * blocks() + 4);
 
 $ENV{TEST_NGINX_MEMCACHED_PORT} ||= 11211;
 
@@ -63,6 +63,9 @@ X-Fetch-Status: MISS
 X-Store-Status: STORE
 --- response_body
 hello
+--- error_log
+srcache_store: subrequest returned status 201
+--- log_level: debug
 
 
 
