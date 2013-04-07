@@ -314,13 +314,13 @@ F(ngx_http_finalize_request) {
     printf("finalize: %d\n", $rc)
 }
 
---- stap_out
-finalize: -4
+--- stap_out_like chop
+^finalize: -4
 conn err: 110: upstream timed out
 upstream fin req: error=0 eof=0 rc=504
-finalize: 504
-post subreq: rc=504, status=200
-finalize: 0
+finalize: -1
+post subreq: rc=-1, status=200
+finalize: 0$
 
 --- tcp_listen: 19112
 --- tcp_no_close
@@ -473,12 +473,16 @@ F(ngx_http_srcache_fetch_post_subrequest) {
 F(ngx_http_finalize_request) {
     printf("finalize: %d\n", $rc)
 }
---- stap_out
+--- stap_out_like
 finalize: -4
-upstream fin req: error=0 eof=1 rc=-1
+(?:upstream fin req: error=0 eof=1 rc=502
 finalize: -1
 post subreq: rc=-1, status=200
-finalize: 0
+|conn err: \d+: writev\(\) failed
+upstream fin req: error=0 eof=0 rc=502
+finalize: -1
+post subreq: rc=-1, status=(?:0|200)
+)?finalize: 0
 
 --- tcp_listen: 19112
 --- tcp_reply eval
