@@ -480,9 +480,10 @@ finalize: -1
 post subreq: rc=-1, status=200
 |conn err: \d+: writev\(\) failed
 upstream fin req: error=0 eof=0 rc=502
-finalize: -1
-post subreq: rc=-1, status=(?:0|200)
-)?finalize: 0
+finalize: (?:-1|502)
+post subreq: rc=(?:-1|502), status=(?:0|200)
+(?:finalize: 0
+)?)?finalize: 0
 
 --- tcp_listen: 19112
 --- tcp_reply eval
