@@ -5,7 +5,7 @@ use Test::Nginx::Socket;
 
 #repeat_each(2);
 
-plan tests => repeat_each() * (5 * blocks() + 4);
+plan tests => repeat_each() * (5 * blocks() + 5);
 
 $ENV{TEST_NGINX_MEMCACHED_PORT} ||= 11211;
 
@@ -16,7 +16,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: flush all
+=== TEST 1: flush all (not using ngx_srcache)
 --- config
     location /flush {
         set $memc_cmd 'flush_all';
@@ -29,6 +29,21 @@ Content-Type: text/plain
 Content-Length: 4
 X-Fetch-Status: BYPASS
 X-Store-Status: BYPASS
+
+--- stap
+F(ngx_http_srcache_access_handler) {
+    println("srcache access handler")
+}
+
+F(ngx_http_srcache_header_filter) {
+    println("srcache header filter")
+}
+
+F(ngx_http_srcache_body_filter) {
+    println("srcache body filter")
+}
+
+--- stap_out
 --- request
 GET /flush
 --- response_body eval: "OK\r\n"

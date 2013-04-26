@@ -21,7 +21,6 @@
 unsigned  ngx_http_srcache_used;
 
 
-static ngx_int_t ngx_http_srcache_pre_config(ngx_conf_t *cf);
 static void *ngx_http_srcache_create_loc_conf(ngx_conf_t *cf);
 static char *ngx_http_srcache_merge_loc_conf(ngx_conf_t *cf, void *parent,
     void *child);
@@ -211,7 +210,7 @@ static ngx_command_t  ngx_http_srcache_commands[] = {
 
 
 static ngx_http_module_t  ngx_http_srcache_filter_module_ctx = {
-    ngx_http_srcache_pre_config,           /* preconfiguration */
+    NULL,                                  /* preconfiguration */
     ngx_http_srcache_post_config,          /* postconfiguration */
 
     ngx_http_srcache_create_main_conf,     /* create main configuration */
@@ -239,17 +238,6 @@ ngx_module_t  ngx_http_srcache_filter_module = {
     NULL,                                  /* exit master */
     NGX_MODULE_V1_PADDING
 };
-
-
-static ngx_int_t
-ngx_http_srcache_pre_config(ngx_conf_t *cf)
-{
-#if 1
-    ngx_http_srcache_used = 0;
-#endif
-
-    return NGX_OK;
-}
 
 
 static void *
@@ -374,6 +362,7 @@ ngx_http_srcache_conf_set_request(ngx_conf_t *cf, ngx_command_t *cmd,
     ngx_str_t                        *value;
     ngx_str_t                        *method_name;
     ngx_http_compile_complex_value_t  ccv;
+    ngx_http_srcache_main_conf_t     *smcf;
 
     rpp = (ngx_http_srcache_request_t **) (p + cmd->offset);
 
@@ -381,7 +370,10 @@ ngx_http_srcache_conf_set_request(ngx_conf_t *cf, ngx_command_t *cmd,
         return "is duplicate";
     }
 
-    ngx_http_srcache_used = 1;
+    smcf = ngx_http_conf_get_module_main_conf(cf,
+                                              ngx_http_srcache_filter_module);
+
+    smcf->module_used = 1;
 
     value = cf->args->elts;
 
@@ -460,6 +452,7 @@ ngx_http_srcache_create_main_conf(ngx_conf_t *cf)
 
     /* set by ngx_pcalloc:
      *      smcf->postponed_to_access_phase_end = 0;
+     *      smcf->module_used = 0;
      *      smcf->headers_in_hash = { NULL, 0 };
      */
 
@@ -518,13 +511,17 @@ ngx_http_srcache_post_config(ngx_conf_t *cf)
     ngx_int_t                        rc;
     ngx_http_handler_pt             *h;
     ngx_http_core_main_conf_t       *cmcf;
+    ngx_http_srcache_main_conf_t    *smcf;
 
     rc = ngx_http_srcache_add_variables(cf);
     if (rc != NGX_OK) {
         return rc;
     }
 
-    if (ngx_http_srcache_used) {
+    smcf = ngx_http_conf_get_module_main_conf(cf,
+                                              ngx_http_srcache_filter_module);
+
+    if (smcf->module_used) {
 
         dd("using ngx-srcache");
 
