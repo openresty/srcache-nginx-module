@@ -18,7 +18,7 @@ This module is production ready.
 Version
 =======
 
-This document describes srcache-nginx-module [v0.19](https://github.com/agentzh/srcache-nginx-module/tags) released on 4 February 2013.
+This document describes srcache-nginx-module [v0.20](https://github.com/agentzh/srcache-nginx-module/tags) released on 26 April 2013.
 
 Synopsis
 ========
@@ -215,7 +215,7 @@ Here is a working example by using Redis:
     location = /redis {
         internal;
 
-        set $redis_key $args;
+        set_md5 $redis_key $args;
         redis_pass 127.0.0.1:6379;
     }
 
@@ -224,6 +224,7 @@ Here is a working example by using Redis:
 
         set_unescape_uri $exptime $arg_exptime;
         set_unescape_uri $key $arg_key;
+        set_md5 $key;
 
         redis2_query set $key $echo_request_body;
         redis2_query expire $key $exptime;
@@ -776,13 +777,13 @@ It is recommended to install this module as well as the Nginx core and many othe
 
 Alternatively, you can build Nginx with this module all by yourself:
 
-* Grab the nginx source code from [nginx.org](http://nginx.org), for example, the version 1.2.7 (see [Nginx Compatibility](http://wiki.nginx.org/HttpSRCacheModule#Compatibility)),
+* Grab the nginx source code from [nginx.org](http://nginx.org), for example, the version 1.2.8 (see [Nginx Compatibility](http://wiki.nginx.org/HttpSRCacheModule#Compatibility)),
 * and then download the latest version of the release tarball of this module from srcache-nginx-module [file list](http://github.com/agentzh/srcache-nginx-module/tags),
 * and finally build the Nginx source with this module
 
-        wget 'http://nginx.org/download/nginx-1.2.7.tar.gz'
-        tar -xzvf nginx-1.2.7.tar.gz
-        cd nginx-1.2.7/
+        wget 'http://nginx.org/download/nginx-1.2.8.tar.gz'
+        tar -xzvf nginx-1.2.8.tar.gz
+        cd nginx-1.2.8/
      
         # Here we assume you would install you nginx under /opt/nginx/.
         ./configure --prefix=/opt/nginx \
@@ -798,7 +799,7 @@ Compatibility
 The following versions of Nginx should work with this module:
 
 * 1.3.x (last tested: 1.3.7)
-* 1.2.x (last tested: 1.2.7)
+* 1.2.x (last tested: 1.2.8)
 * 1.1.x (last tested: 1.1.5)
 * 1.0.x (last tested: 1.0.11)
 * 0.9.x (last tested: 0.9.4)
