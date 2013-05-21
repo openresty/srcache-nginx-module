@@ -3,7 +3,7 @@
 use lib 'lib';
 use Test::Nginx::Socket;
 
-plan tests => repeat_each() * 81;
+plan tests => repeat_each() * 92;
 
 $ENV{TEST_NGINX_MEMCACHED_PORT} ||= 11211;
 
@@ -449,6 +449,70 @@ Content-Type: text/html
 
 
 === TEST 21: inspect the cached item
+--- config
+    location /memc {
+        set $memc_key "/foo";
+        set $memc_exptime 300;
+        memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
+    }
+--- request
+GET /memc
+--- response_headers
+Content-Type: text/html
+--- response_headers
+Content-Type: text/html
+--- response_body_like: 404 Not Found
+--- error_code: 404
+
+
+
+=== TEST 22: flush all
+--- config
+    location /flush {
+        set $memc_cmd 'flush_all';
+        memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
+    }
+--- response_headers
+Content-Type: text/plain
+Content-Length: 4
+!Foo-Bar
+--- request
+GET /flush
+--- response_body eval: "OK\r\n"
+
+
+
+=== TEST 23: basic fetch (explicitly do not cache 302, and store_statuses are all bigger than 302)
+github pull #19
+--- config
+    location /foo {
+        default_type text/css;
+        srcache_fetch GET /memc $uri;
+        srcache_store PUT /memc $uri;
+        srcache_store_statuses 303 304;
+
+        content_by_lua '
+            ngx.redirect("/bah", 302)
+        ';
+    }
+
+    location /memc {
+        internal;
+
+        set $memc_key $query_string;
+        set $memc_exptime 300;
+        memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
+    }
+--- request
+GET /foo HTTP/1.0
+--- response_headers
+Content-Type: text/html
+--- response_body_like: 302 Found
+--- error_code: 302
+
+
+
+=== TEST 24: inspect the cached item
 --- config
     location /memc {
         set $memc_key "/foo";

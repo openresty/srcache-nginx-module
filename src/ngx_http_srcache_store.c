@@ -35,7 +35,7 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
     ngx_http_srcache_loc_conf_t     *slcf;
     ngx_http_post_subrequest_t      *ps;
     ngx_str_t                        skip;
-    ngx_int_t                       *sp; /* status pointer */
+    ngx_uint_t                      *sp; /* status pointer */
 
     dd_enter();
     dd("srcache header filter");
@@ -177,26 +177,22 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
 
     if (slcf->store_statuses != NULL) {
 
-        sp = slcf->store_statuses;
-        for ( ; *sp; sp++) {
+        sp = (ngx_uint_t *) slcf->store_statuses;
 
-            /* store_stauses are in the descent order */
-            if (r->headers_out.status < (ngx_uint_t) *sp) {
-                continue;
-            }
-
-            if (r->headers_out.status > (ngx_uint_t) *sp) {
-                ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                               "srcache_store bypassed because of unmatched "
-                               "status code %i with srcache_store_statuses",
-                               r->headers_out.status);
-
-                return ngx_http_srcache_next_header_filter(r);
-            }
-
-            /* r->headers_out.status == (ngx_uint_t) *sp */
-            break;
+        while (r->headers_out.status < *sp) {
+            sp++;
         }
+
+        if (*sp == 0 || r->headers_out.status > *sp) {
+            ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                           "srcache_store bypassed because of unmatched "
+                           "status code %ui with srcache_store_statuses",
+                           r->headers_out.status);
+
+            return ngx_http_srcache_next_header_filter(r);
+        }
+
+        /* r->headers_out.status == (ngx_uint_t) *sp */
 
     } else {
 
