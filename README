@@ -924,8 +924,12 @@ Installation
     *   Grab the nginx source code from nginx.org (<http://nginx.org>), for
         example, the version 1.2.9 (see Nginx Compatibility),
 
-    *   and then download the latest version of the release tarball of this
-        module from srcache-nginx-module file list
+    *   and then apply the patch to your nginx source tree that fixes an
+        important bug in the mainline Nginx core:
+        https://raw.github.com/agentzh/ngx_openresty/master/patches/nginx-1.2.8-upstream_truncation.patch
+
+    *   after that, download the latest version of the release tarball of
+        this module from srcache-nginx-module file list
         (<http://github.com/agentzh/srcache-nginx-module/tags>),
 
     *   and finally build the Nginx source with this module

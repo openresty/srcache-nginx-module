@@ -778,7 +778,8 @@ It is recommended to install this module as well as the Nginx core and many othe
 Alternatively, you can build Nginx with this module all by yourself:
 
 * Grab the nginx source code from [nginx.org](http://nginx.org), for example, the version 1.2.9 (see [Nginx Compatibility](http://wiki.nginx.org/HttpSRCacheModule#Compatibility)),
-* and then download the latest version of the release tarball of this module from srcache-nginx-module [file list](http://github.com/agentzh/srcache-nginx-module/tags),
+* and then apply the patch to your nginx source tree that fixes an important bug in the mainline Nginx core: <https://raw.github.com/agentzh/ngx_openresty/master/patches/nginx-1.2.8-upstream_truncation.patch>
+* after that, download the latest version of the release tarball of this module from srcache-nginx-module [file list](http://github.com/agentzh/srcache-nginx-module/tags),
 * and finally build the Nginx source with this module
 
         wget 'http://nginx.org/download/nginx-1.2.9.tar.gz'
