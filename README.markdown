@@ -18,7 +18,7 @@ This module is production ready.
 Version
 =======
 
-This document describes srcache-nginx-module [v0.21](https://github.com/agentzh/srcache-nginx-module/tags) released on 23 May 2013.
+This document describes srcache-nginx-module [v0.22](https://github.com/agentzh/srcache-nginx-module/tags) released on 6 August 2013.
 
 Synopsis
 ========
@@ -777,14 +777,14 @@ It is recommended to install this module as well as the Nginx core and many othe
 
 Alternatively, you can build Nginx with this module all by yourself:
 
-* Grab the nginx source code from [nginx.org](http://nginx.org), for example, the version 1.2.9 (see [Nginx Compatibility](http://wiki.nginx.org/HttpSRCacheModule#Compatibility)),
-* and then apply the patch to your nginx source tree that fixes an important bug in the mainline Nginx core: <https://raw.github.com/agentzh/ngx_openresty/master/patches/nginx-1.2.8-upstream_truncation.patch>
+* Grab the nginx source code from [nginx.org](http://nginx.org), for example, the version 1.4.1 (see [Nginx Compatibility](http://wiki.nginx.org/HttpSRCacheModule#Compatibility)),
+* and then apply the patch to your nginx source tree that fixes an important bug in the mainline Nginx core: <https://raw.github.com/agentzh/ngx_openresty/master/patches/nginx-1.4.1-upstream_truncation.patch>
 * after that, download the latest version of the release tarball of this module from srcache-nginx-module [file list](http://github.com/agentzh/srcache-nginx-module/tags),
 * and finally build the Nginx source with this module
 
-        wget 'http://nginx.org/download/nginx-1.2.9.tar.gz'
-        tar -xzvf nginx-1.2.9.tar.gz
-        cd nginx-1.2.9/
+        wget 'http://nginx.org/download/nginx-1.4.1.tar.gz'
+        tar -xzvf nginx-1.4.1.tar.gz
+        cd nginx-1.4.1/
      
         # Here we assume you would install you nginx under /opt/nginx/.
         ./configure --prefix=/opt/nginx \
@@ -799,6 +799,7 @@ Compatibility
 
 The following versions of Nginx should work with this module:
 
+* 1.4.x (last tested: 1.4.1)
 * 1.3.x (last tested: 1.3.7)
 * 1.2.x (last tested: 1.2.9)
 * 1.1.x (last tested: 1.1.5)
