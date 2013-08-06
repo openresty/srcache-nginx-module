@@ -288,7 +288,7 @@ ngx_http_srcache_adjust_subrequest(ngx_http_request_t *sr,
         sr->request_body = body;
 
         rc = ngx_http_srcache_set_content_length_header(sr,
-                                                parsed_sr->content_length_n);
+                                                 parsed_sr->content_length_n);
 
         if (rc != NGX_OK) {
             return NGX_HTTP_INTERNAL_SERVER_ERROR;
@@ -1035,7 +1035,7 @@ ngx_http_srcache_store_response_header(ngx_http_request_t *r,
         && r->headers_out.last_modified_time != -1)
     {
         b->last = ngx_cpymem(b->last, "Last-Modified: ",
-                sizeof("Last-Modified: ") - 1);
+                             sizeof("Last-Modified: ") - 1);
 
         b->last = ngx_cpymem(b->last, buf, sizeof(buf));
 
@@ -1044,7 +1044,7 @@ ngx_http_srcache_store_response_header(ngx_http_request_t *r,
 
     if (r->allow_ranges) {
         b->last = ngx_cpymem(b->last, "X-SRCache-Allow-Ranges: 1\r\n",
-                sizeof("X-SRCache-Allow-Ranges: 1\r\n") - 1);
+                             sizeof("X-SRCache-Allow-Ranges: 1\r\n") - 1);
     }
 
     part = &r->headers_out.headers.part;
@@ -1067,14 +1067,14 @@ ngx_http_srcache_store_response_header(ngx_http_request_t *r,
         }
 
         dd("header hash: %lu, hash lc: %lu", (unsigned long) header[i].hash,
-                (unsigned long) ngx_hash_key_lc(header[i].key.data,
-                header[i].key.len));
+           (unsigned long) ngx_hash_key_lc(header[i].key.data,
+           header[i].key.len));
 
         if (ngx_hash_find(&conf->hide_headers_hash, header[i].hash,
                           header[i].lowcase_key, header[i].key.len))
         {
             dd("skipped header key: %.*s", (int) header[i].key.len,
-                    header[i].key.data);
+               header[i].key.data);
             continue;
         }
 
@@ -1133,8 +1133,7 @@ ngx_http_srcache_hide_headers_hash(ngx_conf_t *cf,
     {
         conf->hide_headers_hash = prev->hide_headers_hash;
 
-        if (conf->hide_headers_hash.buckets)
-        {
+        if (conf->hide_headers_hash.buckets) {
             return NGX_OK;
         }
 
@@ -1198,7 +1197,7 @@ ngx_http_srcache_hide_headers_hash(ngx_conf_t *cf,
 
             if (h[i].len == sizeof("Last-Modified") - 1
                 && ngx_strncasecmp(h[i].data, (u_char *) "Last-Modified",
-                    sizeof("Last-Modified") - 1)
+                                   sizeof("Last-Modified") - 1)
                 == 0)
             {
                 conf->hide_last_modified = 1;
@@ -1206,8 +1205,7 @@ ngx_http_srcache_hide_headers_hash(ngx_conf_t *cf,
 
             if (h[i].len == sizeof("Content-Type") - 1
                 && ngx_strncasecmp(h[i].data, (u_char *) "Content-Type",
-                    sizeof("Content-Type") - 1)
-                == 0)
+                                   sizeof("Content-Type") - 1) == 0)
             {
                 conf->hide_content_type = 1;
             }
@@ -1235,16 +1233,14 @@ ngx_http_srcache_hide_headers_hash(ngx_conf_t *cf,
 
                 if (h[i].len == sizeof("Content-Type") - 1
                     && ngx_strncasecmp(h[i].data, (u_char *) "Content-Type",
-                        sizeof("Content-Type") - 1)
-                    == 0)
+                                       sizeof("Content-Type") - 1) == 0)
                 {
                     conf->hide_content_type = 0;
                 }
 
                 if (h[i].len == sizeof("Last-Modified") - 1
                     && ngx_strncasecmp(h[i].data, (u_char *) "Last-Modified",
-                        sizeof("Last-Modified") - 1)
-                    == 0)
+                                       sizeof("Last-Modified") - 1) == 0)
                 {
                     conf->hide_last_modified = 0;
                 }

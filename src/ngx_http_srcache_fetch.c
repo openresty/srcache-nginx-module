@@ -18,13 +18,9 @@
 
 static ngx_int_t ngx_http_srcache_fetch_subrequest(ngx_http_request_t *r,
         ngx_http_srcache_loc_conf_t *conf, ngx_http_srcache_ctx_t *ctx);
-
 static ngx_int_t ngx_http_srcache_fetch_header_filter(ngx_http_request_t *r);
-
 static ngx_int_t ngx_http_srcache_test_not_modified(ngx_http_request_t *r);
-
 static ngx_int_t ngx_http_srcache_test_precondition(ngx_http_request_t *r);
-
 static void ngx_http_srcache_post_read_body(ngx_http_request_t *r);
 
 
@@ -74,7 +70,7 @@ ngx_http_srcache_access_handler(ngx_http_request_t *r)
             /* register a ctx to give a chance to srcache_store to run */
 
             ctx = ngx_pcalloc(r->pool,
-                    sizeof(ngx_http_srcache_filter_module));
+                              sizeof(ngx_http_srcache_filter_module));
 
             if (ctx == NULL) {
                 return NGX_HTTP_INTERNAL_SERVER_ERROR;
@@ -92,9 +88,9 @@ ngx_http_srcache_access_handler(ngx_http_request_t *r)
     }
 
     if (conf->fetch_skip != NULL
-            && ngx_http_complex_value(r, conf->fetch_skip, &skip) == NGX_OK
-            && skip.len
-            && (skip.len != 1 || skip.data[0] != '0'))
+        && ngx_http_complex_value(r, conf->fetch_skip, &skip) == NGX_OK
+        && skip.len
+        && (skip.len != 1 || skip.data[0] != '0'))
     {
         ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "srcache_fetch skipped due to the true value fed into "
@@ -178,7 +174,7 @@ ngx_http_srcache_access_handler(ngx_http_request_t *r)
 
                 if (!r->filter_finalize) {
                     rc = ngx_http_srcache_next_body_filter(r,
-                            ctx->body_from_cache);
+                                                        ctx->body_from_cache);
 
                     if (rc == NGX_ERROR) {
                         r->connection->error = 1;
@@ -237,7 +233,7 @@ ngx_http_srcache_access_handler(ngx_http_request_t *r)
             tmp = *cur_ph;
 
             memmove(cur_ph, cur_ph + 1,
-                (last_ph - cur_ph) * sizeof (ngx_http_phase_handler_t));
+                    (last_ph - cur_ph) * sizeof (ngx_http_phase_handler_t));
 
             *last_ph = tmp;
 
@@ -294,7 +290,7 @@ do_fetch_subrequest:
 
 ngx_int_t
 ngx_http_srcache_fetch_post_subrequest(ngx_http_request_t *r, void *data,
-        ngx_int_t rc)
+    ngx_int_t rc)
 {
     ngx_http_srcache_ctx_t      *ctx = data;
     ngx_http_srcache_ctx_t      *pr_ctx;
@@ -325,8 +321,8 @@ ngx_http_srcache_fetch_post_subrequest(ngx_http_request_t *r, void *data,
         pr_ctx->from_cache = 0;
 
     } else if (r->headers_out.status >= NGX_HTTP_SPECIAL_RESPONSE
-        || rc == NGX_ERROR
-        || rc >= NGX_HTTP_SPECIAL_RESPONSE)
+               || rc == NGX_ERROR
+               || rc >= NGX_HTTP_SPECIAL_RESPONSE)
     {
         dd("HERE");
         pr_ctx->from_cache = 0;
@@ -351,7 +347,7 @@ ngx_http_srcache_fetch_post_subrequest(ngx_http_request_t *r, void *data,
 
 static ngx_int_t
 ngx_http_srcache_fetch_subrequest(ngx_http_request_t *r,
-        ngx_http_srcache_loc_conf_t *conf, ngx_http_srcache_ctx_t *ctx)
+    ngx_http_srcache_loc_conf_t *conf, ngx_http_srcache_ctx_t *ctx)
 {
     ngx_http_srcache_ctx_t         *sr_ctx;
     ngx_http_post_subrequest_t     *psr;
@@ -376,7 +372,7 @@ ngx_http_srcache_fetch_subrequest(ngx_http_request_t *r,
     parsed_sr->content_length_n = -1;
 
     if (ngx_http_complex_value(r, &conf->fetch->location,
-                &parsed_sr->location) != NGX_OK)
+                               &parsed_sr->location) != NGX_OK)
     {
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
@@ -421,13 +417,13 @@ ngx_http_srcache_fetch_subrequest(ngx_http_request_t *r,
     dd("firing the fetch subrequest");
 
     dd("fetch location: %.*s", (int) parsed_sr->location.len,
-            parsed_sr->location.data);
+       parsed_sr->location.data);
 
     dd("fetch args: %.*s", (int) parsed_sr->args.len,
             parsed_sr->args.data);
 
     rc = ngx_http_subrequest(r, &parsed_sr->location, &parsed_sr->args,
-            &sr, psr, flags);
+                             &sr, psr, flags);
 
     if (rc != NGX_OK) {
         return NGX_ERROR;

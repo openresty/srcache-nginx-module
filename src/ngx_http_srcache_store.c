@@ -68,7 +68,7 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
         dd("in fetch subrequest");
 
         pr_ctx = ngx_http_get_module_ctx(r->parent,
-                ngx_http_srcache_filter_module);
+                                         ngx_http_srcache_filter_module);
 
         if (pr_ctx == NULL) {
             dd("parent ctx is null");
@@ -270,7 +270,7 @@ ngx_http_srcache_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
 
     if (ctx->ignore_body || ctx->in_store_subrequest/* || ctx->fetch_error */) {
         dd("ignore body: ignore body %d, in store sr %d",
-                (int) ctx->ignore_body, (int) ctx->in_store_subrequest);
+           (int) ctx->ignore_body, (int) ctx->in_store_subrequest);
         ngx_http_srcache_discard_bufs(r->pool, in);
         return NGX_OK;
     }
@@ -295,7 +295,7 @@ ngx_http_srcache_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
 
                     if (rc == NGX_AGAIN) {
                         dd("AGAIN/OK: new pos %p, last %p",
-                                cl->buf->pos, cl->buf->last);
+                           cl->buf->pos, cl->buf->last);
 
                         continue;
                     }
@@ -306,7 +306,7 @@ ngx_http_srcache_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
                         ctx->ignore_body = 1;
                         ngx_http_srcache_discard_bufs(r->pool, cl);
                         pr_ctx = ngx_http_get_module_ctx(r->parent,
-                                ngx_http_srcache_filter_module);
+                                              ngx_http_srcache_filter_module);
 
                         if (pr_ctx == NULL) {
                             return NGX_ERROR;
@@ -321,7 +321,7 @@ ngx_http_srcache_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
 
                     dd("OK: new pos %p, last %p", cl->buf->pos, cl->buf->last);
                     dd("buf left: %.*s", (int) (cl->buf->last - cl->buf->pos),
-                            cl->buf->pos);
+                       cl->buf->pos);
 
                     ctx->parsing_cached_headers = 0;
 
@@ -347,7 +347,7 @@ ngx_http_srcache_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
         dd("save the cached response body for parent");
 
         pr_ctx = ngx_http_get_module_ctx(r->parent,
-                ngx_http_srcache_filter_module);
+                                         ngx_http_srcache_filter_module);
 
         if (pr_ctx == NULL) {
             return NGX_ERROR;
@@ -467,7 +467,7 @@ done:
 
 static ngx_int_t
 ngx_http_srcache_store_subrequest(ngx_http_request_t *r,
-        ngx_http_srcache_ctx_t *ctx)
+    ngx_http_srcache_ctx_t *ctx)
 {
     ngx_http_srcache_ctx_t         *sr_ctx;
     ngx_str_t                       args;
@@ -521,7 +521,7 @@ ngx_http_srcache_store_subrequest(ngx_http_request_t *r,
     parsed_sr->content_length_n = ctx->response_length;
 
     if (ngx_http_complex_value(r, &conf->store->location,
-                &parsed_sr->location) != NGX_OK)
+                               &parsed_sr->location) != NGX_OK)
     {
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
@@ -531,7 +531,7 @@ ngx_http_srcache_store_subrequest(ngx_http_request_t *r,
     }
 
     if (ngx_http_complex_value(r, &conf->store->args, &parsed_sr->args)
-            != NGX_OK)
+        != NGX_OK)
     {
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
@@ -540,7 +540,8 @@ ngx_http_srcache_store_subrequest(ngx_http_request_t *r,
     args.len = 0;
 
     if (ngx_http_parse_unsafe_uri(r, &parsed_sr->location, &args, &flags)
-            != NGX_OK) {
+        != NGX_OK)
+    {
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
@@ -554,7 +555,7 @@ ngx_http_srcache_store_subrequest(ngx_http_request_t *r,
             parsed_sr->location.data);
 
     dd("store args: %.*s", (int) parsed_sr->args.len,
-            parsed_sr->args.data);
+       parsed_sr->args.data);
 
     sr_ctx = ngx_pcalloc(r->pool, sizeof(ngx_http_srcache_ctx_t));
 
@@ -573,7 +574,7 @@ ngx_http_srcache_store_subrequest(ngx_http_request_t *r,
     psr->data = sr_ctx;
 
     rc = ngx_http_subrequest(r, &parsed_sr->location, &parsed_sr->args,
-            &sr, psr, flags);
+                             &sr, psr, flags);
 
     if (rc != NGX_OK) {
         return NGX_ERROR;
@@ -593,7 +594,7 @@ ngx_http_srcache_store_subrequest(ngx_http_request_t *r,
 
 static ngx_int_t
 ngx_http_srcache_store_post_subrequest(ngx_http_request_t *r, void *data,
-        ngx_int_t rc)
+    ngx_int_t rc)
 {
     return NGX_OK;
 }

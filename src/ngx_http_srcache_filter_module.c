@@ -353,7 +353,7 @@ ngx_http_srcache_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
 
 static char *
 ngx_http_srcache_conf_set_request(ngx_conf_t *cf, ngx_command_t *cmd,
-        void *conf)
+    void *conf)
 {
     char  *p = conf;
 
@@ -549,7 +549,7 @@ ngx_http_srcache_post_config(ngx_conf_t *cf)
 
 static char *
 ngx_http_srcache_store_statuses(ngx_conf_t *cf, ngx_command_t *cmd,
-        void *conf)
+    void *conf)
 {
     ngx_http_srcache_loc_conf_t     *slcf = conf;
 
