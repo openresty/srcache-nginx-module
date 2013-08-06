@@ -386,4 +386,5 @@ srcache_store skipped due to request method HEAD
 --- no_error_log
 [error]
 --- log_level: debug
+--- wait: 0.1
 

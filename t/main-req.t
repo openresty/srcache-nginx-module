@@ -78,6 +78,7 @@ X-Fetch-Status: MISS
 X-Store-Status: STORE
 --- response_body
 hello
+--- wait: 0.1
 --- error_log
 srcache_store: subrequest returned status 201
 --- log_level: debug
