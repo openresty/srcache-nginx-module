@@ -70,7 +70,7 @@ src/store.[ch]
 t/servroot/
 headers.[ch]
 buildroot/
-build1[0-3]
+build1[0-9]
 go
 all
 analyze
