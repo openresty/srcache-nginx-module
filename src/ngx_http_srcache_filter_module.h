@@ -131,6 +131,8 @@ struct ngx_http_srcache_ctx_s {
     unsigned        store_skip:1;
     unsigned        issued_fetch_subrequest:1;
     unsigned        seen_subreq_eof:1;
+    unsigned        waiting_request_body:1;
+    unsigned        request_body_done:1;
 };
 
 

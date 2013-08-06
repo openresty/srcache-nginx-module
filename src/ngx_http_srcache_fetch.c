@@ -13,6 +13,7 @@
 #include "ngx_http_srcache_fetch.h"
 #include "ngx_http_srcache_store.h"
 #include "ngx_http_srcache_util.h"
+#include <nginx.h>
 
 
 static ngx_int_t ngx_http_srcache_fetch_subrequest(ngx_http_request_t *r,
@@ -23,6 +24,8 @@ static ngx_int_t ngx_http_srcache_fetch_header_filter(ngx_http_request_t *r);
 static ngx_int_t ngx_http_srcache_test_not_modified(ngx_http_request_t *r);
 
 static ngx_int_t ngx_http_srcache_test_precondition(ngx_http_request_t *r);
+
+static void ngx_http_srcache_post_read_body(ngx_http_request_t *r);
 
 
 ngx_int_t
@@ -122,6 +125,15 @@ ngx_http_srcache_access_handler(ngx_http_request_t *r)
         if (ctx->waiting_subrequest) {
             dd("waiting subrequest");
             return NGX_AGAIN;
+        }
+
+        if (ctx->waiting_request_body) {
+            return NGX_AGAIN;
+        }
+
+        if (ctx->request_body_done == 1) {
+            ctx->request_body_done = 0;
+            goto do_fetch_subrequest;
         }
 
         if (ctx->request_done) {
@@ -242,6 +254,28 @@ ngx_http_srcache_access_handler(ngx_http_request_t *r)
 
     dd("running phase handler...");
 
+    if (!r->request_body) {
+        dd("reading request body: ctx = %p", ctx);
+
+        rc = ngx_http_read_client_request_body(r,
+                                               ngx_http_srcache_post_read_body);
+        if (rc == NGX_ERROR || rc > NGX_OK) {
+#if (nginx_version < 1002006)                                               \
+    || (nginx_version >= 1003000 && nginx_version < 1003009)
+            r->main->count--;
+#endif
+            return rc;
+        }
+
+        if (rc == NGX_AGAIN) {
+            ctx->waiting_request_body = 1;
+            return NGX_AGAIN;
+        }
+
+        /* rc == NGX_OK */
+    }
+
+do_fetch_subrequest:
     /* issue a subrequest to fetch cached stuff (if any) */
 
     rc = ngx_http_srcache_fetch_subrequest(r, conf, ctx);
@@ -495,6 +529,35 @@ ngx_http_srcache_test_precondition(ngx_http_request_t *r)
 
     return ngx_http_filter_finalize_request(r, NULL,
                                             NGX_HTTP_PRECONDITION_FAILED);
+}
+
+
+static void
+ngx_http_srcache_post_read_body(ngx_http_request_t *r)
+{
+    ngx_http_srcache_ctx_t  *ctx;
+
+    ctx = ngx_http_get_module_ctx(r, ngx_http_srcache_filter_module);
+
+    dd("post read: ctx=%p", ctx);
+
+    ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                   "srcache post read for the access phase: wait:%ud c:%ud",
+                   (unsigned) ctx->waiting_request_body, r->main->count);
+
+    r->write_event_handler = ngx_http_core_run_phases;
+
+#if defined(nginx_version) && nginx_version >= 8011
+    r->main->count--;
+#endif
+
+    dd("c:%u", r->main->count);
+
+    if (ctx->waiting_request_body) {
+        ctx->request_body_done = 1;
+        ctx->waiting_request_body = 0;
+        ngx_http_core_run_phases(r);
+    }
 }
 
 /* vi:set ft=c ts=4 sw=4 et fdm=marker: */
