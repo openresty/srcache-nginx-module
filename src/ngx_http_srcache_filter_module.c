@@ -23,14 +23,11 @@ static char *ngx_http_srcache_merge_loc_conf(ngx_conf_t *cf, void *parent,
     void *child);
 static ngx_int_t ngx_http_srcache_post_config(ngx_conf_t *cf);
 static char *ngx_http_srcache_conf_set_request(ngx_conf_t *cf,
-        ngx_command_t *cmd, void *conf);
+    ngx_command_t *cmd, void *conf);
 static void *ngx_http_srcache_create_main_conf(ngx_conf_t *cf);
 static char *ngx_http_srcache_init_main_conf(ngx_conf_t *cf, void *conf);
-
-
-static char *
-ngx_http_srcache_store_statuses(ngx_conf_t *cf, ngx_command_t *cmd,
-        void *conf);
+static char * ngx_http_srcache_store_statuses(ngx_conf_t *cf,
+    ngx_command_t *cmd, void *conf);
 
 
 static volatile ngx_cycle_t  *ngx_http_srcache_prev_cycle = NULL;
