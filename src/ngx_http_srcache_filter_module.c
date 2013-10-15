@@ -18,9 +18,6 @@
 #include "ngx_http_srcache_headers.h"
 
 
-unsigned  ngx_http_srcache_used;
-
-
 static void *ngx_http_srcache_create_loc_conf(ngx_conf_t *cf);
 static char *ngx_http_srcache_merge_loc_conf(ngx_conf_t *cf, void *parent,
     void *child);
