@@ -90,6 +90,7 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
 
             pr_ctx->waiting_subrequest = 0;
             /* pr_ctx->fetch_error = 1; */
+            r->header_sent = 1;
 
             return NGX_OK;
         }
@@ -103,6 +104,7 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
 
         ctx->parsing_cached_headers = 1;
 
+        r->header_sent = 1;
         return NGX_OK;
     }
 
@@ -114,6 +116,7 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
                        "srcache_store: subrequest returned status %ui",
                        r->headers_out.status);
 
+        r->header_sent = 1;
         return NGX_OK;
     }
 
