@@ -33,6 +33,9 @@ ngx_http_srcache_store_statuses(ngx_conf_t *cf, ngx_command_t *cmd,
         void *conf);
 
 
+static volatile ngx_cycle_t  *ngx_http_srcache_prev_cycle = NULL;
+
+
 static ngx_str_t  ngx_http_srcache_hide_headers[] = {
     ngx_string("Connection"),
     ngx_string("Keep-Alive"),
@@ -505,6 +508,7 @@ ngx_http_srcache_init_main_conf(ngx_conf_t *cf, void *conf)
 static ngx_int_t
 ngx_http_srcache_post_config(ngx_conf_t *cf)
 {
+    int                              multi_http_blocks;
     ngx_int_t                        rc;
     ngx_http_handler_pt             *h;
     ngx_http_core_main_conf_t       *cmcf;
@@ -518,7 +522,15 @@ ngx_http_srcache_post_config(ngx_conf_t *cf)
     smcf = ngx_http_conf_get_module_main_conf(cf,
                                               ngx_http_srcache_filter_module);
 
-    if (smcf->module_used) {
+    if (ngx_http_srcache_prev_cycle != ngx_cycle) {
+        ngx_http_srcache_prev_cycle = ngx_cycle;
+        multi_http_blocks = 0;
+
+    } else {
+        multi_http_blocks = 1;
+    }
+
+    if (multi_http_blocks || smcf->module_used) {
 
         dd("using ngx-srcache");
 
