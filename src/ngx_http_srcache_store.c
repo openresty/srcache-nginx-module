@@ -233,7 +233,7 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
                       "ngx_srcache not working in subrequests (yet)");
 
         /* not allowd in subrquests */
-        return NGX_HTTP_INTERNAL_SERVER_ERROR;
+        return NGX_ERROR;
     }
 
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
@@ -494,7 +494,7 @@ ngx_http_srcache_store_subrequest(ngx_http_request_t *r,
 
     parsed_sr = ngx_palloc(r->pool, sizeof(ngx_http_srcache_parsed_request_t));
     if (parsed_sr == NULL) {
-        return NGX_HTTP_INTERNAL_SERVER_ERROR;
+        return NGX_ERROR;
     }
 
     parsed_sr->method      = conf->store->method;
@@ -526,17 +526,17 @@ ngx_http_srcache_store_subrequest(ngx_http_request_t *r,
     if (ngx_http_complex_value(r, &conf->store->location,
                                &parsed_sr->location) != NGX_OK)
     {
-        return NGX_HTTP_INTERNAL_SERVER_ERROR;
+        return NGX_ERROR;
     }
 
     if (parsed_sr->location.len == 0) {
-        return NGX_HTTP_INTERNAL_SERVER_ERROR;
+        return NGX_ERROR;
     }
 
     if (ngx_http_complex_value(r, &conf->store->args, &parsed_sr->args)
         != NGX_OK)
     {
-        return NGX_HTTP_INTERNAL_SERVER_ERROR;
+        return NGX_ERROR;
     }
 
     args.data = NULL;
@@ -545,7 +545,7 @@ ngx_http_srcache_store_subrequest(ngx_http_request_t *r,
     if (ngx_http_parse_unsafe_uri(r, &parsed_sr->location, &args, &flags)
         != NGX_OK)
     {
-        return NGX_HTTP_INTERNAL_SERVER_ERROR;
+        return NGX_ERROR;
     }
 
     if (args.len > 0 && parsed_sr->args.len == 0) {
@@ -563,14 +563,14 @@ ngx_http_srcache_store_subrequest(ngx_http_request_t *r,
     sr_ctx = ngx_pcalloc(r->pool, sizeof(ngx_http_srcache_ctx_t));
 
     if (sr_ctx == NULL) {
-        return NGX_HTTP_INTERNAL_SERVER_ERROR;
+        return NGX_ERROR;
     }
 
     sr_ctx->in_store_subrequest = 1;
 
     psr = ngx_palloc(r->pool, sizeof(ngx_http_post_subrequest_t));
     if (psr == NULL) {
-        return NGX_HTTP_INTERNAL_SERVER_ERROR;
+        return NGX_ERROR;
     }
 
     psr->handler = ngx_http_srcache_store_post_subrequest;

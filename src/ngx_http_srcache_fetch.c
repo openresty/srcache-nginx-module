@@ -73,7 +73,7 @@ ngx_http_srcache_access_handler(ngx_http_request_t *r)
                               sizeof(ngx_http_srcache_filter_module));
 
             if (ctx == NULL) {
-                return NGX_HTTP_INTERNAL_SERVER_ERROR;
+                return NGX_ERROR;
             }
 
             ngx_http_set_ctx(r, ctx, ngx_http_srcache_filter_module);
@@ -101,7 +101,7 @@ ngx_http_srcache_access_handler(ngx_http_request_t *r)
         ctx = ngx_pcalloc(r->pool, sizeof(ngx_http_srcache_filter_module));
 
         if (ctx == NULL) {
-            return NGX_HTTP_INTERNAL_SERVER_ERROR;
+            return NGX_ERROR;
         }
 
         ngx_http_set_ctx(r, ctx, ngx_http_srcache_filter_module);
@@ -202,7 +202,7 @@ ngx_http_srcache_access_handler(ngx_http_request_t *r)
         ctx = ngx_pcalloc(r->pool, sizeof(ngx_http_srcache_filter_module));
 
         if (ctx == NULL) {
-            return NGX_HTTP_INTERNAL_SERVER_ERROR;
+            return NGX_ERROR;
         }
 
         ngx_http_set_ctx(r, ctx, ngx_http_srcache_filter_module);
@@ -362,7 +362,7 @@ ngx_http_srcache_fetch_subrequest(ngx_http_request_t *r,
 
     parsed_sr = ngx_palloc(r->pool, sizeof(ngx_http_srcache_parsed_request_t));
     if (parsed_sr == NULL) {
-        return NGX_HTTP_INTERNAL_SERVER_ERROR;
+        return NGX_ERROR;
     }
 
     parsed_sr->method      = conf->fetch->method;
@@ -374,25 +374,26 @@ ngx_http_srcache_fetch_subrequest(ngx_http_request_t *r,
     if (ngx_http_complex_value(r, &conf->fetch->location,
                                &parsed_sr->location) != NGX_OK)
     {
-        return NGX_HTTP_INTERNAL_SERVER_ERROR;
+        return NGX_ERROR;
     }
 
     if (parsed_sr->location.len == 0) {
-        return NGX_HTTP_INTERNAL_SERVER_ERROR;
+        return NGX_ERROR;
     }
 
     if (ngx_http_complex_value(r, &conf->fetch->args, &parsed_sr->args)
             != NGX_OK)
     {
-        return NGX_HTTP_INTERNAL_SERVER_ERROR;
+        return NGX_ERROR;
     }
 
     args.data = NULL;
     args.len = 0;
 
     if (ngx_http_parse_unsafe_uri(r, &parsed_sr->location, &args, &flags)
-            != NGX_OK) {
-        return NGX_HTTP_INTERNAL_SERVER_ERROR;
+        != NGX_OK)
+    {
+        return NGX_ERROR;
     }
 
     if (args.len > 0 && parsed_sr->args.len == 0) {
@@ -401,14 +402,14 @@ ngx_http_srcache_fetch_subrequest(ngx_http_request_t *r,
 
     sr_ctx = ngx_pcalloc(r->pool, sizeof(ngx_http_srcache_ctx_t));
     if (sr_ctx == NULL) {
-        return NGX_HTTP_INTERNAL_SERVER_ERROR;
+        return NGX_ERROR;
     }
 
     sr_ctx->in_fetch_subrequest = 1;
 
     psr = ngx_palloc(r->pool, sizeof(ngx_http_post_subrequest_t));
     if (psr == NULL) {
-        return NGX_HTTP_INTERNAL_SERVER_ERROR;
+        return NGX_ERROR;
     }
 
     psr->handler = ngx_http_srcache_fetch_post_subrequest;

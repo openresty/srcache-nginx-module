@@ -280,7 +280,7 @@ ngx_http_srcache_adjust_subrequest(ngx_http_request_t *sr,
                                 * sizeof(ngx_http_variable_value_t));
 
     if (sr->variables == NULL) {
-        return NGX_HTTP_INTERNAL_SERVER_ERROR;
+        return NGX_ERROR;
     }
 
     body = parsed_sr->request_body;
@@ -291,7 +291,7 @@ ngx_http_srcache_adjust_subrequest(ngx_http_request_t *sr,
                                                  parsed_sr->content_length_n);
 
         if (rc != NGX_OK) {
-            return NGX_HTTP_INTERNAL_SERVER_ERROR;
+            return NGX_ERROR;
         }
     }
 
