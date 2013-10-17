@@ -10,6 +10,56 @@ Name
 
 *This module is not distributed with the Nginx source.* See [the installation instructions](#installation).
 
+Table of Contents
+=================
+
+* [Status](#status)
+* [Version](#version)
+* [Synopsis](#synopsis)
+* [Description](#description)
+    * [Subrequest caching](#subrequest-caching)
+    * [Distributed Memcached Caching](#distributed-memcached-caching)
+    * [Caching with Redis](#caching-with-redis)
+* [Directives](#directives)
+    * [srcache_fetch](#srcache_fetch)
+    * [srcache_fetch_skip](#srcache_fetch_skip)
+    * [srcache_store](#srcache_store)
+    * [srcache_store_max_size](#srcache_store_max_size)
+    * [srcache_store_skip](#srcache_store_skip)
+    * [srcache_store_statuses](#srcache_store_statuses)
+    * [srcache_header_buffer_size](#srcache_header_buffer_size)
+    * [srcache_store_hide_header](#srcache_store_hide_header)
+    * [srcache_store_pass_header](#srcache_store_pass_header)
+    * [srcache_methods](#srcache_methods)
+    * [srcache_ignore_content_encoding](#srcache_ignore_content_encoding)
+    * [srcache_request_cache_control](#srcache_request_cache_control)
+    * [srcache_response_cache_control](#srcache_response_cache_control)
+    * [srcache_store_no_store](#srcache_store_no_store)
+    * [srcache_store_no_cache](#srcache_store_no_cache)
+    * [srcache_store_private](#srcache_store_private)
+    * [srcache_default_expire](#srcache_default_expire)
+    * [srcache_max_expire](#srcache_max_expire)
+* [Variables](#variables)
+    * [$srcache_expire](#srcache_expire)
+    * [$srcache_fetch_status](#srcache_fetch_status)
+    * [$srcache_store_status](#srcache_store_status)
+* [Known Issues](#known-issues)
+* [Caveats](#caveats)
+* [Trouble Shooting](#trouble-shooting)
+* [Installation](#installation)
+* [Compatibility](#compatibility)
+* [Community](#community)
+    * [English Mailing List](#english-mailing-list)
+    * [Chinese Mailing List](#chinese-mailing-list)
+* [Bugs and Patches](#bugs-and-patches)
+* [Source Repository](#source-repository)
+* [Test Suite](#test-suite)
+* [TODO](#todo)
+* [Getting involved](#getting-involved)
+* [Author](#author)
+* [Copyright & License](#copyright--license)
+* [See Also](#see-also)
+
 Status
 ======
 
@@ -101,6 +151,8 @@ Synopsis
     }
 
 
+[Back to TOC](#table-of-contents)
+
 Description
 ===========
 
@@ -110,6 +162,8 @@ Usually, [memc-nginx-module](http://github.com/agentzh/memc-nginx-module) is use
 
 For main requests, the [srcache_fetch](#srcache_fetch) directive works at the end of the access phase, so the [standard access module](http://nginx.org/en/docs/http/ngx_http_access_module.html)'s [allow](http://nginx.org/en/docs/http/ngx_http_access_module.html#allow) and [deny](http://nginx.org/en/docs/http/ngx_http_access_module.html#deny) direcives run *before* ours, which is usually the desired behavior for security reasons.
 
+[Back to TOC](#table-of-contents)
+
 Subrequest caching
 ------------------
 
@@ -118,6 +172,8 @@ For *subrequests*, we explicitly **disallow** the use of this module because it'
 However, if you're using [lua-nginx-module](http://github.com/chaoslawful/lua-nginx-module), it's easy to do subrequest caching in Lua all by yourself. That is, first issue a subrequest to an [memc-nginx-module](http://github.com/agentzh/memc-nginx-module) location to do an explicit cache lookup, if cache hit, just use the cached data returned; otherwise, fall back to the true backend, and finally do a cache insertion to feed the data into the cache.
 
 Using this module for main request caching and Lua for subrequest caching is the approach that we're taking in our business. This hybrid solution works great in production.
+
+[Back to TOC](#table-of-contents)
 
 Distributed Memcached Caching
 -----------------------------
@@ -192,6 +248,8 @@ To maximize speed, we often enable TCP (or Unix Domain Socket) connection pool f
 
 where we define a connection pool which holds up to 512 keep-alive connections for our `moon` upstream (cluster).
 
+[Back to TOC](#table-of-contents)
+
 Caching with Redis
 ------------------
 
@@ -242,8 +300,12 @@ The Nginx core also has a bug that could prevent [redis2-nginx-module](http://gi
 
 Note that, however, if you are using the [ngx_openresty](http://openresty.org/) 1.0.15.3 bundle or later, then you already have everything that you need here in the bundle.
 
+[Back to TOC](#table-of-contents)
+
 Directives
 ==========
+
+[Back to TOC](#table-of-contents)
 
 srcache_fetch
 -------------
@@ -262,6 +324,8 @@ When the subrequest returns status code other than `200`, than a cache miss is s
 This directive will always run at the end of the access phase, such that [ngx_http_access_module](http://nginx.org/en/docs/http/ngx_http_access_module.html)'s [allow](http://nginx.org/en/docs/http/ngx_http_access_module.html#allow) and [deny](http://nginx.org/en/docs/http/ngx_http_access_module.html#deny) will always run *before* this.
 
 You can use the [srcache_fetch_skip](#srcache_fetch_skip) directive to disable cache look-up selectively.
+
+[Back to TOC](#table-of-contents)
 
 srcache_fetch_skip
 ------------------
@@ -309,6 +373,8 @@ The standard [map](http://nginx.org/en/docs/http/ngx_http_map_module.html#map) d
 
 but your [map](http://nginx.org/en/docs/http/ngx_http_map_module.html#map) statement should be put into the `http` config block in your `nginx.conf` file though.
 
+[Back to TOC](#table-of-contents)
+
 srcache_store
 -------------
 **syntax:** *srcache_store &lt;method&gt; &lt;uri&gt; &lt;args&gt;?*
@@ -342,6 +408,8 @@ they arrive. `srcache_store` just copies and collects the data in an output filt
 
 But please note that even though all the response data will be sent immediately, the current Nginx request lifetime will not finish until the srcache_store subrequest completes. That means a delay in closing the TCP connection on the server side (when HTTP keepalive is disabled, but proper HTTP clients should close the connection actively on the client side, which adds no extra delay or other issues at all) or serving the next request sent on the same TCP connection (when HTTP keepalive is in action).
 
+[Back to TOC](#table-of-contents)
+
 srcache_store_max_size
 ----------------------
 **syntax:** *srcache_store_max_size &lt;size&gt;*
@@ -357,6 +425,8 @@ When the response body length is exceeding this size, this module will not try t
 This is particular useful when using cache storage backend that does have a hard upper limit on the input data. For example, for Memcached server, the limit is usually `1 MB`.
 
 When `0` is specified (the default value), there's no limit check at all.
+
+[Back to TOC](#table-of-contents)
 
 srcache_store_skip
 ------------------
@@ -382,6 +452,8 @@ Here's an example using Lua to set $nocache to avoid storing URIs that contain t
     srcache_store_skip $nocache;
 
 
+[Back to TOC](#table-of-contents)
+
 srcache_store_statuses
 ----------------------
 **syntax:** *srcache_store_statuses &lt;status1&gt; &lt;status2&gt; ..*
@@ -406,6 +478,8 @@ At least one argument should be given to this directive.
 
 This directive was first introduced in the `v0.13rc2` release.
 
+[Back to TOC](#table-of-contents)
+
 srcache_header_buffer_size
 --------------------------
 **syntax:** *srcache_header_buffer_size &lt;size&gt;*
@@ -421,6 +495,8 @@ This directive controles the header buffer when serializing response headers for
 Note that the buffer is not used to hold all the response headers, but just each individual header. So the buffer is merely needed to be big enough to hold the longest response header.
 
 This directive was first introduced in the `v0.12rc7` release.
+
+[Back to TOC](#table-of-contents)
 
 srcache_store_hide_header
 -------------------------
@@ -457,6 +533,8 @@ This directive was first introduced in the `v0.12rc7` release.
 
 See also [srcache_store_pass_header](#srcache_store_pass_header).
 
+[Back to TOC](#table-of-contents)
+
 srcache_store_pass_header
 -------------------------
 **syntax:** *srcache_store_pass_header &lt;header&gt;*
@@ -492,6 +570,8 @@ This directive was first introduced in the `v0.12rc7` release.
 
 See also [srcache_store_hide_header](#srcache_store_hide_header).
 
+[Back to TOC](#table-of-contents)
+
 srcache_methods
 ---------------
 **syntax:** *srcache_methods &lt;method&gt;...*
@@ -509,6 +589,8 @@ The following HTTP methods are allowed: `GET`, `HEAD`, `POST`, `PUT`, and `DELET
 Note that since the `v0.17` release `HEAD` requests are always skipped by [srcache_store](#srcache_store) because their responses never carry a response body.
 
 This directive was first introduced in the `v0.12rc7` release.
+
+[Back to TOC](#table-of-contents)
 
 srcache_ignore_content_encoding
 -------------------------------
@@ -537,6 +619,8 @@ It's recommended to always disable gzip/deflate compression on your backend serv
 
 This directive was first introduced in the `v0.12rc7` release.
 
+[Back to TOC](#table-of-contents)
+
 srcache_request_cache_control
 -----------------------------
 **syntax:** *srcache_request_cache_control on|off*
@@ -557,6 +641,8 @@ Turning off this directive will disable this functionality and is considered saf
 This directive was first introduced in the `v0.12rc7` release.
 
 See also [srcache_response_cache_control](#srcache_response_cache_control).
+
+[Back to TOC](#table-of-contents)
 
 srcache_response_cache_control
 ------------------------------
@@ -582,6 +668,8 @@ This directive was first introduced in the `v0.12rc7` release.
 
 See also [srcache_request_cache_control](#srcache_request_cache_control).
 
+[Back to TOC](#table-of-contents)
+
 srcache_store_no_store
 ----------------------
 **syntax:** *srcache_store_no_store on|off*
@@ -595,6 +683,8 @@ srcache_store_no_store
 Turning this directive on will force responses with the header `Cache-Control: no-store` to be stored into the cache when [srcache_response_cache_control](#srcache_response_cache_control) is turned `on` *and* other conditions are met. Default to `off`.
 
 This directive was first introduced in the `v0.12rc7` release.
+
+[Back to TOC](#table-of-contents)
 
 srcache_store_no_cache
 ----------------------
@@ -610,6 +700,8 @@ Turning this directive on will force responses with the header `Cache-Control: n
 
 This directive was first introduced in the `v0.12rc7` release.
 
+[Back to TOC](#table-of-contents)
+
 srcache_store_private
 ---------------------
 **syntax:** *srcache_store_private on|off*
@@ -623,6 +715,8 @@ srcache_store_private
 Turning this directive on will force responses with the header `Cache-Control: private` to be stored into the cache when [srcache_response_cache_control](#srcache_response_cache_control) is turned `on` *and* other conditions are met. Default to `off`.
 
 This directive was first introduced in the `v0.12rc7` release.
+
+[Back to TOC](#table-of-contents)
 
 srcache_default_expire
 ----------------------
@@ -645,6 +739,8 @@ The `<time>` argument values are in seconds by default. But it's wise to always 
 This time must be less than 597 hours.
 
 This directive was first introduced in the `v0.12rc7` release.
+
+[Back to TOC](#table-of-contents)
 
 srcache_max_expire
 ------------------
@@ -670,8 +766,12 @@ When `0` is specified, which is the default setting, then there will be *no* lim
 
 This directive was first introduced in the `v0.12rc7` release.
 
+[Back to TOC](#table-of-contents)
+
 Variables
 =========
+[Back to TOC](#table-of-contents)
+
 $srcache_expire
 ---------------
 **type:** *integer*
@@ -692,6 +792,8 @@ You don't have to use this variable for the expiration time.
 
 This variable was first introduced in the `v0.12rc7` release.
 
+[Back to TOC](#table-of-contents)
+
 $srcache_fetch_status
 ---------------------
 **type:** *string*
@@ -707,6 +809,8 @@ When the "fetch" subrequest returns status code other than `200` or its response
 The value of this variable is only meaningful after the `access` request processing phase, or `BYPASS` is always given.
 
 This variable was first introduced in the `v0.14` release.
+
+[Back to TOC](#table-of-contents)
 
 $srcache_store_status
 ---------------------
@@ -724,10 +828,14 @@ The value of this variable is only meaningful at least when the request headers 
 
 This variable was first introduced in the `v0.14` release.
 
+[Back to TOC](#table-of-contents)
+
 Known Issues
 ============
 * On certain systems, enabling aio and/or sendfile may stop [srcache_store](#srcache_store) from working. You can disable them in the locations configured by [srcache_store](#srcache_store).
 * The [srcache_store](#srcache_store) directive can not be used to capture the responses generated by [echo-nginx-module](http://github.com/agentzh/echo-nginx-module)'s subrequest directivees like [echo_subrequest_async](http://github.com/agentzh/echo-nginx-module#echo_subrequest_async) and [echo_location](http://github.com/agentzh/echo-nginx-module#echo_location).
+
+[Back to TOC](#table-of-contents)
 
 Caveats
 =======
@@ -760,6 +868,8 @@ Caveats
     }
 
 
+[Back to TOC](#table-of-contents)
+
 Trouble Shooting
 ================
 
@@ -769,6 +879,8 @@ Several common pitfalls for beginners:
 
 * The original response carries a `Cache-Control` header that explicitly disables caching and you do not configure directives like [srcache_response_cache_control](#srcache_response_cache_control).
 * The original response is already gzip compressed, which is not cached by default (see [srcache_ignore_content_encoding](#srcache_ignore_content_encoding)).
+
+[Back to TOC](#table-of-contents)
 
 Installation
 ============
@@ -794,6 +906,8 @@ Alternatively, you can build Nginx with this module all by yourself:
         make install
 
 
+[Back to TOC](#table-of-contents)
+
 Compatibility
 =============
 
@@ -811,18 +925,26 @@ Earlier versions of Nginx like 0.7.x, 0.6.x and 0.5.x will *not* work.
 
 If you find that any particular version of Nginx above 0.7.44 does not work with this module, please consider reporting a bug.
 
+[Back to TOC](#table-of-contents)
+
 Community
 =========
+
+[Back to TOC](#table-of-contents)
 
 English Mailing List
 --------------------
 
 The [openresty-en](https://groups.google.com/group/openresty-en) mailing list is for English speakers.
 
+[Back to TOC](#table-of-contents)
+
 Chinese Mailing List
 --------------------
 
 The [openresty](https://groups.google.com/group/openresty) mailing list is for Chinese speakers.
+
+[Back to TOC](#table-of-contents)
 
 Bugs and Patches
 ================
@@ -832,9 +954,13 @@ Please submit bug reports, wishlists, or patches by
 1. creating a ticket on the [GitHub Issue Tracker](http://github.com/agentzh/srcache-nginx-module/issues),
 1. or posting to the [OpenResty community](#community).
 
+[Back to TOC](#table-of-contents)
+
 Source Repository
 =================
 Available on github at [agentzh/srcache-nginx-module](http://github.com/agentzh/srcache-nginx-module).
+
+[Back to TOC](#table-of-contents)
 
 Test Suite
 ==========
@@ -850,18 +976,26 @@ Because a single nginx server (by default, `localhost:1984`) is used across all 
 
 Some parts of the test suite requires modules [ngx_http_rewrite_module](http://nginx.org/en/docs/http/ngx_http_rewrite_module.html), [echo-nginx-module](http://github.com/agentzh/echo-nginx-module), [rds-json-nginx-module](http://github.com/agentzh/rds-json-nginx-module), and [drizzle-nginx-module](http://github.com/chaoslawful/drizzle-nginx-module) to be enabled as well when building Nginx.
 
+[Back to TOC](#table-of-contents)
+
 TODO
 ====
 * add gzip compression and decompression support.
 * add new nginx variable `$srcache_key` and new directives `srcache_key_ignore_args`, `srcache_key_filter_args`, and `srcache_key_sort_args`.
 
+[Back to TOC](#table-of-contents)
+
 Getting involved
 ================
 You'll be very welcomed to submit patches to the author or just ask for a commit bit to the source repository on GitHub.
 
+[Back to TOC](#table-of-contents)
+
 Author
 ======
 Yichun "agentzh" Zhang (章亦春) <agentzh@gmail.com>, CloudFlare Inc.
+
+[Back to TOC](#table-of-contents)
 
 Copyright & License
 ===================
@@ -875,6 +1009,8 @@ Redistribution and use in source and binary forms, with or without modification,
 * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+[Back to TOC](#table-of-contents)
 
 See Also
 ========
