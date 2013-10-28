@@ -20,6 +20,7 @@ Table of Contents
     * [Subrequest caching](#subrequest-caching)
     * [Distributed Memcached Caching](#distributed-memcached-caching)
     * [Caching with Redis](#caching-with-redis)
+    * [Cache Key Preprocessing](#cache-key-preprocessing)
 * [Directives](#directives)
     * [srcache_fetch](#srcache_fetch)
     * [srcache_fetch_skip](#srcache_fetch_skip)
@@ -68,11 +69,12 @@ This module is production ready.
 Version
 =======
 
-This document describes srcache-nginx-module [v0.22](https://github.com/agentzh/srcache-nginx-module/tags) released on 6 August 2013.
+This document describes srcache-nginx-module [v0.23](https://github.com/agentzh/srcache-nginx-module/tags) released on 27 October 2013.
 
 Synopsis
 ========
 
+```nginx
 
     upstream my_memcached {
         server 10.62.136.7:11211;
@@ -101,8 +103,9 @@ Synopsis
         # proxy_pass/fastcgi_pass/drizzle_pass/echo/etc...
         # or even static files on the disk
     }
+```
 
-
+```nginx
 
     location = /memc2 {
         internal;
@@ -125,8 +128,9 @@ Synopsis
         # proxy_pass/fastcgi_pass/drizzle_pass/echo/etc...
         # or even static files on the disk
     }
+```
 
-
+```nginx
 
     map $request_method $skip_fetch {
         default     0;
@@ -149,7 +153,7 @@ Synopsis
             # proxy_pass/drizzle_pass/content_by_lua/echo/...
         }
     }
-
+```
 
 [Back to TOC](#table-of-contents)
 
@@ -180,6 +184,7 @@ Distributed Memcached Caching
 
 Here is a simple example demonstrating a distributed memcached caching mechanism built atop this module. Suppose we do have three different memcacached nodes and we use simple modulo to hash our keys.
 
+```nginx
 
     http {
         upstream moon {
@@ -220,7 +225,7 @@ Here is a simple example demonstrating a distributed memcached caching mechanism
             }
         }
     }
-
+```
 Here's what is going on in the sample above:
 1. We first define three upstreams, `moon`, `earth`, and `sun`. These are our three memcached servers.
 1. And then we group them together as an upstream list entity named `universe` with the `upstream_list` directive provided by [set-misc-nginx-module](http://github.com/agentzh/set-misc-nginx-module).
@@ -238,13 +243,14 @@ Further, one can utilize the [srcache_fetch_skip](#srcache_fetch_skip) and [srca
 
 To maximize speed, we often enable TCP (or Unix Domain Socket) connection pool for our memcached upstreams provided by [HttpUpstreamKeepaliveModule](http://wiki.nginx.org/HttpUpstreamKeepaliveModule), for example,
 
+```nginx
 
     upstream moon {
         server 10.62.136.54:11211;
         server unix:/tmp/memcached.sock backup;
         keepalive 512;
     }
-
+```
 
 where we define a connection pool which holds up to 512 keep-alive connections for our `moon` upstream (cluster).
 
@@ -257,6 +263,7 @@ One annoyance with Memcached backed caching is Memcached server's 1 MB value siz
 
 Here is a working example by using Redis:
 
+```nginx
 
     location /api {
         default_type text/css;
@@ -288,7 +295,7 @@ Here is a working example by using Redis:
         redis2_query expire $key $exptime;
         redis2_pass 127.0.0.1:6379;
     }
-
+```
 
 This example makes use of the [$echo_request_body](http://github.com/agentzh/echo-nginx-module#echo_request_body) variable provided by [echo-nginx-module](http://github.com/agentzh/echo-nginx-module). Note that you need the latest version of [echo-nginx-module](http://github.com/agentzh/echo-nginx-module), `v0.38rc2` because earlier versions may not work reliably.
 
@@ -299,6 +306,67 @@ The Nginx core also has a bug that could prevent [redis2-nginx-module](http://gi
    http://mailman.nginx.org/pipermail/nginx-devel/2012-March/002040.html
 
 Note that, however, if you are using the [ngx_openresty](http://openresty.org/) 1.0.15.3 bundle or later, then you already have everything that you need here in the bundle.
+
+[Back to TOC](#table-of-contents)
+
+Cache Key Preprocessing
+-----------------------
+
+It is often desired to preprocess the cache key to exclude random noises that may hurt the cache hit rate. For example, random session IDs in the URI arguments are usually desired to get removed.
+
+Consider the following URI querystring
+
+    SID=BC3781C3-2E02-4A11-89CF-34E5CFE8B0EF&UID=44332&L=EN&M=1&H=1&UNC=0&SRC=LK&RT=62
+
+we want to remove the `SID` and `UID` arguments from it. It is easy to achieve if you use [lua-nginx-module](http://github.com/chaoslawful/lua-nginx-module) at the same time:
+
+```nginx
+
+    location = /t {
+        rewrite_by_lua '
+            local args = ngx.req.get_uri_args()
+            args.SID = nil
+            args.UID = nil
+            ngx.req.set_uri_args(args)
+        ';
+
+        echo $args;
+    }
+```
+
+Here we use the [echo](http://github.com/agentzh/echo-nginx-module#echo) directive from [echo-nginx-module](http://github.com/agentzh/echo-nginx-module) to dump out
+the final value of [$args](http://nginx.org/en/docs/http/ngx_http_core_module.html#var_args) in the end. You can replace it with your
+[[HttpSRCacheModule]] configurations and upstream configurations instead for
+your case. Let's test this /t interface with curl:
+
+    $ curl 'localhost:8081/t?RT=62&SID=BC3781C3-2E02-4A11-89CF-34E5CFE8B0EF&UID=44332&L=EN&M=1&H=1&UNC=0&SRC=LK'
+    M=1&UNC=0&RT=62&H=1&L=EN&SRC=LK
+
+It is worth mentioning that, if you want to retain the order of the URI
+arguments, then you can do string substitutions on the value of [$args](http://nginx.org/en/docs/http/ngx_http_core_module.html#var_args)
+directly, for example,
+
+    location = /t {
+        rewrite_by_lua '
+            local args = ngx.var.args
+            newargs, n, err = ngx.re.gsub(args, [[\b[SU]ID=[^&]*&?]], "", "jo")
+            if n and n > 0 then
+                ngx.var.args = newargs
+            end
+        ';
+
+        echo $args;
+    }
+
+Now test it with the original curl command again, we get exactly what
+we would expect:
+
+    RT=62&L=EN&M=1&H=1&UNC=0&SRC=LK
+
+But for caching purposes, it's good to normalize the URI argument
+order so that you can increase the cache hit rate. And the hash table
+entry order used by LuaJIT or Lua can be used to normalize the order
+as a nice side effect.
 
 [Back to TOC](#table-of-contents)
 
@@ -341,6 +409,7 @@ The `<flag>` argument supports nginx variables. When this argument's value is no
 
 For example, to skip caching requests which have a cookie named `foo` with the value `bar`, we can write
 
+```nginx
 
     location / {
         set $key ...;
@@ -359,17 +428,18 @@ For example, to skip caching requests which have a cookie named `foo` with the v
 
         # proxy_pass/fastcgi_pass/content_by_lua/...
     }
-
+```
 where [lua-nginx-module](http://github.com/chaoslawful/lua-nginx-module) is used to calculate the value of the `$skip` variable at the (earlier) rewrite phase. Similarly, the `$key` variable can be computed by Lua using the [set_by_lua](http://github.com/chaoslawful/lua-nginx-module#set_by_lua) or [rewrite_by_lua](http://github.com/chaoslawful/lua-nginx-module#rewrite_by_lua) directive too.
 
 The standard [map](http://nginx.org/en/docs/http/ngx_http_map_module.html#map) directive can also be used to compute the value of the `$skip` variable used in the sample above:
 
+```nginx
 
     map $cookie_foo $skip {
         default     0;
         bar         1;
     }
-
+```
 
 but your [map](http://nginx.org/en/docs/http/ngx_http_map_module.html#map) statement should be put into the `http` config block in your `nginx.conf` file though.
 
@@ -442,6 +512,7 @@ The `<flag>` argument supports Nginx variables. When this argument's value is no
 
 Here's an example using Lua to set $nocache to avoid storing URIs that contain the string "/tmp":
 
+```nginx
 
     set_by_lua $nocache '
         if string.match(ngx.var.uri, "/tmp") then
@@ -450,7 +521,7 @@ Here's an example using Lua to set $nocache to avoid storing URIs that contain t
         return 0';
 
     srcache_store_skip $nocache;
-
+```
 
 [Back to TOC](#table-of-contents)
 
@@ -470,9 +541,10 @@ By default, only `200`, `301`, and `302` responses will be stored to cache and a
 
 You can specify arbitrary positive numbers for the response status code that you'd like to cache, even including error code like `404` and `503`. For example:
 
+```nginx
 
     srcache_store 200 201 301 302 404 503;
-
+```
 
 At least one argument should be given to this directive.
 
@@ -522,10 +594,11 @@ By default, this module caches all the response headers except the following one
 
 You can hide even more response headers from [srcache_store](#srcache_store) by listing their names (case-insensitive) by means of this directive. For examples,
 
+```nginx
 
     srcache_store_hide_header X-Foo;
     srcache_store_hide_header Last-Modified;
-
+```
 
 Multiple occurrences of this directive are allowed in a single location.
 
@@ -559,10 +632,11 @@ By default, this module caches all the response headers except the following one
 
 You can force [srcache_store](#srcache_store) to store one or more of these response headers from [srcache_store](#srcache_store) by listing their names (case-insensitive) by means of this directive. For examples,
 
+```nginx
 
     srcache_store_pass_header Set-Cookie;
     srcache_store_pass_header Proxy-Autenticate;
-
+```
 
 Multiple occurrences of this directive are allowed in a single location.
 
@@ -613,9 +687,10 @@ Turning on this directive will ignore the `Content-Encoding` response header and
 
 It's recommended to always disable gzip/deflate compression on your backend server by specifying the following line in your `nginx.conf` file:
 
+```nginx
 
     proxy_set_header  Accept-Encoding  "";
-
+```
 
 This directive was first introduced in the `v0.12rc7` release.
 
@@ -732,9 +807,10 @@ This directive controls the default expiration time period that is allowed for t
 
 The `<time>` argument values are in seconds by default. But it's wise to always explicitly specify the time unit to avoid confusion. Time units supported are "s"(seconds), "ms"(milliseconds), "y"(years), "M"(months), "w"(weeks), "d"(days), "h"(hours), and "m"(minutes). For example,
 
+```nginx
 
     srcache_default_expire 30m; # 30 minutes
-
+```
 
 This time must be less than 597 hours.
 
@@ -756,9 +832,10 @@ This directive controls the maximal expiration time period that is allowed for t
 
 The `<time>` argument values are in seconds by default. But it's wise to always explicitly specify the time unit to avoid confusion. Time units supported are "s"(seconds), "ms"(milliseconds), "y"(years), "M"(months), "w"(weeks), "d"(days), "h"(hours), and "m"(minutes). For example,
 
+```nginx
 
     srcache_max_expire 2h;  # 2 hours
-
+```
 
 This time must be less than 597 hours.
 
@@ -840,10 +917,12 @@ Known Issues
 Caveats
 =======
 * It is recommended to disable your backend server's gzip compression and use nginx's [ngx_http_gzip_module](http://nginx.org/en/docs/http/ngx_http_gzip_module.html) to do the job. In case of [ngx_http_proxy_module](http://nginx.org/en/docs/http/ngx_http_proxy_module.html), you can use the following configure setting to disable backend gzip compression:
+```nginx
 
     proxy_set_header  Accept-Encoding  "";
-
+```
 * Do *not* use [ngx_http_rewrite_module](http://nginx.org/en/docs/http/ngx_http_rewrite_module.html)'s [if](http://nginx.org/en/docs/http/ngx_http_rewrite_module.html#if) directive in the same location as this module's, because "[if](http://nginx.org/en/docs/http/ngx_http_rewrite_module.html#if) is evil". Instead, use [ngx_http_map_module](http://nginx.org/en/docs/http/ngx_http_map_module.html) or [lua-nginx-module](http://github.com/chaoslawful/lua-nginx-module) combined with this module's [srcache_store_skip](#srcache_store_skip) and/or [srcache_fetch_skip](#srcache_fetch_skip) directives. For example:
+```nginx
 
     map $request_method $skip_fetch {
         default     0;
@@ -866,7 +945,7 @@ Caveats
             # proxy_pass/drizzle_pass/content_by_lua/echo/...
         }
     }
-
+```
 
 [Back to TOC](#table-of-contents)
 
@@ -889,14 +968,15 @@ It is recommended to install this module as well as the Nginx core and many othe
 
 Alternatively, you can build Nginx with this module all by yourself:
 
-* Grab the nginx source code from [nginx.org](http://nginx.org), for example, the version 1.4.1 (see [Nginx Compatibility](#compatibility)),
-* and then apply the patch to your nginx source tree that fixes an important bug in the mainline Nginx core: <https://raw.github.com/agentzh/ngx_openresty/master/patches/nginx-1.4.1-upstream_truncation.patch>
+* Grab the nginx source code from [nginx.org](http://nginx.org), for example, the version 1.4.3 (see [Nginx Compatibility](#compatibility)),
+* and then apply the patch to your nginx source tree that fixes an important bug in the mainline Nginx core: <https://raw.github.com/agentzh/ngx_openresty/master/patches/nginx-1.4.2-upstream_truncation.patch> (you do NOT need this patch if you are using nginx 1.5.3 and later versions.)
 * after that, download the latest version of the release tarball of this module from srcache-nginx-module [file list](http://github.com/agentzh/srcache-nginx-module/tags),
 * and finally build the Nginx source with this module
+```nginx
 
-        wget 'http://nginx.org/download/nginx-1.4.1.tar.gz'
-        tar -xzvf nginx-1.4.1.tar.gz
-        cd nginx-1.4.1/
+        wget 'http://nginx.org/download/nginx-1.4.3.tar.gz'
+        tar -xzvf nginx-1.4.3.tar.gz
+        cd nginx-1.4.3/
      
         # Here we assume you would install you nginx under /opt/nginx/.
         ./configure --prefix=/opt/nginx \
@@ -904,7 +984,7 @@ Alternatively, you can build Nginx with this module all by yourself:
     
         make -j2
         make install
-
+```
 
 [Back to TOC](#table-of-contents)
 
@@ -913,7 +993,7 @@ Compatibility
 
 The following versions of Nginx should work with this module:
 
-* 1.4.x (last tested: 1.4.1)
+* 1.4.x (last tested: 1.4.3)
 * 1.3.x (last tested: 1.3.7)
 * 1.2.x (last tested: 1.2.9)
 * 1.1.x (last tested: 1.1.5)
@@ -967,9 +1047,10 @@ Test Suite
 This module comes with a Perl-driven test suite. The [test cases](http://github.com/agentzh/srcache-nginx-module/tree/master/test/t) are [declarative](http://github.com/agentzh/srcache-nginx-module/blob/master/test/t/main-req.t) too. Thanks to the [Test::Nginx](http://search.cpan.org/perldoc?Test::Base) module in the Perl world.
 
 To run it on your side:
+```bash
 
     $ PATH=/path/to/your/nginx-with-srcache-module:$PATH prove -r t
-
+```
 You need to terminate any Nginx processes before running the test suite if you have changed the Nginx server binary.
 
 Because a single nginx server (by default, `localhost:1984`) is used across all the test scripts (`.t` files), it's meaningless to run the test suite in parallel by specifying `-jN` when invoking the `prove` utility.

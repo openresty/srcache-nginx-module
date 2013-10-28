@@ -9,9 +9,9 @@ Status
     This module is production ready.
 
 Version
-    This document describes srcache-nginx-module v0.22
-    (<https://github.com/agentzh/srcache-nginx-module/tags>) released on 6
-    August 2013.
+    This document describes srcache-nginx-module v0.23
+    (<https://github.com/agentzh/srcache-nginx-module/tags>) released on 27
+    October 2013.
 
 Synopsis
         upstream my_memcached {
@@ -275,6 +275,63 @@ Description
     Note that, however, if you are using the ngx_openresty
     (<http://openresty.org/>) 1.0.15.3 bundle or later, then you already
     have everything that you need here in the bundle.
+
+  Cache Key Preprocessing
+    It is often desired to preprocess the cache key to exclude random noises
+    that may hurt the cache hit rate. For example, random session IDs in the
+    URI arguments are usually desired to get removed.
+
+    Consider the following URI querystring
+
+        SID=BC3781C3-2E02-4A11-89CF-34E5CFE8B0EF&UID=44332&L=EN&M=1&H=1&UNC=0&SRC=LK&RT=62
+
+    we want to remove the "SID" and "UID" arguments from it. It is easy to
+    achieve if you use [[HttpLuaModule]] at the same time:
+
+        location = /t {
+            rewrite_by_lua '
+                local args = ngx.req.get_uri_args()
+                args.SID = nil
+                args.UID = nil
+                ngx.req.set_uri_args(args)
+            ';
+
+            echo $args;
+        }
+
+    Here we use the echo directive from [[HttpEchoModule]] to dump out the
+    final value of $args in the end. You can replace it with your
+    [[HttpSRCacheModule]] configurations and upstream configurations instead
+    for your case. Let's test this /t interface with curl:
+
+        $ curl 'localhost:8081/t?RT=62&SID=BC3781C3-2E02-4A11-89CF-34E5CFE8B0EF&UID=44332&L=EN&M=1&H=1&UNC=0&SRC=LK'
+        M=1&UNC=0&RT=62&H=1&L=EN&SRC=LK
+
+    It is worth mentioning that, if you want to retain the order of the URI
+    arguments, then you can do string substitutions on the value of $args
+    directly, for example,
+
+        location = /t {
+            rewrite_by_lua '
+                local args = ngx.var.args
+                newargs, n, err = ngx.re.gsub(args, [[\b[SU]ID=[^&]*&?]], "", "jo")
+                if n and n > 0 then
+                    ngx.var.args = newargs
+                end
+            ';
+
+            echo $args;
+        }
+
+    Now test it with the original curl command again, we get exactly what we
+    would expect:
+
+        RT=62&L=EN&M=1&H=1&UNC=0&SRC=LK
+
+    But for caching purposes, it's good to normalize the URI argument order
+    so that you can increase the cache hit rate. And the hash table entry
+    order used by LuaJIT or Lua can be used to normalize the order as a nice
+    side effect.
 
 Directives
   srcache_fetch
@@ -922,12 +979,13 @@ Installation
     Alternatively, you can build Nginx with this module all by yourself:
 
     *   Grab the nginx source code from nginx.org (<http://nginx.org>), for
-        example, the version 1.4.1 (see Nginx Compatibility),
+        example, the version 1.4.3 (see Nginx Compatibility),
 
     *   and then apply the patch to your nginx source tree that fixes an
         important bug in the mainline Nginx core:
         https://raw.github.com/agentzh/ngx_openresty/master/patches/nginx-1.
-        4.1-upstream_truncation.patch
+        4.2-upstream_truncation.patch (you do NOT need this patch if you are
+        using nginx 1.5.3 and later versions.)
 
     *   after that, download the latest version of the release tarball of
         this module from srcache-nginx-module file list
@@ -935,9 +993,9 @@ Installation
 
     *   and finally build the Nginx source with this module
 
-            wget 'http://nginx.org/download/nginx-1.4.1.tar.gz'
-            tar -xzvf nginx-1.4.1.tar.gz
-            cd nginx-1.4.1/
+            wget 'http://nginx.org/download/nginx-1.4.3.tar.gz'
+            tar -xzvf nginx-1.4.3.tar.gz
+            cd nginx-1.4.3/
 
             # Here we assume you would install you nginx under /opt/nginx/.
             ./configure --prefix=/opt/nginx \
@@ -949,7 +1007,7 @@ Installation
 Compatibility
     The following versions of Nginx should work with this module:
 
-    *   1.4.x (last tested: 1.4.1)
+    *   1.4.x (last tested: 1.4.3)
 
     *   1.3.x (last tested: 1.3.7)
 
