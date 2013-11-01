@@ -20,7 +20,9 @@ static ngx_int_t ngx_http_srcache_fetch_subrequest(ngx_http_request_t *r,
         ngx_http_srcache_loc_conf_t *conf, ngx_http_srcache_ctx_t *ctx);
 static ngx_int_t ngx_http_srcache_fetch_header_filter(ngx_http_request_t *r);
 static ngx_int_t ngx_http_srcache_test_not_modified(ngx_http_request_t *r);
+#if defined(nginx_version) && (nginx_version >= 9002)
 static ngx_int_t ngx_http_srcache_test_precondition(ngx_http_request_t *r);
+#endif
 static void ngx_http_srcache_post_read_body(ngx_http_request_t *r);
 
 
@@ -453,9 +455,11 @@ ngx_http_srcache_fetch_header_filter(ngx_http_request_t *r)
         return ngx_http_srcache_next_header_filter(r);
     }
 
+#if defined(nginx_version) && (nginx_version >= 9002)
     if (r->headers_in.if_unmodified_since) {
         return ngx_http_srcache_test_precondition(r);
     }
+#endif
 
     if (r->headers_in.if_modified_since) {
         return ngx_http_srcache_test_not_modified(r);
@@ -508,6 +512,7 @@ ngx_http_srcache_test_not_modified(ngx_http_request_t *r)
 }
 
 
+#if defined(nginx_version) && (nginx_version >= 9002)
 static ngx_int_t
 ngx_http_srcache_test_precondition(ngx_http_request_t *r)
 {
@@ -527,6 +532,7 @@ ngx_http_srcache_test_precondition(ngx_http_request_t *r)
     return ngx_http_filter_finalize_request(r, NULL,
                                             NGX_HTTP_PRECONDITION_FAILED);
 }
+#endif
 
 
 static void
