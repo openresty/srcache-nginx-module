@@ -9,9 +9,9 @@ Status
     This module is production ready.
 
 Version
-    This document describes srcache-nginx-module v0.23
-    (<https://github.com/agentzh/srcache-nginx-module/tags>) released on 27
-    October 2013.
+    This document describes srcache-nginx-module v0.24
+    (<https://github.com/agentzh/srcache-nginx-module/tags>) released on 6
+    November 2013.
 
 Synopsis
         upstream my_memcached {
