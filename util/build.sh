@@ -7,12 +7,12 @@ version=$1
 home=~
 force=$2
 
-ngx_redis_version=0.3.6
+ngx_redis_version=0.3.7
 ngx_redis_path=$home/work/nginx/ngx_http_redis-$ngx_redis_version
 
-cd $ngx_redis_path
-patch -N -p1 < $root/../ngx_openresty/patches/ngx_http_redis-$ngx_redis_version-variables_in_redis_pass.patch
-cd $root
+cd $ngx_redis_path || exit 1
+patch --forward -p1 < $root/../ngx_openresty/patches/ngx_http_redis-$ngx_redis_version-variables_in_redis_pass.patch
+cd $root || exit 1
 
             #--without-http_memcached_module \
 ngx-build $force $version \
