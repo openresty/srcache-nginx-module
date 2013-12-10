@@ -255,6 +255,7 @@ ngx_http_srcache_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
     ngx_int_t                    rc;
     ngx_chain_t                 *cl;
     ngx_http_srcache_loc_conf_t *slcf;
+    ngx_str_t                    skip;
     size_t                       len;
     unsigned                     last;
 
@@ -373,6 +374,28 @@ ngx_http_srcache_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
         return NGX_OK;
     }
 
+    slcf = ngx_http_get_module_loc_conf(r, ngx_http_srcache_filter_module);
+    if (slcf == NULL) {
+        return NGX_ERROR;
+    }
+
+    if (slcf->store_skip != NULL
+        && ngx_http_complex_value(r, slcf->store_skip, &skip) == NGX_OK
+        && skip.len
+        && (skip.len != 1 || skip.data[0] != '0'))
+    {
+        ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                       "srcache_store skipped due to the true value fed into "
+                       "srcache_store_skip: \"%V\"", &skip);
+
+        ctx->store_response = 0;
+
+        if (ngx_http_srcache_next_header_filter(r) == NGX_ERROR) {
+            return NGX_ERROR;
+        }
+    }
+
+
     if (ctx->store_response) {
         dd("storing the response: %p", in);
 
@@ -395,7 +418,6 @@ ngx_http_srcache_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
             }
         }
 
-        slcf = ngx_http_get_module_loc_conf(r, ngx_http_srcache_filter_module);
 
         if (slcf->store_max_size != 0
             && ctx->response_length > slcf->store_max_size)
