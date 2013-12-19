@@ -318,8 +318,8 @@ F(ngx_http_finalize_request) {
 ^finalize: -4
 conn err: 110: upstream timed out
 upstream fin req: error=0 eof=0 rc=504
-finalize: -1
-post subreq: rc=-1, status=200
+finalize: 0
+post subreq: rc=0, status=200
 finalize: 0$
 
 --- tcp_listen: 19112
@@ -476,12 +476,12 @@ F(ngx_http_finalize_request) {
 --- stap_out_like
 finalize: -4
 (?:upstream fin req: error=0 eof=1 rc=502
-finalize: -1
-post subreq: rc=-1, status=200
+finalize: 0
+post subreq: rc=0, status=200
 |conn err: \d+: writev\(\) failed
 upstream fin req: error=0 eof=0 rc=502
-finalize: (?:-1|502)
-post subreq: rc=(?:-1|502), status=(?:0|200)
+finalize: (?:0|502)
+post subreq: rc=(?:0|502), status=(?:0|200)
 (?:finalize: 0
 )?)?finalize: 0
 
@@ -492,8 +492,8 @@ post subreq: rc=(?:-1|502), status=(?:0|200)
 Content-Type: text/css
 --- response_body
 I do like you
---- no_error_log
-[error]
+--- error_log
+upstream prematurely closed connection
 
 
 

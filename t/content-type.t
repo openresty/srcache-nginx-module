@@ -29,6 +29,7 @@ GET /flush
 --- config
     location /foo {
         charset UTF-8;
+        charset_types application/x-javascript;
         default_type application/json;
         srcache_fetch GET /memc $uri;
         srcache_store PUT /memc $uri;
@@ -60,6 +61,7 @@ bar(hello
 --- config
     location /foo {
         charset UTF-8;
+        charset_types application/x-javascript;
         default_type text/css;
         srcache_fetch GET /memc $uri;
         srcache_store PUT /memc $uri;
