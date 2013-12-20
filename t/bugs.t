@@ -492,6 +492,7 @@ post subreq: rc=(?:0|502), status=(?:0|200)
 Content-Type: text/css
 --- response_body
 I do like you
+--- wait: 0.1
 --- error_log
 upstream prematurely closed connection
 
