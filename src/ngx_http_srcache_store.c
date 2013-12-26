@@ -255,6 +255,7 @@ ngx_http_srcache_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
     ngx_int_t                    rc;
     ngx_chain_t                 *cl;
     ngx_http_srcache_loc_conf_t *slcf;
+    ngx_str_t                    skip;
     size_t                       len;
     unsigned                     last;
 
@@ -448,6 +449,19 @@ ngx_http_srcache_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
                 goto done;
             }
 #endif
+
+            if (slcf->store_skip != NULL
+                && ngx_http_complex_value(r, slcf->store_skip, &skip) == NGX_OK
+                && skip.len
+                && (skip.len != 1 || skip.data[0] != '0'))
+            {
+                ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                               "srcache_store skipped due to the true value fed into "
+                               "srcache_store_skip: \"%V\"", &skip);
+
+                ctx->store_response = 0;
+                goto done;
+            }
 
             rc = ngx_http_srcache_store_subrequest(r, ctx);
 
