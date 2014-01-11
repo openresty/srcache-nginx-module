@@ -69,90 +69,92 @@ This module is production ready.
 Version
 =======
 
-This document describes srcache-nginx-module [v0.24](https://github.com/agentzh/srcache-nginx-module/tags) released on 6 November 2013.
+This document describes srcache-nginx-module [v0.25](https://github.com/agentzh/srcache-nginx-module/tags) released on 10 January 2014.
 
 Synopsis
 ========
 
 ```nginx
 
-    upstream my_memcached {
-        server 10.62.136.7:11211;
-        keepalive 512; # this requires the ngx_http_upstream_keepalive module
-    }
+upstream my_memcached {
+    server 10.62.136.7:11211;
+    keepalive 512; # this requires the ngx_http_upstream_keepalive module
+}
 
-    location = /memc {
-        internal;
+location = /memc {
+    internal;
 
-        memc_connect_timeout 100ms;
-        memc_send_timeout 100ms;
-        memc_read_timeout 100ms;
+    memc_connect_timeout 100ms;
+    memc_send_timeout 100ms;
+    memc_read_timeout 100ms;
+    memc_ignore_client_abort on;
 
-        set $memc_key $query_string;
-        set $memc_exptime 300;
+    set $memc_key $query_string;
+    set $memc_exptime 300;
 
-        memc_pass my_memcached;
-    }
+    memc_pass my_memcached;
+}
 
-    location /foo {
-        set $key $uri$args;
+location /foo {
+    set $key $uri$args;
+    srcache_fetch GET /memc $key;
+    srcache_store PUT /memc $key;
+    srcache_store_statuses 200 301 302;
+  
+    # proxy_pass/fastcgi_pass/drizzle_pass/echo/etc...
+    # or even static files on the disk
+}
+```
+
+```nginx
+
+location = /memc2 {
+    internal;
+
+    memc_connect_timeout 100ms;
+    memc_send_timeout 100ms;
+    memc_read_timeout 100ms;
+    memc_ignore_client_abort on;
+
+    set_unescape_uri $memc_key $arg_key;
+    set $memc_exptime $arg_exptime;
+
+    memc_pass unix:/tmp/memcached.sock;
+}
+
+location /bar {
+    set_escape_uri $key $uri$args;
+    srcache_fetch GET /memc2 key=$key;
+    srcache_store PUT /memc2 key=$key&exptime=$srcache_expire;
+  
+    # proxy_pass/fastcgi_pass/drizzle_pass/echo/etc...
+    # or even static files on the disk
+}
+```
+
+```nginx
+
+map $request_method $skip_fetch {
+    default     0;
+    POST        1;
+    PUT         1;
+}
+
+server {
+    listen 8080;
+
+    location /api/ {
+        set $key "$uri?$args";
+
         srcache_fetch GET /memc $key;
         srcache_store PUT /memc $key;
-        srcache_store_statuses 200 301 302;
-  
-        # proxy_pass/fastcgi_pass/drizzle_pass/echo/etc...
-        # or even static files on the disk
+
+        srcache_methods GET PUT POST;
+        srcache_fetch_skip $skip_fetch;
+
+        # proxy_pass/drizzle_pass/content_by_lua/echo/...
     }
-```
-
-```nginx
-
-    location = /memc2 {
-        internal;
-
-        memc_connect_timeout 100ms;
-        memc_send_timeout 100ms;
-        memc_read_timeout 100ms;
-
-        set_unescape_uri $memc_key $arg_key;
-        set $memc_exptime $arg_exptime;
-
-        memc_pass unix:/tmp/memcached.sock;
-    }
-
-    location /bar {
-        set_escape_uri $key $uri$args;
-        srcache_fetch GET /memc2 key=$key;
-        srcache_store PUT /memc2 key=$key&exptime=$srcache_expire;
-  
-        # proxy_pass/fastcgi_pass/drizzle_pass/echo/etc...
-        # or even static files on the disk
-    }
-```
-
-```nginx
-
-    map $request_method $skip_fetch {
-        default     0;
-        POST        1;
-        PUT         1;
-    }
-
-    server {
-        listen 8080;
-
-        location /api/ {
-            set $key "$uri?$args";
-
-            srcache_fetch GET /memc $key;
-            srcache_store PUT /memc $key;
-
-            srcache_methods GET PUT POST;
-            srcache_fetch_skip $skip_fetch;
-
-            # proxy_pass/drizzle_pass/content_by_lua/echo/...
-        }
-    }
+}
 ```
 
 [Back to TOC](#table-of-contents)
@@ -186,45 +188,45 @@ Here is a simple example demonstrating a distributed memcached caching mechanism
 
 ```nginx
 
-    http {
-        upstream moon {
-            server 10.62.136.54:11211;
-            server unix:/tmp/memcached.sock backup;
+http {
+    upstream moon {
+        server 10.62.136.54:11211;
+        server unix:/tmp/memcached.sock backup;
+    }
+
+    upstream earth {
+        server 10.62.136.55:11211;
+    }
+
+    upstream sun {
+        server 10.62.136.56:11211;
+    }
+
+    upstream_list universe moon earth sun;
+
+    server {
+        memc_connect_timeout 100ms;
+        memc_send_timeout 100ms;
+        memc_read_timeout 100ms;
+
+        location = /memc {
+            internal;
+
+            set $memc_key $query_string;
+            set_hashed_upstream $backend universe $memc_key;
+            set $memc_exptime 3600; # in seconds
+            memc_pass $backend;
         }
 
-        upstream earth {
-            server 10.62.136.55:11211;
-        }
+        location / {
+            set $key $uri;
+            srcache_fetch GET /memc $key;
+            srcache_store PUT /memc $key;
 
-        upstream sun {
-            server 10.62.136.56:11211;
-        }
-
-        upstream_list universe moon earth sun;
-
-        server {
-            memc_connect_timeout 100ms;
-            memc_send_timeout 100ms;
-            memc_read_timeout 100ms;
-
-            location = /memc {
-                internal;
-
-                set $memc_key $query_string;
-                set_hashed_upstream $backend universe $memc_key;
-                set $memc_exptime 3600; # in seconds
-                memc_pass $backend;
-            }
-
-            location / {
-                set $key $uri;
-                srcache_fetch GET /memc $key;
-                srcache_store PUT /memc $key;
-
-                # proxy_pass/fastcgi_pass/content_by_lua/drizzle_pass/...
-            }
+            # proxy_pass/fastcgi_pass/content_by_lua/drizzle_pass/...
         }
     }
+}
 ```
 Here's what is going on in the sample above:
 1. We first define three upstreams, `moon`, `earth`, and `sun`. These are our three memcached servers.
@@ -245,11 +247,11 @@ To maximize speed, we often enable TCP (or Unix Domain Socket) connection pool f
 
 ```nginx
 
-    upstream moon {
-        server 10.62.136.54:11211;
-        server unix:/tmp/memcached.sock backup;
-        keepalive 512;
-    }
+upstream moon {
+    server 10.62.136.54:11211;
+    server unix:/tmp/memcached.sock backup;
+    keepalive 512;
+}
 ```
 
 where we define a connection pool which holds up to 512 keep-alive connections for our `moon` upstream (cluster).
@@ -265,36 +267,36 @@ Here is a working example by using Redis:
 
 ```nginx
 
-    location /api {
-        default_type text/css;
+location /api {
+    default_type text/css;
 
-        set $key $uri;
-        set_escape_uri $escaped_key $key;
+    set $key $uri;
+    set_escape_uri $escaped_key $key;
 
-        srcache_fetch GET /redis $key;
-        srcache_store PUT /redis2 key=$escaped_key&exptime=120;
+    srcache_fetch GET /redis $key;
+    srcache_store PUT /redis2 key=$escaped_key&exptime=120;
 
-        # fastcgi_pass/proxy_pass/drizzle_pass/postgres_pass/echo/etc
-    }
+    # fastcgi_pass/proxy_pass/drizzle_pass/postgres_pass/echo/etc
+}
 
-    location = /redis {
-        internal;
+location = /redis {
+    internal;
 
-        set_md5 $redis_key $args;
-        redis_pass 127.0.0.1:6379;
-    }
+    set_md5 $redis_key $args;
+    redis_pass 127.0.0.1:6379;
+}
 
-    location = /redis2 {
-        internal;
+location = /redis2 {
+    internal;
 
-        set_unescape_uri $exptime $arg_exptime;
-        set_unescape_uri $key $arg_key;
-        set_md5 $key;
+    set_unescape_uri $exptime $arg_exptime;
+    set_unescape_uri $key $arg_key;
+    set_md5 $key;
 
-        redis2_query set $key $echo_request_body;
-        redis2_query expire $key $exptime;
-        redis2_pass 127.0.0.1:6379;
-    }
+    redis2_query set $key $echo_request_body;
+    redis2_query expire $key $exptime;
+    redis2_pass 127.0.0.1:6379;
+}
 ```
 
 This example makes use of the [$echo_request_body](http://github.com/agentzh/echo-nginx-module#echo_request_body) variable provided by [echo-nginx-module](http://github.com/agentzh/echo-nginx-module). Note that you need the latest version of [echo-nginx-module](http://github.com/agentzh/echo-nginx-module), `v0.38rc2` because earlier versions may not work reliably.
@@ -322,16 +324,16 @@ we want to remove the `SID` and `UID` arguments from it. It is easy to achieve i
 
 ```nginx
 
-    location = /t {
-        rewrite_by_lua '
-            local args = ngx.req.get_uri_args()
-            args.SID = nil
-            args.UID = nil
-            ngx.req.set_uri_args(args)
-        ';
+location = /t {
+    rewrite_by_lua '
+        local args = ngx.req.get_uri_args()
+        args.SID = nil
+        args.UID = nil
+        ngx.req.set_uri_args(args)
+    ';
 
-        echo $args;
-    }
+    echo $args;
+}
 ```
 
 Here we use the [echo](http://github.com/agentzh/echo-nginx-module#echo) directive from [echo-nginx-module](http://github.com/agentzh/echo-nginx-module) to dump out
@@ -411,23 +413,23 @@ For example, to skip caching requests which have a cookie named `foo` with the v
 
 ```nginx
 
-    location / {
-        set $key ...;
-        set_by_lua $skip '
-            if ngx.var.cookie_foo == "bar" then
-                return 1
-            end
-            return 0
-        ';
+location / {
+    set $key ...;
+    set_by_lua $skip '
+        if ngx.var.cookie_foo == "bar" then
+            return 1
+        end
+        return 0
+    ';
 
-        srcache_fetch_skip $skip;
-        srcache_store_skip $skip;
+    srcache_fetch_skip $skip;
+    srcache_store_skip $skip;
 
-        srcache_fetch GET /memc $key;
-        srcache_store GET /memc $key;
+    srcache_fetch GET /memc $key;
+    srcache_store GET /memc $key;
 
-        # proxy_pass/fastcgi_pass/content_by_lua/...
-    }
+    # proxy_pass/fastcgi_pass/content_by_lua/...
+}
 ```
 where [lua-nginx-module](http://github.com/chaoslawful/lua-nginx-module) is used to calculate the value of the `$skip` variable at the (earlier) rewrite phase. Similarly, the `$key` variable can be computed by Lua using the [set_by_lua](http://github.com/chaoslawful/lua-nginx-module#set_by_lua) or [rewrite_by_lua](http://github.com/chaoslawful/lua-nginx-module#rewrite_by_lua) directive too.
 
@@ -435,10 +437,10 @@ The standard [map](http://nginx.org/en/docs/http/ngx_http_map_module.html#map) d
 
 ```nginx
 
-    map $cookie_foo $skip {
-        default     0;
-        bar         1;
-    }
+map $cookie_foo $skip {
+    default     0;
+    bar         1;
+}
 ```
 
 but your [map](http://nginx.org/en/docs/http/ngx_http_map_module.html#map) statement should be put into the `http` config block in your `nginx.conf` file though.
@@ -514,13 +516,13 @@ Here's an example using Lua to set $nocache to avoid storing URIs that contain t
 
 ```nginx
 
-    set_by_lua $nocache '
-        if string.match(ngx.var.uri, "/tmp") then
-            return 1
-        end
-        return 0';
+set_by_lua $nocache '
+    if string.match(ngx.var.uri, "/tmp") then
+        return 1
+    end
+    return 0';
 
-    srcache_store_skip $nocache;
+srcache_store_skip $nocache;
 ```
 
 [Back to TOC](#table-of-contents)
@@ -543,7 +545,7 @@ You can specify arbitrary positive numbers for the response status code that you
 
 ```nginx
 
-    srcache_store 200 201 301 302 404 503;
+srcache_store 200 201 301 302 404 503;
 ```
 
 At least one argument should be given to this directive.
@@ -596,8 +598,8 @@ You can hide even more response headers from [srcache_store](#srcache_store) by 
 
 ```nginx
 
-    srcache_store_hide_header X-Foo;
-    srcache_store_hide_header Last-Modified;
+srcache_store_hide_header X-Foo;
+srcache_store_hide_header Last-Modified;
 ```
 
 Multiple occurrences of this directive are allowed in a single location.
@@ -634,8 +636,8 @@ You can force [srcache_store](#srcache_store) to store one or more of these resp
 
 ```nginx
 
-    srcache_store_pass_header Set-Cookie;
-    srcache_store_pass_header Proxy-Autenticate;
+srcache_store_pass_header Set-Cookie;
+srcache_store_pass_header Proxy-Autenticate;
 ```
 
 Multiple occurrences of this directive are allowed in a single location.
@@ -689,7 +691,7 @@ It's recommended to always disable gzip/deflate compression on your backend serv
 
 ```nginx
 
-    proxy_set_header  Accept-Encoding  "";
+proxy_set_header  Accept-Encoding  "";
 ```
 
 This directive was first introduced in the `v0.12rc7` release.
@@ -809,7 +811,7 @@ The `<time>` argument values are in seconds by default. But it's wise to always 
 
 ```nginx
 
-    srcache_default_expire 30m; # 30 minutes
+srcache_default_expire 30m; # 30 minutes
 ```
 
 This time must be less than 597 hours.
@@ -834,7 +836,7 @@ The `<time>` argument values are in seconds by default. But it's wise to always 
 
 ```nginx
 
-    srcache_max_expire 2h;  # 2 hours
+srcache_max_expire 2h;  # 2 hours
 ```
 
 This time must be less than 597 hours.
@@ -919,32 +921,32 @@ Caveats
 * It is recommended to disable your backend server's gzip compression and use nginx's [ngx_http_gzip_module](http://nginx.org/en/docs/http/ngx_http_gzip_module.html) to do the job. In case of [ngx_http_proxy_module](http://nginx.org/en/docs/http/ngx_http_proxy_module.html), you can use the following configure setting to disable backend gzip compression:
 ```nginx
 
-    proxy_set_header  Accept-Encoding  "";
+proxy_set_header  Accept-Encoding  "";
 ```
 * Do *not* use [ngx_http_rewrite_module](http://nginx.org/en/docs/http/ngx_http_rewrite_module.html)'s [if](http://nginx.org/en/docs/http/ngx_http_rewrite_module.html#if) directive in the same location as this module's, because "[if](http://nginx.org/en/docs/http/ngx_http_rewrite_module.html#if) is evil". Instead, use [ngx_http_map_module](http://nginx.org/en/docs/http/ngx_http_map_module.html) or [lua-nginx-module](http://github.com/chaoslawful/lua-nginx-module) combined with this module's [srcache_store_skip](#srcache_store_skip) and/or [srcache_fetch_skip](#srcache_fetch_skip) directives. For example:
 ```nginx
 
-    map $request_method $skip_fetch {
-        default     0;
-        POST        1;
-        PUT         1;
+map $request_method $skip_fetch {
+    default     0;
+    POST        1;
+    PUT         1;
+}
+ 
+server {
+    listen 8080;
+ 
+    location /api/ {
+        set $key "$uri?$args";
+ 
+        srcache_fetch GET /memc $key;
+        srcache_store PUT /memc $key;
+ 
+        srcache_methods GET PUT POST;
+        srcache_fetch_skip $skip_fetch;
+ 
+        # proxy_pass/drizzle_pass/content_by_lua/echo/...
     }
- 
-    server {
-        listen 8080;
- 
-        location /api/ {
-            set $key "$uri?$args";
- 
-            srcache_fetch GET /memc $key;
-            srcache_store PUT /memc $key;
- 
-            srcache_methods GET PUT POST;
-            srcache_fetch_skip $skip_fetch;
- 
-            # proxy_pass/drizzle_pass/content_by_lua/echo/...
-        }
-    }
+}
 ```
 
 [Back to TOC](#table-of-contents)
@@ -968,22 +970,22 @@ It is recommended to install this module as well as the Nginx core and many othe
 
 Alternatively, you can build Nginx with this module all by yourself:
 
-* Grab the nginx source code from [nginx.org](http://nginx.org), for example, the version 1.4.3 (see [Nginx Compatibility](#compatibility)),
-* and then apply the patch to your nginx source tree that fixes an important bug in the mainline Nginx core: <https://raw.github.com/agentzh/ngx_openresty/master/patches/nginx-1.4.2-upstream_truncation.patch> (you do NOT need this patch if you are using nginx 1.5.3 and later versions.)
+* Grab the nginx source code from [nginx.org](http://nginx.org), for example, the version 1.5.8 (see [Nginx Compatibility](#compatibility)),
+* and then apply the patch to your nginx source tree that fixes an important bug in the mainline Nginx core: <https://raw.github.com/agentzh/ngx_openresty/master/patches/nginx-1.4.3-upstream_truncation.patch> (you do NOT need this patch if you are using nginx 1.5.3 and later versions.)
 * after that, download the latest version of the release tarball of this module from srcache-nginx-module [file list](http://github.com/agentzh/srcache-nginx-module/tags),
 * and finally build the Nginx source with this module
 ```nginx
 
-        wget 'http://nginx.org/download/nginx-1.4.3.tar.gz'
-        tar -xzvf nginx-1.4.3.tar.gz
-        cd nginx-1.4.3/
-     
-        # Here we assume you would install you nginx under /opt/nginx/.
-        ./configure --prefix=/opt/nginx \
-             --add-module=/path/to/srcache-nginx-module
-    
-        make -j2
-        make install
+    wget 'http://nginx.org/download/nginx-1.5.8.tar.gz'
+    tar -xzvf nginx-1.5.8.tar.gz
+    cd nginx-1.5.8/
+ 
+    # Here we assume you would install you nginx under /opt/nginx/.
+    ./configure --prefix=/opt/nginx \
+         --add-module=/path/to/srcache-nginx-module
+
+    make -j2
+    make install
 ```
 
 [Back to TOC](#table-of-contents)
@@ -993,7 +995,8 @@ Compatibility
 
 The following versions of Nginx should work with this module:
 
-* 1.4.x (last tested: 1.4.3)
+* 1.5.x (last tested: 1.5.8)
+* 1.4.x (last tested: 1.4.4)
 * 1.3.x (last tested: 1.3.7)
 * 1.2.x (last tested: 1.2.9)
 * 1.1.x (last tested: 1.1.5)
@@ -1049,7 +1052,7 @@ This module comes with a Perl-driven test suite. The [test cases](http://github.
 To run it on your side:
 ```bash
 
-    $ PATH=/path/to/your/nginx-with-srcache-module:$PATH prove -r t
+$ PATH=/path/to/your/nginx-with-srcache-module:$PATH prove -r t
 ```
 You need to terminate any Nginx processes before running the test suite if you have changed the Nginx server binary.
 
@@ -1080,7 +1083,8 @@ Yichun "agentzh" Zhang (章亦春) <agentzh@gmail.com>, CloudFlare Inc.
 
 Copyright & License
 ===================
-Copyright (c) 2010-2013, Yichun "agentzh" Zhang (章亦春) <agentzh@gmail.com>, CloudFlare Inc.
+
+Copyright (c) 2010-2014, Yichun "agentzh" Zhang (章亦春) <agentzh@gmail.com>, CloudFlare Inc.
 
 This module is licensed under the terms of the BSD license.
 
@@ -1099,4 +1103,3 @@ See Also
 * [lua-nginx-module](http://github.com/chaoslawful/lua-nginx-module)
 * [set-misc-nginx-module](http://github.com/agentzh/set-misc-nginx-module)
 * The [ngx_openresty bundle](http://openresty.org)
-

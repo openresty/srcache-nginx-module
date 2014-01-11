@@ -10,7 +10,7 @@ This module is production ready.
 
 = Version =
 
-This document describes srcache-nginx-module [https://github.com/agentzh/srcache-nginx-module/tags v0.24] released on 6 November 2013.
+This document describes srcache-nginx-module [https://github.com/agentzh/srcache-nginx-module/tags v0.25] released on 10 January 2014.
 
 = Synopsis =
 
@@ -26,6 +26,7 @@ This document describes srcache-nginx-module [https://github.com/agentzh/srcache
         memc_connect_timeout 100ms;
         memc_send_timeout 100ms;
         memc_read_timeout 100ms;
+        memc_ignore_client_abort on;
 
         set $memc_key $query_string;
         set $memc_exptime 300;
@@ -51,6 +52,7 @@ This document describes srcache-nginx-module [https://github.com/agentzh/srcache
         memc_connect_timeout 100ms;
         memc_send_timeout 100ms;
         memc_read_timeout 100ms;
+        memc_ignore_client_abort on;
 
         set_unescape_uri $memc_key $arg_key;
         set $memc_exptime $arg_exptime;
@@ -794,14 +796,14 @@ It is recommended to install this module as well as the Nginx core and many othe
 
 Alternatively, you can build Nginx with this module all by yourself:
 
-* Grab the nginx source code from [http://nginx.org nginx.org], for example, the version 1.4.3 (see [[#Compatibility|Nginx Compatibility]]),
-* and then apply the patch to your nginx source tree that fixes an important bug in the mainline Nginx core: https://raw.github.com/agentzh/ngx_openresty/master/patches/nginx-1.4.2-upstream_truncation.patch (you do NOT need this patch if you are using nginx 1.5.3 and later versions.)
+* Grab the nginx source code from [http://nginx.org nginx.org], for example, the version 1.5.8 (see [[#Compatibility|Nginx Compatibility]]),
+* and then apply the patch to your nginx source tree that fixes an important bug in the mainline Nginx core: https://raw.github.com/agentzh/ngx_openresty/master/patches/nginx-1.4.3-upstream_truncation.patch (you do NOT need this patch if you are using nginx 1.5.3 and later versions.)
 * after that, download the latest version of the release tarball of this module from srcache-nginx-module [http://github.com/agentzh/srcache-nginx-module/tags file list],
 * and finally build the Nginx source with this module
 <geshi lang="nginx">
-        wget 'http://nginx.org/download/nginx-1.4.3.tar.gz'
-        tar -xzvf nginx-1.4.3.tar.gz
-        cd nginx-1.4.3/
+        wget 'http://nginx.org/download/nginx-1.5.8.tar.gz'
+        tar -xzvf nginx-1.5.8.tar.gz
+        cd nginx-1.5.8/
      
         # Here we assume you would install you nginx under /opt/nginx/.
         ./configure --prefix=/opt/nginx \
@@ -815,7 +817,8 @@ Alternatively, you can build Nginx with this module all by yourself:
 
 The following versions of Nginx should work with this module:
 
-* 1.4.x (last tested: 1.4.3)
+* 1.5.x (last tested: 1.5.8)
+* 1.4.x (last tested: 1.4.4)
 * 1.3.x (last tested: 1.3.7)
 * 1.2.x (last tested: 1.2.9)
 * 1.1.x (last tested: 1.1.5)
@@ -871,7 +874,8 @@ You'll be very welcomed to submit patches to the author or just ask for a commit
 Yichun "agentzh" Zhang (章亦春) <agentzh@gmail.com>, CloudFlare Inc.
 
 = Copyright & License =
-Copyright (c) 2010-2013, Yichun "agentzh" Zhang (章亦春) <agentzh@gmail.com>, CloudFlare Inc.
+
+Copyright (c) 2010-2014, Yichun "agentzh" Zhang (章亦春) <agentzh@gmail.com>, CloudFlare Inc.
 
 This module is licensed under the terms of the BSD license.
 
@@ -887,4 +891,3 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 * [[HttpLuaModule]]
 * [[HttpSetMiscModule]]
 * The [http://openresty.org ngx_openresty bundle]
-
