@@ -410,6 +410,8 @@ When <code>0</code> is specified (the default value), there's no limit check at 
 
 The <code><flag></code> argument supports Nginx variables. When this argument's value is not empty ''and'' not equal to <code>0</code>, then the storing process will be unconditionally skipped.
 
+Starting from the <code>v0.25</code> release, the <code><flag></code> expression (possibly containing Nginx variables) can be evaluated up to twice: the first time is right after the response header is being sent and when the <code><flag></code> expression is not evaluated to true values it will be evaluated again right after the end of the response body data stream is seen. Before <code>v0.25</code>, only the first time evaluation is performed.
+
 Here's an example using Lua to set $nocache to avoid storing URIs that contain the string "/tmp":
 
 <geshi lang="nginx">

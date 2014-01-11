@@ -512,6 +512,8 @@ srcache_store_skip
 
 The `<flag>` argument supports Nginx variables. When this argument's value is not empty *and* not equal to `0`, then the storing process will be unconditionally skipped.
 
+Starting from the `v0.25` release, the `<flag>` expression (possibly containing Nginx variables) can be evaluated up to twice: the first time is right after the response header is being sent and when the `<flag>` expression is not evaluated to true values it will be evaluated again right after the end of the response body data stream is seen. Before `v0.25`, only the first time evaluation is performed.
+
 Here's an example using Lua to set $nocache to avoid storing URIs that contain the string "/tmp":
 
 ```nginx
