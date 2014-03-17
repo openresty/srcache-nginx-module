@@ -92,6 +92,10 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
             /* pr_ctx->fetch_error = 1; */
             r->header_sent = 1;
 
+            if (r->method == NGX_HTTP_HEAD) {
+                r->header_only = 1;
+            }
+
             return NGX_OK;
         }
 
@@ -99,12 +103,14 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
                        "srcache_fetch decides to send the response in cache");
 
         r->filter_need_in_memory = 1;
-
         pr_ctx->from_cache = 1;
-
         ctx->parsing_cached_headers = 1;
-
         r->header_sent = 1;
+
+        if (r->method == NGX_HTTP_HEAD) {
+            r->header_only = 1;
+        }
+
         return NGX_OK;
     }
 
@@ -117,6 +123,11 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
                        r->headers_out.status);
 
         r->header_sent = 1;
+
+        if (r->method == NGX_HTTP_HEAD) {
+            r->header_only = 1;
+        }
+
         return NGX_OK;
     }
 
@@ -243,6 +254,10 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
 
     ctx->http_status = r->headers_out.status;
     ctx->store_response = 1;
+
+    if (r->method == NGX_HTTP_HEAD) {
+        r->header_only = 1;
+    }
 
     return NGX_OK;
 }
