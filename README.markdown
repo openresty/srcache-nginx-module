@@ -168,6 +168,10 @@ Usually, [memc-nginx-module](http://github.com/agentzh/memc-nginx-module) is use
 
 For main requests, the [srcache_fetch](#srcache_fetch) directive works at the end of the access phase, so the [standard access module](http://nginx.org/en/docs/http/ngx_http_access_module.html)'s [allow](http://nginx.org/en/docs/http/ngx_http_access_module.html#allow) and [deny](http://nginx.org/en/docs/http/ngx_http_access_module.html#deny) direcives run *before* ours, which is usually the desired behavior for security reasons.
 
+The workflow of this module looks like below:
+
+![srcache flowchart](http://agentzh.org/misc/image/srcache-flowchart.png "srcache flowchart")
+
 [Back to TOC](#table-of-contents)
 
 Subrequest caching

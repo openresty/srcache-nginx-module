@@ -102,6 +102,10 @@ Usually, [[HttpMemcModule]] is used together with this module to provide a concr
 
 For main requests, the [[#srcache_fetch|srcache_fetch]] directive works at the end of the access phase, so the [[HttpAccessModule|standard access module]]'s [[HttpAccessModule#allow|allow]] and [[HttpAccessModule#deny|deny]] direcives run ''before'' ours, which is usually the desired behavior for security reasons.
 
+The workflow of this module looks like below:
+
+http://agentzh.org/misc/image/srcache-flowchart.png
+
 == Subrequest caching ==
 
 For ''subrequests'', we explicitly '''disallow''' the use of this module because it's too difficult to get right. There used to be an implementation but it was buggy and I finally gave up fixing it and abandoned it.
