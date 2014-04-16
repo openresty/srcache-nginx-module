@@ -551,7 +551,7 @@ You can specify arbitrary positive numbers for the response status code that you
 
 ```nginx
 
-srcache_store 200 201 301 302 404 503;
+srcache_store_statuses 200 201 301 302 404 503;
 ```
 
 At least one argument should be given to this directive.
