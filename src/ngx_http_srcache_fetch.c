@@ -355,6 +355,10 @@ ngx_http_srcache_fetch_subrequest(ngx_http_request_t *r,
         return NGX_ERROR;
     }
 
+    if (conf->fetch == NULL) {
+        return NGX_ERROR;
+    }
+
     parsed_sr->method      = conf->fetch->method;
     parsed_sr->method_name = conf->fetch->method_name;
 
