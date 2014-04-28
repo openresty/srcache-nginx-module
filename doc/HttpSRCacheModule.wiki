@@ -10,7 +10,7 @@ This module is production ready.
 
 = Version =
 
-This document describes srcache-nginx-module [https://github.com/agentzh/srcache-nginx-module/tags v0.26] released on 20 March 2014.
+This document describes srcache-nginx-module [https://github.com/openresty/srcache-nginx-module/tags v0.26] released on 20 March 2014.
 
 = Synopsis =
 
@@ -803,8 +803,8 @@ It is recommended to install this module as well as the Nginx core and many othe
 Alternatively, you can build Nginx with this module all by yourself:
 
 * Grab the nginx source code from [http://nginx.org nginx.org], for example, the version 1.5.11 (see [[#Compatibility|Nginx Compatibility]]),
-* and then apply the patch to your nginx source tree that fixes an important bug in the mainline Nginx core: https://raw.github.com/agentzh/ngx_openresty/master/patches/nginx-1.4.3-upstream_truncation.patch (you do NOT need this patch if you are using nginx 1.5.3 and later versions.)
-* after that, download the latest version of the release tarball of this module from srcache-nginx-module [http://github.com/agentzh/srcache-nginx-module/tags file list],
+* and then apply the patch to your nginx source tree that fixes an important bug in the mainline Nginx core: https://raw.github.com/openresty/ngx_openresty/master/patches/nginx-1.4.3-upstream_truncation.patch (you do NOT need this patch if you are using nginx 1.5.3 and later versions.)
+* after that, download the latest version of the release tarball of this module from srcache-nginx-module [http://github.com/openresty/srcache-nginx-module/tags file list],
 * and finally build the Nginx source with this module
 <geshi lang="nginx">
         wget 'http://nginx.org/download/nginx-1.5.11.tar.gz'
@@ -850,14 +850,14 @@ The [https://groups.google.com/group/openresty openresty] mailing list is for Ch
 
 Please submit bug reports, wishlists, or patches by
 
-# creating a ticket on the [http://github.com/agentzh/srcache-nginx-module/issues GitHub Issue Tracker],
+# creating a ticket on the [http://github.com/openresty/srcache-nginx-module/issues GitHub Issue Tracker],
 # or posting to the [[#Community|OpenResty community]].
 
 = Source Repository =
-Available on github at [http://github.com/agentzh/srcache-nginx-module agentzh/srcache-nginx-module].
+Available on github at [http://github.com/openresty/srcache-nginx-module openresty/srcache-nginx-module].
 
 = Test Suite =
-This module comes with a Perl-driven test suite. The [http://github.com/agentzh/srcache-nginx-module/tree/master/test/t test cases] are [http://github.com/agentzh/srcache-nginx-module/blob/master/test/t/main-req.t declarative] too. Thanks to the [http://search.cpan.org/perldoc?Test::Base Test::Nginx] module in the Perl world.
+This module comes with a Perl-driven test suite. The [http://github.com/openresty/srcache-nginx-module/tree/master/test/t test cases] are [http://github.com/openresty/srcache-nginx-module/blob/master/test/t/main-req.t declarative] too. Thanks to the [http://search.cpan.org/perldoc?Test::Base Test::Nginx] module in the Perl world.
 
 To run it on your side:
 <geshi lang="bash">
