@@ -69,6 +69,7 @@ typedef struct {
     ngx_flag_t                       store_private;
     ngx_flag_t                       store_no_store;
     ngx_flag_t                       store_no_cache;
+    ngx_flag_t                       store_ranges;
 
     ngx_flag_t                       ignore_content_encoding;
 
