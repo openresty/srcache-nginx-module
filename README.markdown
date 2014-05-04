@@ -986,7 +986,7 @@ server {
 Trouble Shooting
 ================
 
-To debug issues, you should always check your Nginx `error.log` file first. If no error messages are printed, you need to enable the Nginx debugging logs to get more details, as explained in [[Debugging#Debugging_log]].
+To debug issues, you should always check your Nginx `error.log` file first. If no error messages are printed, you need to enable the Nginx debugging logs to get more details, as explained in [debugging log](http://nginx.org/en/docs/debugging_log.html).
 
 Several common pitfalls for beginners:
 
