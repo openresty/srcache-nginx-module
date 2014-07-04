@@ -17,7 +17,7 @@ cd $root || exit 1
             #--without-http_memcached_module \
 ngx-build $force $version \
             --with-cc-opt="-O0" \
-            --with-ld-opt="-Wl,-rpath,$LUAJIT_LIB:/opt/postgres/lib:/opt/drizzle/lib:/usr/local/lib:/home/lz/lib" \
+            --with-ld-opt="-Wl,-rpath,/opt/postgres/lib:/opt/drizzle/lib:/usr/local/lib:/home/lz/lib" \
             --without-mail_pop3_module \
             --without-mail_imap_module \
             --without-mail_smtp_module \
