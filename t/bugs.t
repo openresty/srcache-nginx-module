@@ -547,8 +547,8 @@ finalize: 0
 Content-Type: text/css
 --- response_body
 I do like you
---- no_error_log
-[error]
+--- error_log
+srcache_store subrequest failed: rc=-1 status=0
 
 
 
@@ -600,8 +600,8 @@ finalize: 0
 Content-Type: text/css
 --- response_body
 I do like you
---- no_error_log
-[error]
+--- error_log
+srcache_store subrequest failed: rc=500 status=0,
 
 
 
@@ -628,4 +628,42 @@ hello
 srcache_fetch: cache sent truncated response body
 --- no_error_log
 [alert]
+
+
+
+=== TEST 18: store subrequest failure
+--- http_config
+    upstream local {
+        server localhost:$TEST_NGINX_MEMCACHED_PORT;
+    }
+
+--- config
+    memc_connect_timeout 100ms;
+    memc_send_timeout 100ms;
+    memc_read_timeout 100ms;
+
+    location = /memc {
+        internal;
+
+        set $memc_key $query_string;
+        set $memc_exptime 1d;
+        memc_pass local;
+    }
+
+    location = /tblah {
+        srcache_fetch GET /memc $uri;
+        srcache_store PUT /memc $uri;
+        proxy_pass http://127.0.0.1:$server_port/back;
+    }
+
+    location = /back {
+        echo ok;
+    }
+--- request
+    GET /tblah
+--- response_body
+ok
+--- error_log
+variable "$memc_exptime" takes invalid value: 1d,
+srcache_store subrequest failed: rc=400 status=0,
 

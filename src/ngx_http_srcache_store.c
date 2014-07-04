@@ -644,6 +644,15 @@ static ngx_int_t
 ngx_http_srcache_store_post_subrequest(ngx_http_request_t *r, void *data,
     ngx_int_t rc)
 {
+    if (rc == NGX_ERROR
+        || rc >= NGX_HTTP_SPECIAL_RESPONSE
+        || r->headers_out.status >= NGX_HTTP_SPECIAL_RESPONSE)
+    {
+        ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                      "srcache_store subrequest failed: rc=%i status=%ui",
+                      rc, r->headers_out.status);
+    }
+
     return NGX_OK;
 }
 
