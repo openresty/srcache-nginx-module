@@ -444,7 +444,7 @@ By default, only <code>200</code>, <code>301</code>, and <code>302</code> respon
 You can specify arbitrary positive numbers for the response status code that you'd like to cache, even including error code like <code>404</code> and <code>503</code>. For example:
 
 <geshi lang="nginx">
-    srcache_store 200 201 301 302 404 503;
+    srcache_store_statuses 200 201 301 302 404 503;
 </geshi>
 
 At least one argument should be given to this directive.
