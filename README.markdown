@@ -79,7 +79,7 @@ Synopsis
 
 upstream my_memcached {
     server 10.62.136.7:11211;
-    keepalive 512; # this requires the ngx_http_upstream_keepalive module
+    keepalive 512;
 }
 
 location = /memc {
