@@ -262,6 +262,7 @@ ngx_http_srcache_access_handler(ngx_http_request_t *r)
     }
 
 do_fetch_subrequest:
+
     /* issue a subrequest to fetch cached stuff (if any) */
 
     rc = ngx_http_srcache_fetch_subrequest(r, conf, ctx);

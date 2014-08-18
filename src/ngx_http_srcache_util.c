@@ -619,6 +619,7 @@ ngx_http_srcache_response_no_cache(ngx_http_request_t *r,
     }
 
 check_expires:
+
     dd("valid_sec after processing cache-control: %d", (int) ctx->valid_sec);
 
     if (ctx->valid_sec == 0) {
