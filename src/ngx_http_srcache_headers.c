@@ -28,6 +28,8 @@ static ngx_int_t ngx_http_srcache_process_accept_ranges(ngx_http_request_t *r,
     ngx_table_elt_t *h, ngx_uint_t offset);
 static ngx_int_t ngx_http_srcache_ignore_header_line(ngx_http_request_t *r,
     ngx_table_elt_t *h, ngx_uint_t offset);
+static ngx_int_t ngx_http_srcache_process_location(ngx_http_request_t *r,
+    ngx_table_elt_t *h, ngx_uint_t offset);
 
 #if (NGX_HTTP_GZIP)
 static ngx_int_t
@@ -64,8 +66,8 @@ ngx_http_srcache_header_t  ngx_http_srcache_headers_in[] = {
                  offsetof(ngx_http_headers_out_t, www_authenticate) },
 
     { ngx_string("Location"),
-                 ngx_http_srcache_process_header_line,
-                 offsetof(ngx_http_headers_out_t, location) },
+                 ngx_http_srcache_process_location,
+                 0 },
 
     { ngx_string("Refresh"),
                  ngx_http_srcache_process_header_line,
@@ -120,6 +122,32 @@ ngx_http_srcache_process_header_line(ngx_http_request_t *r, ngx_table_elt_t *h,
         ph = (ngx_table_elt_t **) ((char *) &r->headers_out + offset);
         *ph = ho;
     }
+
+    return NGX_OK;
+}
+
+
+static ngx_int_t
+ngx_http_srcache_process_location(ngx_http_request_t *r, ngx_table_elt_t *h,
+    ngx_uint_t offset)
+{
+    ngx_table_elt_t  *ho;
+
+    ho = ngx_list_push(&r->headers_out.headers);
+    if (ho == NULL) {
+        return NGX_ERROR;
+    }
+
+    *ho = *h;
+
+    if (ho->value.data[0] != '/') {
+        r->headers_out.location = ho;
+    }
+
+    /*
+     * we do not set r->headers_out.location here to avoid the handling
+     * the local redirects without a host name by ngx_http_header_filter()
+     */
 
     return NGX_OK;
 }

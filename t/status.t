@@ -3,7 +3,7 @@
 use lib 'lib';
 use Test::Nginx::Socket;
 
-plan tests => repeat_each() * 92;
+plan tests => repeat_each() * 97;
 
 $ENV{TEST_NGINX_MEMCACHED_PORT} ||= 11211;
 
@@ -312,6 +312,7 @@ GET /flush
 GET /foo HTTP/1.0
 --- response_headers
 Content-Type: text/html
+Location: /bah
 --- response_body_like: 302 Found
 --- error_code: 302
 
@@ -339,7 +340,37 @@ Location: /bah\r
 
 
 
-=== TEST 16: flush all
+=== TEST 16: cache hit
+--- config
+    location /foo {
+        default_type text/css;
+        srcache_fetch GET /memc $uri;
+        srcache_store PUT /memc $uri;
+        srcache_store_statuses 303 304;
+
+        content_by_lua '
+            ngx.say("hi")
+        ';
+    }
+
+    location /memc {
+        internal;
+
+        set $memc_key $query_string;
+        set $memc_exptime 300;
+        memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
+    }
+--- request
+GET /foo HTTP/1.0
+--- response_headers
+Content-Type: text/html
+Location: /bah
+--- response_body_like: 302 Found
+--- error_code: 302
+
+
+
+=== TEST 17: flush all
 --- config
     location /flush {
         set $memc_cmd 'flush_all';
@@ -355,7 +386,7 @@ GET /flush
 
 
 
-=== TEST 17: basic fetch (201 not cached by default)
+=== TEST 18: basic fetch (201 not cached by default)
 --- config
     location /foo {
         default_type text/css;
@@ -385,7 +416,7 @@ Dog created
 
 
 
-=== TEST 18: inspect the cached item
+=== TEST 19: inspect the cached item
 --- config
     location /memc {
         set $memc_key "/foo";
@@ -403,7 +434,7 @@ Content-Type: text/html
 
 
 
-=== TEST 19: flush all
+=== TEST 20: flush all
 --- config
     location /flush {
         set $memc_cmd 'flush_all';
@@ -419,7 +450,7 @@ GET /flush
 
 
 
-=== TEST 20: basic fetch (explicitly do not cache 302)
+=== TEST 21: basic fetch (explicitly do not cache 302)
 --- config
     location /foo {
         default_type text/css;
@@ -448,7 +479,7 @@ Content-Type: text/html
 
 
 
-=== TEST 21: inspect the cached item
+=== TEST 22: inspect the cached item
 --- config
     location /memc {
         set $memc_key "/foo";
@@ -466,7 +497,7 @@ Content-Type: text/html
 
 
 
-=== TEST 22: flush all
+=== TEST 23: flush all
 --- config
     location /flush {
         set $memc_cmd 'flush_all';
@@ -482,7 +513,7 @@ GET /flush
 
 
 
-=== TEST 23: basic fetch (explicitly do not cache 302, and store_statuses are all bigger than 302)
+=== TEST 24: basic fetch (explicitly do not cache 302, and store_statuses are all bigger than 302)
 github pull #19
 --- config
     location /foo {
@@ -512,7 +543,7 @@ Content-Type: text/html
 
 
 
-=== TEST 24: inspect the cached item
+=== TEST 25: inspect the cached item
 --- config
     location /memc {
         set $memc_key "/foo";
