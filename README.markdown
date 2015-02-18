@@ -70,7 +70,7 @@ This module is production ready.
 Version
 =======
 
-This document describes srcache-nginx-module [v0.28](https://github.com/openresty/srcache-nginx-module/tags) released on 8 July 2014.
+This document describes srcache-nginx-module [v0.29](https://github.com/openresty/srcache-nginx-module/tags) released on 18 February 2015.
 
 Synopsis
 ========
@@ -79,7 +79,7 @@ Synopsis
 
  upstream my_memcached {
      server 10.62.136.7:11211;
-     keepalive 512;
+     keepalive 10;
  }
 
  location = /memc {
@@ -255,11 +255,11 @@ To maximize speed, we often enable TCP (or Unix Domain Socket) connection pool f
  upstream moon {
      server 10.62.136.54:11211;
      server unix:/tmp/memcached.sock backup;
-     keepalive 512;
+     keepalive 10;
  }
 ```
 
-where we define a connection pool which holds up to 512 keep-alive connections for our `moon` upstream (cluster).
+where we define a connection pool which holds up to 10 keep-alive connections (per nginx worker process) for our `moon` upstream (cluster).
 
 [Back to TOC](#table-of-contents)
 
@@ -1002,15 +1002,15 @@ It is recommended to install this module as well as the Nginx core and many othe
 
 Alternatively, you can build Nginx with this module all by yourself:
 
-* Grab the nginx source code from [nginx.org](http://nginx.org), for example, the version 1.7.2 (see [Nginx Compatibility](#compatibility)),
+* Grab the nginx source code from [nginx.org](http://nginx.org), for example, the version 1.7.10 (see [Nginx Compatibility](#compatibility)),
 * and then apply the patch to your nginx source tree that fixes an important bug in the mainline Nginx core: <https://raw.github.com/openresty/ngx_openresty/master/patches/nginx-1.4.3-upstream_truncation.patch> (you do NOT need this patch if you are using nginx 1.5.3 and later versions.)
 * after that, download the latest version of the release tarball of this module from srcache-nginx-module [file list](http://github.com/openresty/srcache-nginx-module/tags),
 * and finally build the Nginx source with this module
 ```nginx
 
-     wget 'http://nginx.org/download/nginx-1.7.2.tar.gz'
-     tar -xzvf nginx-1.7.2.tar.gz
-     cd nginx-1.7.2/
+     wget 'http://nginx.org/download/nginx-1.7.10.tar.gz'
+     tar -xzvf nginx-1.7.10.tar.gz
+     cd nginx-1.7.10/
 
      # Here we assume you would install you nginx under /opt/nginx/.
      ./configure --prefix=/opt/nginx \
@@ -1027,7 +1027,7 @@ Compatibility
 
 The following versions of Nginx should work with this module:
 
-* 1.7.x (last tested: 1.7.2)
+* 1.7.x (last tested: 1.7.10)
 * 1.5.x (last tested: 1.5.12)
 * 1.4.x (last tested: 1.4.4)
 * 1.3.x (last tested: 1.3.7)
@@ -1117,7 +1117,7 @@ Yichun "agentzh" Zhang (章亦春) <agentzh@gmail.com>, CloudFlare Inc.
 Copyright & License
 ===================
 
-Copyright (c) 2010-2014, Yichun "agentzh" Zhang (章亦春) <agentzh@gmail.com>, CloudFlare Inc.
+Copyright (c) 2010-2015, Yichun "agentzh" Zhang (章亦春) <agentzh@gmail.com>, CloudFlare Inc.
 
 This module is licensed under the terms of the BSD license.
 
