@@ -70,7 +70,7 @@ This module is production ready.
 Version
 =======
 
-This document describes srcache-nginx-module [v0.29](https://github.com/openresty/srcache-nginx-module/tags) released on 18 February 2015.
+This document describes srcache-nginx-module [v0.30](https://github.com/openresty/srcache-nginx-module/tags) released on 22 June 2015.
 
 Synopsis
 ========
