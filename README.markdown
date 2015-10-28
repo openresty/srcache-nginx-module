@@ -1,8 +1,3 @@
-<!---
-Don't edit this file manually! Instead you should generate it by using:
-    wiki2markdown.pl doc/HttpSRCacheModule.wiki
--->
-
 Name
 ====
 
@@ -165,7 +160,7 @@ Description
 
 This module provides a transparent caching layer for arbitrary nginx locations (like those use an upstream or even serve static disk files). The caching behavior is mostly compatible with [RFC 2616](http://www.ietf.org/rfc/rfc2616.txt).
 
-Usually, [memc-nginx-module](http://github.com/openresty/memc-nginx-module) is used together with this module to provide a concrete caching storage backend. But technically, any modules that provide a REST interface can be used as the fetching and storage subrequests used by this module.
+Usually, [memc-nginx-module](https://github.com/openresty/memc-nginx-module) is used together with this module to provide a concrete caching storage backend. But technically, any modules that provide a REST interface can be used as the fetching and storage subrequests used by this module.
 
 For main requests, the [srcache_fetch](#srcache_fetch) directive works at the end of the access phase, so the [standard access module](http://nginx.org/en/docs/http/ngx_http_access_module.html)'s [allow](http://nginx.org/en/docs/http/ngx_http_access_module.html#allow) and [deny](http://nginx.org/en/docs/http/ngx_http_access_module.html#deny) direcives run *before* ours, which is usually the desired behavior for security reasons.
 
@@ -180,7 +175,7 @@ Subrequest caching
 
 For *subrequests*, we explicitly **disallow** the use of this module because it's too difficult to get right. There used to be an implementation but it was buggy and I finally gave up fixing it and abandoned it.
 
-However, if you're using [lua-nginx-module](http://github.com/openresty/lua-nginx-module), it's easy to do subrequest caching in Lua all by yourself. That is, first issue a subrequest to an [memc-nginx-module](http://github.com/openresty/memc-nginx-module) location to do an explicit cache lookup, if cache hit, just use the cached data returned; otherwise, fall back to the true backend, and finally do a cache insertion to feed the data into the cache.
+However, if you're using [lua-nginx-module](https://github.com/openresty/lua-nginx-module), it's easy to do subrequest caching in Lua all by yourself. That is, first issue a subrequest to an [memc-nginx-module](https://github.com/openresty/memc-nginx-module) location to do an explicit cache lookup, if cache hit, just use the cached data returned; otherwise, fall back to the true backend, and finally do a cache insertion to feed the data into the cache.
 
 Using this module for main request caching and Lua for subrequest caching is the approach that we're taking in our business. This hybrid solution works great in production.
 
@@ -235,16 +230,16 @@ Here is a simple example demonstrating a distributed memcached caching mechanism
 ```
 Here's what is going on in the sample above:
 1. We first define three upstreams, `moon`, `earth`, and `sun`. These are our three memcached servers.
-1. And then we group them together as an upstream list entity named `universe` with the `upstream_list` directive provided by [set-misc-nginx-module](http://github.com/openresty/set-misc-nginx-module).
+1. And then we group them together as an upstream list entity named `universe` with the `upstream_list` directive provided by [set-misc-nginx-module](https://github.com/openresty/set-misc-nginx-module).
 1. After that, we define an internal location named `/memc` for talking to the memcached cluster.
-1. In this `/memc` location, we first set the `$memc_key` variable with the query string (`$args`), and then use the [set_hashed_upstream](http://github.com/openresty/set-misc-nginx-module#set_hashed_upstream) directive to hash our [$memc_key](http://github.com/openresty/memc-nginx-module#memc_key) over the upsteam list `universe`, so as to obtain a concrete upstream name to be assigned to the variable `$backend`.
-1. We pass this `$backend` variable into the [memc_pass](http://github.com/openresty/memc-nginx-module#memc_pass) directive. The `$backend` variable can hold a value among `moon`, `earth`, and `sun`.
-1. Also, we define the memcached caching expiration time to be 3600 seconds (i.e., an hour) by overriding the [$memc_exptime](http://github.com/openresty/memc-nginx-module#memc_exptime) variable.
+1. In this `/memc` location, we first set the `$memc_key` variable with the query string (`$args`), and then use the [set_hashed_upstream](https://github.com/openresty/set-misc-nginx-module#set_hashed_upstream) directive to hash our [$memc_key](https://github.com/openresty/memc-nginx-module#memc_key) over the upsteam list `universe`, so as to obtain a concrete upstream name to be assigned to the variable `$backend`.
+1. We pass this `$backend` variable into the [memc_pass](https://github.com/openresty/memc-nginx-module#memc_pass) directive. The `$backend` variable can hold a value among `moon`, `earth`, and `sun`.
+1. Also, we define the memcached caching expiration time to be 3600 seconds (i.e., an hour) by overriding the [$memc_exptime](https://github.com/openresty/memc-nginx-module#memc_exptime) variable.
 1. In our main public location `/`, we configure the `$uri` variable as our cache key, and then configure [srcache_fetch](#srcache_fetch) for cache lookups and [srcache_store](#srcache_store) for cache updates. We're using two subrequests to our `/memc` location defined earlier in these two directives.
 
-One can use [lua-nginx-module](http://github.com/openresty/lua-nginx-module)'s [set_by_lua](http://github.com/openresty/lua-nginx-module#set_by_lua) or [rewrite_by_lua](http://github.com/openresty/lua-nginx-module#rewrite_by_lua) directives to inject custom Lua code to compute the `$backend` and/or `$key` variables in the sample above.
+One can use [lua-nginx-module](https://github.com/openresty/lua-nginx-module)'s [set_by_lua](https://github.com/openresty/lua-nginx-module#set_by_lua) or [rewrite_by_lua](https://github.com/openresty/lua-nginx-module#rewrite_by_lua) directives to inject custom Lua code to compute the `$backend` and/or `$key` variables in the sample above.
 
-One thing that should be taken care of is that memcached does have restriction on key lengths, i.e., 250 bytes, so for keys that may be very long, one could use the [set_md5](http://github.com/openresty/set-misc-nginx-module#set_md5) directive or its friends to pre-hash the key to a fixed-length digest before assigning it to `$memc_key` in the `/memc` location or the like.
+One thing that should be taken care of is that memcached does have restriction on key lengths, i.e., 250 bytes, so for keys that may be very long, one could use the [set_md5](https://github.com/openresty/set-misc-nginx-module#set_md5) directive or its friends to pre-hash the key to a fixed-length digest before assigning it to `$memc_key` in the `/memc` location or the like.
 
 Further, one can utilize the [srcache_fetch_skip](#srcache_fetch_skip) and [srcache_store_skip](#srcache_store_skip) directives to control what to cache and what not on a per-request basis, and Lua can also be used here in a similar way. So the possibility is really unlimited.
 
@@ -304,11 +299,11 @@ Here is a working example by using Redis:
  }
 ```
 
-This example makes use of the [$echo_request_body](http://github.com/openresty/echo-nginx-module#echo_request_body) variable provided by [echo-nginx-module](http://github.com/openresty/echo-nginx-module). Note that you need the latest version of [echo-nginx-module](http://github.com/openresty/echo-nginx-module), `v0.38rc2` because earlier versions may not work reliably.
+This example makes use of the [$echo_request_body](https://github.com/openresty/echo-nginx-module#echo_request_body) variable provided by [echo-nginx-module](https://github.com/openresty/echo-nginx-module). Note that you need the latest version of [echo-nginx-module](https://github.com/openresty/echo-nginx-module), `v0.38rc2` because earlier versions may not work reliably.
 
-Also, you need both [HttpRedisModule](http://wiki.nginx.org/HttpRedisModule) and [redis2-nginx-module](http://github.com/openresty/redis2-nginx-module). The former is used in the [srcache_fetch](#srcache_fetch) subrequest and the latter is used in the [srcache_store](#srcache_store) subrequest.
+Also, you need both [HttpRedisModule](http://wiki.nginx.org/HttpRedisModule) and [redis2-nginx-module](https://github.com/openresty/redis2-nginx-module). The former is used in the [srcache_fetch](#srcache_fetch) subrequest and the latter is used in the [srcache_store](#srcache_store) subrequest.
 
-The Nginx core also has a bug that could prevent [redis2-nginx-module](http://github.com/openresty/redis2-nginx-module)'s pipelining support from working properly in certain extreme conditions. And the following patch fixes this:
+The Nginx core also has a bug that could prevent [redis2-nginx-module](https://github.com/openresty/redis2-nginx-module)'s pipelining support from working properly in certain extreme conditions. And the following patch fixes this:
 
    http://mailman.nginx.org/pipermail/nginx-devel/2012-March/002040.html
 
@@ -325,7 +320,7 @@ Consider the following URI querystring
 
     SID=BC3781C3-2E02-4A11-89CF-34E5CFE8B0EF&UID=44332&L=EN&M=1&H=1&UNC=0&SRC=LK&RT=62
 
-we want to remove the `SID` and `UID` arguments from it. It is easy to achieve if you use [lua-nginx-module](http://github.com/openresty/lua-nginx-module) at the same time:
+we want to remove the `SID` and `UID` arguments from it. It is easy to achieve if you use [lua-nginx-module](https://github.com/openresty/lua-nginx-module) at the same time:
 
 ```nginx
 
@@ -341,9 +336,9 @@ we want to remove the `SID` and `UID` arguments from it. It is easy to achieve i
  }
 ```
 
-Here we use the [echo](http://github.com/openresty/echo-nginx-module#echo) directive from [echo-nginx-module](http://github.com/openresty/echo-nginx-module) to dump out
+Here we use the [echo](https://github.com/openresty/echo-nginx-module#echo) directive from [echo-nginx-module](https://github.com/openresty/echo-nginx-module) to dump out
 the final value of [$args](http://nginx.org/en/docs/http/ngx_http_core_module.html#var_args) in the end. You can replace it with your
-[srcache-nginx-module](http://github.com/openresty/srcache-nginx-module) configurations and upstream configurations instead for
+[srcache-nginx-module](https://github.com/openresty/srcache-nginx-module) configurations and upstream configurations instead for
 your case. Let's test this /t interface with curl:
 
     $ curl 'localhost:8081/t?RT=62&SID=BC3781C3-2E02-4A11-89CF-34E5CFE8B0EF&UID=44332&L=EN&M=1&H=1&UNC=0&SRC=LK'
@@ -436,7 +431,7 @@ For example, to skip caching requests which have a cookie named `foo` with the v
      # proxy_pass/fastcgi_pass/content_by_lua/...
  }
 ```
-where [lua-nginx-module](http://github.com/openresty/lua-nginx-module) is used to calculate the value of the `$skip` variable at the (earlier) rewrite phase. Similarly, the `$key` variable can be computed by Lua using the [set_by_lua](http://github.com/openresty/lua-nginx-module#set_by_lua) or [rewrite_by_lua](http://github.com/openresty/lua-nginx-module#rewrite_by_lua) directive too.
+where [lua-nginx-module](https://github.com/openresty/lua-nginx-module) is used to calculate the value of the `$skip` variable at the (earlier) rewrite phase. Similarly, the `$key` variable can be computed by Lua using the [set_by_lua](https://github.com/openresty/lua-nginx-module#set_by_lua) or [rewrite_by_lua](https://github.com/openresty/lua-nginx-module#rewrite_by_lua) directive too.
 
 The standard [map](http://nginx.org/en/docs/http/ngx_http_map_module.html#map) directive can also be used to compute the value of the `$skip` variable used in the sample above:
 
@@ -944,7 +939,7 @@ This variable was first introduced in the `v0.14` release.
 Known Issues
 ============
 * On certain systems, enabling aio and/or sendfile may stop [srcache_store](#srcache_store) from working. You can disable them in the locations configured by [srcache_store](#srcache_store).
-* The [srcache_store](#srcache_store) directive can not be used to capture the responses generated by [echo-nginx-module](http://github.com/openresty/echo-nginx-module)'s subrequest directivees like [echo_subrequest_async](http://github.com/openresty/echo-nginx-module#echo_subrequest_async) and [echo_location](http://github.com/openresty/echo-nginx-module#echo_location). You are recommended to use HttpLuaModule to initiate and capture subrequests, which should work with [srcache_store](#srcache_store).
+* The [srcache_store](#srcache_store) directive can not be used to capture the responses generated by [echo-nginx-module](https://github.com/openresty/echo-nginx-module)'s subrequest directivees like [echo_subrequest_async](https://github.com/openresty/echo-nginx-module#echo_subrequest_async) and [echo_location](https://github.com/openresty/echo-nginx-module#echo_location). You are recommended to use HttpLuaModule to initiate and capture subrequests, which should work with [srcache_store](#srcache_store).
 
 [Back to TOC](#table-of-contents)
 
@@ -955,7 +950,7 @@ Caveats
 
  proxy_set_header  Accept-Encoding  "";
 ```
-* Do *not* use [ngx_http_rewrite_module](http://nginx.org/en/docs/http/ngx_http_rewrite_module.html)'s [if](http://nginx.org/en/docs/http/ngx_http_rewrite_module.html#if) directive in the same location as this module's, because "[if](http://nginx.org/en/docs/http/ngx_http_rewrite_module.html#if) is evil". Instead, use [ngx_http_map_module](http://nginx.org/en/docs/http/ngx_http_map_module.html) or [lua-nginx-module](http://github.com/openresty/lua-nginx-module) combined with this module's [srcache_store_skip](#srcache_store_skip) and/or [srcache_fetch_skip](#srcache_fetch_skip) directives. For example:
+* Do *not* use [ngx_http_rewrite_module](http://nginx.org/en/docs/http/ngx_http_rewrite_module.html)'s [if](http://nginx.org/en/docs/http/ngx_http_rewrite_module.html#if) directive in the same location as this module's, because "[if](http://nginx.org/en/docs/http/ngx_http_rewrite_module.html#if) is evil". Instead, use [ngx_http_map_module](http://nginx.org/en/docs/http/ngx_http_map_module.html) or [lua-nginx-module](https://github.com/openresty/lua-nginx-module) combined with this module's [srcache_store_skip](#srcache_store_skip) and/or [srcache_fetch_skip](#srcache_fetch_skip) directives. For example:
 ```nginx
 
  map $request_method $skip_fetch {
@@ -1002,15 +997,15 @@ It is recommended to install this module as well as the Nginx core and many othe
 
 Alternatively, you can build Nginx with this module all by yourself:
 
-* Grab the nginx source code from [nginx.org](http://nginx.org), for example, the version 1.7.10 (see [Nginx Compatibility](#compatibility)),
+* Grab the nginx source code from [nginx.org](http://nginx.org), for example, the version 1.9.3 (see [Nginx Compatibility](#compatibility)),
 * and then apply the patch to your nginx source tree that fixes an important bug in the mainline Nginx core: <https://raw.github.com/openresty/ngx_openresty/master/patches/nginx-1.4.3-upstream_truncation.patch> (you do NOT need this patch if you are using nginx 1.5.3 and later versions.)
-* after that, download the latest version of the release tarball of this module from srcache-nginx-module [file list](http://github.com/openresty/srcache-nginx-module/tags),
+* after that, download the latest version of the release tarball of this module from srcache-nginx-module [file list](https://github.com/openresty/srcache-nginx-module/tags),
 * and finally build the Nginx source with this module
 ```nginx
 
-     wget 'http://nginx.org/download/nginx-1.7.10.tar.gz'
-     tar -xzvf nginx-1.7.10.tar.gz
-     cd nginx-1.7.10/
+     wget 'http://nginx.org/download/nginx-1.9.3.tar.gz'
+     tar -xzvf nginx-1.9.3.tar.gz
+     cd nginx-1.9.3/
 
      # Here we assume you would install you nginx under /opt/nginx/.
      ./configure --prefix=/opt/nginx \
@@ -1027,6 +1022,8 @@ Compatibility
 
 The following versions of Nginx should work with this module:
 
+* 1.9.x (last tested: 1.9.3)
+* 1.8.x
 * 1.7.x (last tested: 1.7.10)
 * 1.5.x (last tested: 1.5.12)
 * 1.4.x (last tested: 1.4.4)
@@ -1067,20 +1064,20 @@ Bugs and Patches
 
 Please submit bug reports, wishlists, or patches by
 
-1. creating a ticket on the [GitHub Issue Tracker](http://github.com/openresty/srcache-nginx-module/issues),
+1. creating a ticket on the [GitHub Issue Tracker](https://github.com/openresty/srcache-nginx-module/issues),
 1. or posting to the [OpenResty community](#community).
 
 [Back to TOC](#table-of-contents)
 
 Source Repository
 =================
-Available on github at [openresty/srcache-nginx-module](http://github.com/openresty/srcache-nginx-module).
+Available on github at [openresty/srcache-nginx-module](https://github.com/openresty/srcache-nginx-module).
 
 [Back to TOC](#table-of-contents)
 
 Test Suite
 ==========
-This module comes with a Perl-driven test suite. The [test cases](http://github.com/openresty/srcache-nginx-module/tree/master/test/t) are [declarative](http://github.com/openresty/srcache-nginx-module/blob/master/test/t/main-req.t) too. Thanks to the [Test::Nginx](http://search.cpan.org/perldoc?Test::Base) module in the Perl world.
+This module comes with a Perl-driven test suite. The [test cases](https://github.com/openresty/srcache-nginx-module/tree/master/test/t) are [declarative](https://github.com/openresty/srcache-nginx-module/blob/master/test/t/main-req.t) too. Thanks to the [Test::Nginx](http://search.cpan.org/perldoc?Test::Base) module in the Perl world.
 
 To run it on your side:
 ```bash
@@ -1091,7 +1088,7 @@ You need to terminate any Nginx processes before running the test suite if you h
 
 Because a single nginx server (by default, `localhost:1984`) is used across all the test scripts (`.t` files), it's meaningless to run the test suite in parallel by specifying `-jN` when invoking the `prove` utility.
 
-Some parts of the test suite requires modules [ngx_http_rewrite_module](http://nginx.org/en/docs/http/ngx_http_rewrite_module.html), [echo-nginx-module](http://github.com/openresty/echo-nginx-module), [rds-json-nginx-module](http://github.com/openresty/rds-json-nginx-module), and [drizzle-nginx-module](http://github.com/openresty/drizzle-nginx-module) to be enabled as well when building Nginx.
+Some parts of the test suite requires modules [ngx_http_rewrite_module](http://nginx.org/en/docs/http/ngx_http_rewrite_module.html), [echo-nginx-module](https://github.com/openresty/echo-nginx-module), [rds-json-nginx-module](https://github.com/openresty/rds-json-nginx-module), and [drizzle-nginx-module](https://github.com/openresty/drizzle-nginx-module) to be enabled as well when building Nginx.
 
 [Back to TOC](#table-of-contents)
 
@@ -1132,8 +1129,8 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 See Also
 ========
-* [memc-nginx-module](http://github.com/openresty/memc-nginx-module)
-* [lua-nginx-module](http://github.com/openresty/lua-nginx-module)
-* [set-misc-nginx-module](http://github.com/openresty/set-misc-nginx-module)
+* [memc-nginx-module](https://github.com/openresty/memc-nginx-module)
+* [lua-nginx-module](https://github.com/openresty/lua-nginx-module)
+* [set-misc-nginx-module](https://github.com/openresty/set-misc-nginx-module)
 * The [ngx_openresty bundle](http://openresty.org)
 
