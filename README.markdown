@@ -184,7 +184,7 @@ Using this module for main request caching and Lua for subrequest caching is the
 Distributed Memcached Caching
 -----------------------------
 
-Here is a simple example demonstrating a distributed memcached caching mechanism built atop this module. Suppose we do have three different memcacached nodes and we use simple modulo to hash our keys.
+Here is a simple example demonstrating a distributed memcached caching mechanism built atop this module. Suppose we do have three different memcached nodes and we use simple modulo to hash our keys.
 
 ```nginx
 
