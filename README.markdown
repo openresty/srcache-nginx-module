@@ -307,7 +307,7 @@ The Nginx core also has a bug that could prevent [redis2-nginx-module](https://g
 
    http://mailman.nginx.org/pipermail/nginx-devel/2012-March/002040.html
 
-Note that, however, if you are using the [ngx_openresty](http://openresty.org/) 1.0.15.3 bundle or later, then you already have everything that you need here in the bundle.
+Note that, however, if you are using the [OpenResty](http://openresty.org/) 1.0.15.3 bundle or later, then you already have everything that you need here in the bundle.
 
 [Back to TOC](#table-of-contents)
 
@@ -993,12 +993,12 @@ Several common pitfalls for beginners:
 Installation
 ============
 
-It is recommended to install this module as well as the Nginx core and many other goodies via the [ngx_openresty bundle](http://openresty.org). It is the easiest way and most safe way to set things up. See OpenResty's [installation instructions](http://openresty.org/#Installation) for details.
+It is recommended to install this module as well as the Nginx core and many other goodies via the [OpenResty bundle](http://openresty.org). It is the easiest way and most safe way to set things up. See OpenResty's [installation instructions](http://openresty.org/#Installation) for details.
 
 Alternatively, you can build Nginx with this module all by yourself:
 
 * Grab the nginx source code from [nginx.org](http://nginx.org), for example, the version 1.9.3 (see [Nginx Compatibility](#compatibility)),
-* and then apply the patch to your nginx source tree that fixes an important bug in the mainline Nginx core: <https://raw.github.com/openresty/ngx_openresty/master/patches/nginx-1.4.3-upstream_truncation.patch> (you do NOT need this patch if you are using nginx 1.5.3 and later versions.)
+* and then apply the patch to your nginx source tree that fixes an important bug in the mainline Nginx core: <https://raw.github.com/openresty/openresty/master/patches/nginx-1.4.3-upstream_truncation.patch> (you do NOT need this patch if you are using nginx 1.5.3 and later versions.)
 * after that, download the latest version of the release tarball of this module from srcache-nginx-module [file list](https://github.com/openresty/srcache-nginx-module/tags),
 * and finally build the Nginx source with this module
 ```nginx
@@ -1132,5 +1132,5 @@ See Also
 * [memc-nginx-module](https://github.com/openresty/memc-nginx-module)
 * [lua-nginx-module](https://github.com/openresty/lua-nginx-module)
 * [set-misc-nginx-module](https://github.com/openresty/set-misc-nginx-module)
-* The [ngx_openresty bundle](http://openresty.org)
+* The [openresty bundle](http://openresty.org)
 
