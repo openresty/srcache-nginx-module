@@ -843,6 +843,8 @@ The `<time>` argument values are in seconds by default. But it's wise to always 
 
 This time must be less than 597 hours.
 
+Setting an expire time of 0s will cache the content forever.
+
 This directive was first introduced in the `v0.12rc7` release.
 
 [Back to TOC](#table-of-contents)
