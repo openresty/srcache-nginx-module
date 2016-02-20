@@ -1005,18 +1005,26 @@ Alternatively, you can build Nginx with this module all by yourself:
 * and then apply the patch to your nginx source tree that fixes an important bug in the mainline Nginx core: <https://raw.github.com/openresty/openresty/master/patches/nginx-1.4.3-upstream_truncation.patch> (you do NOT need this patch if you are using nginx 1.5.3 and later versions.)
 * after that, download the latest version of the release tarball of this module from srcache-nginx-module [file list](https://github.com/openresty/srcache-nginx-module/tags),
 * and finally build the Nginx source with this module
+
+```bash
+ wget 'http://nginx.org/download/nginx-1.9.7.tar.gz'
+ tar -xzvf nginx-1.9.7.tar.gz
+ cd nginx-1.9.7/
+
+ # Here we assume you would install you nginx under /opt/nginx/.
+ ./configure --prefix=/opt/nginx \
+      --add-module=/path/to/srcache-nginx-module
+
+ make -j2
+ make install
+```
+
+Starting from NGINX 1.9.11, you can also compile this module as a dynamic module, by using the `--add-dynamic-module=PATH` option instead of `--add-module=PATH` on the
+`./configure` command line above. And then you can explicitly load the module in your `nginx.conf` via the [load_module](http://nginx.org/en/docs/ngx_core_module.html#load_module)
+directive, for example,
+
 ```nginx
-
-     wget 'http://nginx.org/download/nginx-1.9.7.tar.gz'
-     tar -xzvf nginx-1.9.7.tar.gz
-     cd nginx-1.9.7/
-
-     # Here we assume you would install you nginx under /opt/nginx/.
-     ./configure --prefix=/opt/nginx \
-          --add-module=/path/to/srcache-nginx-module
-
-     make -j2
-     make install
+load_module /path/to/modules/ngx_http_srcache_filter_module.so;
 ```
 
 [Back to TOC](#table-of-contents)
