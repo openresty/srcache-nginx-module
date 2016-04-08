@@ -990,6 +990,7 @@ Several common pitfalls for beginners:
 
 * The original response carries a `Cache-Control` header that explicitly disables caching and you do not configure directives like [srcache_response_cache_control](#srcache_response_cache_control).
 * The original response is already gzip compressed, which is not cached by default (see [srcache_ignore_content_encoding](#srcache_ignore_content_encoding)).
+* Memcached might return `CLIENT_ERROR bad command line format` when using a too long key (250 chars as of version 1.4.25). It is thus safer to use `set_md5 $key $uri$args;` instead of `set $key $uri$args;`. The `set_md5` directive (and more) is available from [OpenResty's set-misc module](https://github.com/openresty/set-misc-nginx-module).
 
 [Back to TOC](#table-of-contents)
 
