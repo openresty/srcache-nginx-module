@@ -377,7 +377,7 @@ ngx_http_srcache_fetch_subrequest(ngx_http_request_t *r,
     }
 
     if (ngx_http_complex_value(r, &conf->fetch->args, &parsed_sr->args)
-            != NGX_OK)
+        != NGX_OK)
     {
         return NGX_ERROR;
     }
@@ -416,7 +416,7 @@ ngx_http_srcache_fetch_subrequest(ngx_http_request_t *r,
        parsed_sr->location.data);
 
     dd("fetch args: %.*s", (int) parsed_sr->args.len,
-            parsed_sr->args.data);
+       parsed_sr->args.data);
 
     rc = ngx_http_subrequest(r, &parsed_sr->location, &parsed_sr->args,
                              &sr, psr, flags);

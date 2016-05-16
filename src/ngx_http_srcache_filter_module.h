@@ -94,7 +94,7 @@ typedef struct {
 } ngx_http_srcache_main_conf_t;
 
 
-typedef struct ngx_http_srcache_ctx_s ngx_http_srcache_ctx_t;
+typedef struct ngx_http_srcache_ctx_s  ngx_http_srcache_ctx_t;
 
 typedef struct ngx_http_srcache_postponed_request_s
     ngx_http_srcache_postponed_request_t;
@@ -108,7 +108,7 @@ struct ngx_http_srcache_ctx_s {
     void                            *store_wev_handler_ctx;
 
     ngx_int_t                      (*process_header)(ngx_http_request_t *r,
-                                        ngx_buf_t *b);
+                                                     ngx_buf_t *b);
 
     time_t                           valid_sec;
 

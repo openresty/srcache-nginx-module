@@ -48,12 +48,12 @@ static ngx_str_t  ngx_http_srcache_hide_headers[] = {
 
 
 static ngx_conf_bitmask_t  ngx_http_srcache_cache_method_mask[] = {
-   { ngx_string("GET"),  NGX_HTTP_GET},
-   { ngx_string("HEAD"), NGX_HTTP_HEAD },
-   { ngx_string("POST"), NGX_HTTP_POST },
-   { ngx_string("PUT"), NGX_HTTP_PUT },
-   { ngx_string("DELETE"), NGX_HTTP_DELETE },
-   { ngx_null_string, 0 }
+    { ngx_string("GET"),  NGX_HTTP_GET},
+    { ngx_string("HEAD"), NGX_HTTP_HEAD },
+    { ngx_string("POST"), NGX_HTTP_POST },
+    { ngx_string("PUT"), NGX_HTTP_PUT },
+    { ngx_string("DELETE"), NGX_HTTP_DELETE },
+    { ngx_null_string, 0 }
 };
 
 
@@ -303,12 +303,12 @@ ngx_http_srcache_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
     ngx_conf_merge_ptr_value(conf->store, prev->store, NULL);
 
     ngx_conf_merge_size_value(conf->buf_size, prev->buf_size,
-            (size_t) ngx_pagesize);
+                              (size_t) ngx_pagesize);
 
     ngx_conf_merge_size_value(conf->store_max_size, prev->store_max_size, 0);
 
     ngx_conf_merge_size_value(conf->header_buf_size, prev->header_buf_size,
-            (size_t) ngx_pagesize);
+                              (size_t) ngx_pagesize);
 
     if (conf->fetch_skip == NULL) {
         conf->fetch_skip = prev->fetch_skip;
@@ -340,7 +340,7 @@ ngx_http_srcache_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
     ngx_conf_merge_value(conf->default_expire, prev->default_expire, 60);
 
     ngx_conf_merge_value(conf->ignore_content_encoding,
-            prev->ignore_content_encoding, 0);
+                         prev->ignore_content_encoding, 0);
 
     hash.max_size = 512;
     hash.bucket_size = ngx_align(64, ngx_cacheline_size);
@@ -396,8 +396,8 @@ ngx_http_srcache_conf_set_request(ngx_conf_t *cf, ngx_command_t *cmd,
 
     if (rp->method == NGX_HTTP_UNKNOWN) {
         ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
-                "%V specifies bad HTTP method %V",
-                &cmd->name, method_name);
+                           "%V specifies bad HTTP method %V",
+                           &cmd->name, method_name);
 
         return NGX_CONF_ERROR;
     }
@@ -589,16 +589,16 @@ ngx_http_srcache_store_statuses(ngx_conf_t *cf, ngx_command_t *cmd,
         status = ngx_atoi(value[i].data, value[i].len);
         if (status == NGX_ERROR) {
             ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
-                    "status code \"%V\" is an invalid number",
-                    &value[i]);
+                               "status code \"%V\" is an invalid number",
+                               &value[i]);
 
             return NGX_CONF_ERROR;
         }
 
         if (status < 0) {
             ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
-                    "status code \"%V\" is not a positive number",
-                    &value[i]);
+                               "status code \"%V\" is not a positive number",
+                               &value[i]);
 
             return NGX_CONF_ERROR;
         }
@@ -609,7 +609,7 @@ ngx_http_srcache_store_statuses(ngx_conf_t *cf, ngx_command_t *cmd,
     slcf->store_statuses[i - 1] = 0;
 
     ngx_sort(slcf->store_statuses, n, sizeof(ngx_int_t),
-            ngx_http_srcache_cmp_int);
+             ngx_http_srcache_cmp_int);
 
 #if 0
     for (i = 0; i < n; i++) {

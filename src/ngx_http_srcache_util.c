@@ -144,9 +144,10 @@ ngx_http_srcache_discard_bufs(ngx_pool_t *pool, ngx_chain_t *in)
 ngx_int_t
 ngx_http_srcache_parse_method_name(ngx_str_t **method_name_ptr)
 {
-    const ngx_str_t* method_name = *method_name_ptr;
+    const ngx_str_t         *method_name = *method_name_ptr;
 
     switch (method_name->len) {
+
     case 3:
         if (ngx_http_srcache_strcmp_const(method_name->data, "GET") == 0) {
             *method_name_ptr = &ngx_http_srcache_get_method;
@@ -424,7 +425,7 @@ ngx_http_srcache_set_content_length_header(ngx_http_request_t *r, off_t len)
             'n'), 'g'), 't'), 'h');
 
     dd("r content length: %.*s",
-       (int)r->headers_in.content_length->value.len,
+       (int) r->headers_in.content_length->value.len,
        r->headers_in.content_length->value.data);
 
     pr = r->parent;
@@ -1069,7 +1070,7 @@ ngx_http_srcache_store_response_header(ngx_http_request_t *r,
 
         dd("header hash: %lu, hash lc: %lu", (unsigned long) header[i].hash,
            (unsigned long) ngx_hash_key_lc(header[i].key.data,
-           header[i].key.len));
+                                           header[i].key.len));
 
         if (ngx_hash_find(&conf->hide_headers_hash, header[i].hash,
                           header[i].lowcase_key, header[i].key.len))
@@ -1212,7 +1213,7 @@ ngx_http_srcache_hide_headers_hash(ngx_conf_t *cf,
             }
 
             dd("adding header to hide headers: %.*s", (int) h[i].len,
-                    h[i].data);
+               h[i].data);
 
         exist:
 

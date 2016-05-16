@@ -601,7 +601,7 @@ ngx_http_srcache_store_subrequest(ngx_http_request_t *r,
     dd("firing the store subrequest");
 
     dd("store location: %.*s", (int) parsed_sr->location.len,
-            parsed_sr->location.data);
+       parsed_sr->location.data);
 
     dd("store args: %.*s", (int) parsed_sr->args.len,
        parsed_sr->args.data);
