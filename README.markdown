@@ -65,7 +65,7 @@ This module is production ready.
 Version
 =======
 
-This document describes srcache-nginx-module [v0.30](https://github.com/openresty/srcache-nginx-module/tags) released on 22 June 2015.
+This document describes srcache-nginx-module [v0.31](https://github.com/openresty/srcache-nginx-module/tags) released on 15 May 2016.
 
 Synopsis
 ========
@@ -1001,15 +1001,15 @@ It is recommended to install this module as well as the Nginx core and many othe
 
 Alternatively, you can build Nginx with this module all by yourself:
 
-* Grab the nginx source code from [nginx.org](http://nginx.org), for example, the version 1.9.7 (see [Nginx Compatibility](#compatibility)),
+* Grab the nginx source code from [nginx.org](http://nginx.org), for example, the version 1.9.15 (see [Nginx Compatibility](#compatibility)),
 * and then apply the patch to your nginx source tree that fixes an important bug in the mainline Nginx core: <https://raw.github.com/openresty/openresty/master/patches/nginx-1.4.3-upstream_truncation.patch> (you do NOT need this patch if you are using nginx 1.5.3 and later versions.)
 * after that, download the latest version of the release tarball of this module from srcache-nginx-module [file list](https://github.com/openresty/srcache-nginx-module/tags),
 * and finally build the Nginx source with this module
 
 ```bash
- wget 'http://nginx.org/download/nginx-1.9.7.tar.gz'
- tar -xzvf nginx-1.9.7.tar.gz
- cd nginx-1.9.7/
+ wget 'http://nginx.org/download/nginx-1.9.15.tar.gz'
+ tar -xzvf nginx-1.9.15.tar.gz
+ cd nginx-1.9.15/
 
  # Here we assume you would install you nginx under /opt/nginx/.
  ./configure --prefix=/opt/nginx \
@@ -1034,7 +1034,7 @@ Compatibility
 
 The following versions of Nginx should work with this module:
 
-* 1.9.x (last tested: 1.9.7)
+* 1.9.x (last tested: 1.9.15)
 * 1.8.x
 * 1.7.x (last tested: 1.7.10)
 * 1.5.x (last tested: 1.5.12)
