@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# this file is mostly meant to be used by the author himself.
+# this file is only meant to be used by the module developers.
 
 root=`pwd`
 version=$1
@@ -11,7 +11,13 @@ ngx_redis_version=0.3.7
 ngx_redis_path=$home/work/nginx/ngx_http_redis-$ngx_redis_version
 
 cd $ngx_redis_path || exit 1
-patch --forward -p1 < $root/../ngx_openresty/patches/ngx_http_redis-$ngx_redis_version-variables_in_redis_pass.patch
+patch_file=$root/../openresty/patches/ngx_http_redis-$ngx_redis_version-variables_in_redis_pass.patch
+if [ ! -f $patch_file ]; then
+    echo "$patch_file: No such file" > /dev/stderr
+    exit 1
+fi
+# we ignore any errors here since the target directory might have already been patched.
+patch --forward -p1 < $patch_file
 cd $root || exit 1
 
             #--without-http_memcached_module \
