@@ -261,7 +261,7 @@ where we define a connection pool which holds up to 10 keep-alive connections (p
 Caching with Redis
 ------------------
 
-One annoyance with Memcached backed caching is Memcached server's 1 MB value size limit. So it is often desired to use some more permissive backend storage services like Redis to serve as this module's backend.
+Redis is an alternative key-value store with many additional features.
 
 Here is a working example by using Redis:
 
@@ -494,7 +494,7 @@ srcache_store_max_size
 
 When the response body length is exceeding this size, this module will not try to store the response body into the cache using the subrequest template that is specified in [srcache_store](#srcache_store).
 
-This is particular useful when using cache storage backend that does have a hard upper limit on the input data. For example, for Memcached server, the limit is usually `1 MB`.
+This is particular useful when using cache storage backend that does have a hard upper limit on the input data. For example, the Memcached server has a default limit of `1 MB` by item.
 
 When `0` is specified (the default value), there's no limit check at all.
 
@@ -991,6 +991,9 @@ Several common pitfalls for beginners:
 * The original response carries a `Cache-Control` header that explicitly disables caching and you do not configure directives like [srcache_response_cache_control](#srcache_response_cache_control).
 * The original response is already gzip compressed, which is not cached by default (see [srcache_ignore_content_encoding](#srcache_ignore_content_encoding)).
 * Memcached might return `CLIENT_ERROR bad command line format` when using a too long key (250 chars as of version 1.4.25). It is thus safer to use `set_md5 $key $uri$args;` instead of `set $key $uri$args;`. The `set_md5` directive (and more) is available from [OpenResty's set-misc module](https://github.com/openresty/set-misc-nginx-module).
+* Nginx might return `client intended to send too large body` when trying to store objects larger than 1m to the storage backend, in which case nginx `client_max_body_size` must be set to a higher value.
+* Memcached might fail to store objects larger than 1m, causing errors like `srcache_store subrequest failed status=502`. Since version 1.4.2, memcached supports a command-line `-I` option to override the default size of each slab page. Please read its manpage for more information.
+
 
 [Back to TOC](#table-of-contents)
 
