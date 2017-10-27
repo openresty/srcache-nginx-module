@@ -62,7 +62,7 @@ install:
   - git clone https://github.com/openresty/rds-json-nginx-module.git ../rds-json-nginx-module
   - git clone https://github.com/openresty/drizzle-nginx-module.git ../drizzle-nginx-module
   - git clone https://github.com/openresty/memc-nginx-module.git ../memc-nginx-module
-  - git clone https://github.com/FRiCKLE/ngx_postgres.git ../postgres-nginx-module
+  - git clone https://github.com/openresty/ngx_postgres.git ../postgres-nginx-module
   - git clone https://github.com/openresty/openresty.git ../ngx_openresty
 
 before_script:
