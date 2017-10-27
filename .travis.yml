@@ -9,11 +9,6 @@ cache:
   directories:
   - download-cache
 
-addons:
-  apt:
-    packages:
-    - mysql-server
-
 compiler:
   - gcc
   - clang
@@ -36,6 +31,7 @@ services:
  - memcache
  - redis-server
  - postgresql
+ - mysql
 
 before_install:
   - sudo apt-get install -qq -y axel cpanminus libtest-base-perl libtext-diff-perl liburi-perl libwww-perl libtest-longstring-perl liblist-moreutils-perl > build.log 2>&1 || (cat build.log && exit 1)
