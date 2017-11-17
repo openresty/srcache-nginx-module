@@ -229,7 +229,7 @@ GET /cats
 If-Unmodified-Since: Thu, 10 May 2012 07:50:58 GMT
 --- response_headers
 Content-Type: text/html
-Content-Length: 186
+Content-Length: 182
 !Last-Modified
 --- response_body_like: 412 Precondition Failed
 --- error_code: 412
