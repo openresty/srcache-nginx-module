@@ -246,7 +246,7 @@ ngx_http_srcache_access_handler(ngx_http_request_t *r)
         rc = ngx_http_read_client_request_body(r,
                                                ngx_http_srcache_post_read_body);
         if (rc == NGX_ERROR || rc > NGX_OK) {
-#if (nginx_version < 1002006)                                               \
+#if (nginx_version < 1002006)                                                \
     || (nginx_version >= 1003000 && nginx_version < 1003009)
             r->main->count--;
 #endif

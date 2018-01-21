@@ -12,7 +12,7 @@
 
 #define ngx_http_srcache_method_name(m) { sizeof(m) - 1, (u_char *) m " " }
 
-#define ngx_http_srcache_strcmp_const(a, b) \
+#define ngx_http_srcache_strcmp_const(a, b)                                  \
         ngx_strncmp(a, b, sizeof(b) - 1)
 
 extern ngx_str_t  ngx_http_srcache_content_length_header_key;
