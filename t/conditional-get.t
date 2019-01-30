@@ -5,7 +5,7 @@ use Test::Nginx::Socket;
 
 #repeat_each(100);
 
-plan tests => repeat_each() * (6 * blocks());
+plan tests => repeat_each() * (6 * blocks() - 1);
 
 $ENV{TEST_NGINX_MEMCACHED_PORT} ||= 11211;
 #$ENV{TEST_NGINX_MYSQL_PORT}     ||= 3306;
@@ -229,7 +229,6 @@ GET /cats
 If-Unmodified-Since: Thu, 10 May 2012 07:50:58 GMT
 --- response_headers
 Content-Type: text/html
-Content-Length: 186
 !Last-Modified
 --- response_body_like: 412 Precondition Failed
 --- error_code: 412
