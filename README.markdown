@@ -66,7 +66,7 @@ This module is production ready.
 Version
 =======
 
-This document describes srcache-nginx-module [v0.31](https://github.com/openresty/srcache-nginx-module/tags) released on 15 May 2016.
+This document describes srcache-nginx-module [v0.32](https://github.com/openresty/srcache-nginx-module/tags) released on 2 July 2020.
 
 Synopsis
 ========
@@ -476,7 +476,7 @@ Since the `v0.12rc7` release, both the response status line, response headers, a
 
 You can use the [srcache_store_pass_header](#srcache_store_pass_header) and/or [srcache_store_hide_header](#srcache_store_hide_header) directives to control what headers to cache and what not.
 
-The original response's data chunks get emitted as soon as 
+The original response's data chunks get emitted as soon as
 they arrive. `srcache_store` just copies and collects the data in an output filter without postponing them from being sent downstream.
 
 But please note that even though all the response data will be sent immediately, the current Nginx request lifetime will not finish until the srcache_store subrequest completes. That means a delay in closing the TCP connection on the server side (when HTTP keepalive is disabled, but proper HTTP clients should close the connection actively on the client side, which adds no extra delay or other issues at all) or serving the next request sent on the same TCP connection (when HTTP keepalive is in action).
