@@ -224,16 +224,18 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
         }
     }
 
-    if (slcf->store_max_size != 0
+    ctx->store_max_size = ngx_http_complex_value_size(r, slcf->store_max_size, 0);
+
+    if (ctx->store_max_size != 0
         && r->headers_out.content_length_n > 0
         && r->headers_out.content_length_n + 15
            /* just an approxiation for the response header size */
-           > (off_t) slcf->store_max_size)
+           > (off_t) ctx->store_max_size)
     {
         ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "srcache_store bypassed because of too large "
                        "Content-Length response header: %O (limit is: %z)",
-                       r->headers_out.content_length_n, slcf->store_max_size);
+                       r->headers_out.content_length_n, ctx->store_max_size);
 
         return ngx_http_srcache_next_header_filter(r);
     }
@@ -429,13 +431,13 @@ ngx_http_srcache_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
             }
         }
 
-        if (slcf->store_max_size != 0
-            && ctx->response_length > slcf->store_max_size)
+        if (ctx->store_max_size != 0
+            && ctx->response_length > ctx->store_max_size)
         {
             ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                            "srcache_store bypassed because response body "
                            "exceeded maximum size: %z (limit is: %z)",
-                           ctx->response_length, slcf->store_max_size);
+                           ctx->response_length, ctx->store_max_size);
 
             ctx->store_response = 0;
 
