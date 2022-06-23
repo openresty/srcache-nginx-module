@@ -88,4 +88,3 @@ Content-Length:
 --- response_body chop
 bar(hello
 );
-

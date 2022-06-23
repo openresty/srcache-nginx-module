@@ -432,4 +432,3 @@ srcache_store skipped due to the true value in srcache_store_skip: "1"
     GET /memc
 --- response_body_like: 404 Not Found
 --- error_code: 404
-

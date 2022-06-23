@@ -136,4 +136,3 @@ Content-Type: text/css
 --- response_body chomp
 [{"id":2,"name":null},{"id":3,"name":"bob"}]
 --- SKIP
-

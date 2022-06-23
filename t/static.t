@@ -160,4 +160,3 @@ Content-Length: 6
 !Last-Modified
 --- response_body
 hello
-

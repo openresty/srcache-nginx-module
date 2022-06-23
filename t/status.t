@@ -3,7 +3,7 @@
 use lib 'lib';
 use Test::Nginx::Socket;
 
-plan tests => repeat_each() * 97;
+plan tests => repeat_each() * 124;
 
 $ENV{TEST_NGINX_MEMCACHED_PORT} ||= 11211;
 
@@ -559,3 +559,165 @@ Content-Type: text/html
 --- response_body_like: 404 Not Found
 --- error_code: 404
 
+
+
+=== TEST 26: basic fetch (cache 308 by default)
+--- config
+    location /foo {
+        default_type text/css;
+        srcache_fetch GET /memc $uri;
+        srcache_store PUT /memc $uri;
+
+        content_by_lua '
+            ngx.redirect("/bah", 308)
+        ';
+    }
+
+    location /memc {
+        internal;
+
+        set $memc_key $query_string;
+        set $memc_exptime 300;
+        memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
+    }
+--- request
+GET /foo HTTP/1.0
+--- response_headers
+Content-Type: text/html
+--- response_body_like: 308 Permanent Redirect
+--- error_code: 308
+
+
+
+=== TEST 27: inspect the cached item
+--- config
+    location /memc {
+        set $memc_key "/foo";
+        set $memc_exptime 300;
+        memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
+    }
+--- request
+GET /memc
+--- response_headers
+Content-Type: text/html
+--- response_headers
+Content-Type: text/plain
+--- response_body_like
+^HTTP/1\.1 308 Permanent Redirect\r
+Content-Type: text/html\r
+Location: /bah\r
+\r
+.*?308 Permanent Redirect.*
+
+
+
+=== TEST 28: flush all
+--- config
+    location /flush {
+        set $memc_cmd 'flush_all';
+        memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
+    }
+--- response_headers
+Content-Type: text/plain
+Content-Length: 4
+!Foo-Bar
+--- request
+GET /flush
+--- response_body eval: "OK\r\n"
+
+
+
+=== TEST 29: basic fetch (cache 307 by default)
+--- config
+    location /foo {
+        default_type text/css;
+        srcache_fetch GET /memc $uri;
+        srcache_store PUT /memc $uri;
+
+        content_by_lua '
+            ngx.redirect("/bah", 307)
+        ';
+    }
+
+    location /memc {
+        internal;
+
+        set $memc_key $query_string;
+        set $memc_exptime 300;
+        memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
+    }
+--- request
+GET /foo HTTP/1.0
+--- response_headers
+Content-Type: text/html
+Location: /bah
+--- response_body_like: 307 Temporary Redirect
+--- error_code: 307
+
+
+
+=== TEST 30: inspect the cached item
+--- config
+    location /memc {
+        set $memc_key "/foo";
+        set $memc_exptime 300;
+        memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
+    }
+--- request
+GET /memc
+--- response_headers
+Content-Type: text/html
+--- response_headers
+Content-Type: text/plain
+--- response_body_like
+^HTTP/1\.1 307 Temporary Redirect\r
+Content-Type: text/html\r
+Location: /bah\r
+\r
+.*?307 Temporary Redirect.*
+
+
+
+=== TEST 31: cache hit
+--- config
+    location /foo {
+        default_type text/css;
+        srcache_fetch GET /memc $uri;
+        srcache_store PUT /memc $uri;
+        srcache_store_statuses 303 304;
+
+        content_by_lua '
+            ngx.say("hi")
+        ';
+    }
+
+    location /memc {
+        internal;
+
+        set $memc_key $query_string;
+        set $memc_exptime 300;
+        memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
+    }
+--- request
+GET /foo HTTP/1.0
+--- response_headers
+Content-Type: text/html
+Location: /bah
+--- response_body_like: 307 Temporary Redirect
+--- error_code: 307
+
+
+
+=== TEST 32: flush all
+--- config
+    location /flush {
+        set $memc_cmd 'flush_all';
+        memc_pass 127.0.0.1:$TEST_NGINX_MEMCACHED_PORT;
+    }
+--- response_headers
+Content-Type: text/plain
+Content-Length: 4
+!Foo-Bar
+--- request
+GET /flush
+--- response_body eval: "OK\r\n"

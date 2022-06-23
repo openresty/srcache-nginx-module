@@ -111,4 +111,3 @@ srcache header filter called
 srcache header filter called
 --- response_body
 hello
-

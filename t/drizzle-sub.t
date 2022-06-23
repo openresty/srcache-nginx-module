@@ -111,4 +111,3 @@ GET /main
 Content-Type: text/plain
 --- response_body chomp
 [{"id":2,"name":null},{"id":3,"name":"bob"}][{"id":3,"name":"bob"},{"id":2,"name":null}]
-

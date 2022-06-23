@@ -143,4 +143,3 @@ Content-Type: foo/bar
 Content-Length: 5
 --- response_body chomp
 hello
-

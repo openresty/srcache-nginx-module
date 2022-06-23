@@ -96,7 +96,7 @@ Synopsis
      set $key $uri$args;
      srcache_fetch GET /memc $key;
      srcache_store PUT /memc $key;
-     srcache_store_statuses 200 301 302;
+     srcache_store_statuses 200 301 302 307 308;
 
      # proxy_pass/fastcgi_pass/drizzle_pass/echo/etc...
      # or even static files on the disk
@@ -276,7 +276,7 @@ Here is a working example using the lua-resty-redis module:
     srcache_store_skip $skip_cache;
 
     srcache_response_cache_control off;
-    srcache_store_statuses 200 201 301 302 404 503;
+    srcache_store_statuses 200 201 301 302 307 308 404 503;
 
     set_escape_uri $escaped_key $key;
 
@@ -300,7 +300,7 @@ Here is a working example using the lua-resty-redis module:
 
     fastcgi_pass upstream-name;
   }
-            
+
   location /redis-fetch {
     internal;
 
@@ -639,7 +639,7 @@ srcache_store_statuses
 ----------------------
 **syntax:** *srcache_store_statuses &lt;status1&gt; &lt;status2&gt; ..*
 
-**default:** *srcache_store_statuses 200 301 302*
+**default:** *srcache_store_statuses 200 301 302 307 308*
 
 **context:** *http, server, location, location if*
 
@@ -647,13 +647,13 @@ srcache_store_statuses
 
 This directive controls what responses to store to the cache according to their status code.
 
-By default, only `200`, `301`, and `302` responses will be stored to cache and any other responses will skip [srcache_store](#srcache_store).
+By default, only `200`, `301`, `302`, `307` and `308` responses will be stored to cache and any other responses will skip [srcache_store](#srcache_store).
 
 You can specify arbitrary positive numbers for the response status code that you'd like to cache, even including error code like `404` and `503`. For example:
 
 ```nginx
 
- srcache_store_statuses 200 201 301 302 404 503;
+ srcache_store_statuses 200 201 301 302 307 308 404 503;
 ```
 
 At least one argument should be given to this directive.

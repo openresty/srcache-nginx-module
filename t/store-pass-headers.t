@@ -171,4 +171,3 @@ Set-Cookie: foo=baz
 Proxy-Authenticate: blah
 --- response_body
 hello
-

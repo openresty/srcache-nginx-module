@@ -408,4 +408,3 @@ X-Store-Status: STORE
 --- response_body
 world
 --- error_code: 200
-

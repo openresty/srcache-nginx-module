@@ -80,4 +80,3 @@ err
 GET /foo
 --- response_body
 hello
-

@@ -66,4 +66,3 @@ Accept-Ranges: bytes
 --- request
 GET /index.html
 --- response_body_like: It works!
-

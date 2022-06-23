@@ -230,4 +230,3 @@ Content-Length:
 X-Fetch-Status: MISS
 --- response_body
 world
-

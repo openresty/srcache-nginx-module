@@ -387,4 +387,3 @@ Content-Length: 6
 !Foo-Bar
 --- response_body
 hello
-

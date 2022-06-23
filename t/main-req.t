@@ -144,4 +144,3 @@ Content-Length: 6
 X-Fetch-Status: HIT
 --- response_body
 hello
-

@@ -184,4 +184,3 @@ Last-Modified: Sat, 01 Mar 2014 01:02:38 GMT
 GET /memc?/foo
 --- response_body_like: 404 Not Found
 --- error_code: 404
-

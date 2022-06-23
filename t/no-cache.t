@@ -307,4 +307,3 @@ Content-Type: text/css
 Content-Length: 
 --- response_body
 world
-

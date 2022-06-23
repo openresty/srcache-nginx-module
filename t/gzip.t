@@ -158,4 +158,3 @@ Content-Type: text/css
 Content-Length: 6
 --- response_body
 hello
-

@@ -666,4 +666,3 @@ ok
 --- error_log
 variable "$memc_exptime" takes invalid value: 1d,
 srcache_store subrequest failed: rc=400 status=0,
-

@@ -103,4 +103,3 @@ Content-Type: application/json
 [{"id":2,"name":null},{"id":3,"name":"bob"}]
 --- no_error_log
 [error]
-

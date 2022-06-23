@@ -63,5 +63,3 @@ GET /cats
 --- response_headers
 Content-Type: application/json
 --- response_body chomp
-
-

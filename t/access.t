@@ -82,4 +82,3 @@ GET /foo
 Content-Type: text/html
 --- response_body_like: 403 Forbidden
 --- error_code: 403
-

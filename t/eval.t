@@ -94,4 +94,3 @@ GET /flush
 GET /proxy
 --- response_body chomp
 [{"a":3}]
-

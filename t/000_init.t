@@ -156,4 +156,3 @@ GET /init
 --- timeout: 10
 --- no_error_log
 [error]
-
