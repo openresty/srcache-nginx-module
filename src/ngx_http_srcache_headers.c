@@ -256,9 +256,17 @@ static ngx_int_t
 ngx_http_srcache_process_multi_header_lines(ngx_http_request_t *r,
     ngx_table_elt_t *h, ngx_uint_t offset)
 {
+#if defined(nginx_version) && nginx_version < 1023000
     ngx_array_t      *pa;
+#endif
     ngx_table_elt_t  *ho, **ph;
 
+#if defined(nginx_version) && nginx_version >= 1023000
+    ph = (ngx_table_elt_t **) ((char *) &r->headers_out + offset);
+    while (*ph) {
+      ph = &(*ph)->next;
+    }
+#else
     pa = (ngx_array_t *) ((char *) &r->headers_out + offset);
 
     if (pa->elts == NULL) {
@@ -272,6 +280,7 @@ ngx_http_srcache_process_multi_header_lines(ngx_http_request_t *r,
     if (ph == NULL) {
         return NGX_ERROR;
     }
+#endif
 
     ho = ngx_list_push(&r->headers_out.headers);
     if (ho == NULL) {
@@ -280,6 +289,9 @@ ngx_http_srcache_process_multi_header_lines(ngx_http_request_t *r,
 
     *ho = *h;
     *ph = ho;
+#if defined(nginx_version) && nginx_version >= 1023000
+    ho->next = NULL;
+#endif
 
     return NGX_OK;
 }

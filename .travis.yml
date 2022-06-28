@@ -25,6 +25,7 @@ env:
   matrix:
     - NGINX_VERSION=1.17.8
     - NGINX_VERSION=1.19.9
+    - NGINX_VERSION=1.23.0
 
 services:
  - memcache
