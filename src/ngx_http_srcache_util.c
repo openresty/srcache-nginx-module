@@ -566,7 +566,7 @@ ngx_http_srcache_response_no_cache(ngx_http_request_t *r,
         goto check_expires;
     }
 
-    for (cc = cc->next; cc; cc = cc->next) {
+    for (; cc; cc = cc->next) {
         if (!cc->hash) {
             continue;
         }
