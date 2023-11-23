@@ -45,9 +45,9 @@ install:
   - echo $HOME
   - if [ ! -d download-cache ]; then mkdir download-cache; fi
   - rm -fr download-cache/drizzle7-2011.07.21.tar.gz
-  - if [ ! -f download-cache/ngx_http_redis-0.3.7.tar.gz ]; then wget -O download-cache/ngx_http_redis-0.3.7.tar.gz http://people.freebsd.org/~osa/ngx_http_redis-0.3.7.tar.gz; fi
   - if [ ! -f download-cache/drizzle7-2011.07.21.tar.gz ]; then wget -P download-cache https://github.com/openresty/openresty-deps-prebuild/releases/download/v20230902/drizzle7-2011.07.21.tar.gz; fi
-  - mkdir -p ~/work/nginx && cp download-cache/ngx_http_redis-0.3.7.tar.gz ~/work/nginx/
+  - mkdir -p ~/work/nginx
+  - git clone https://github.com/centminmod/ngx_http_redis ~/work/nginx/ngx_http_redis
   - git clone https://github.com/openresty/nginx-devel-utils.git
   - git clone https://github.com/openresty/openresty.git ../openresty
   - git clone https://github.com/openresty/no-pool-nginx.git ../no-pool-nginx
