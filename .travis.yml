@@ -1,5 +1,9 @@
 sudo: required
-dist: bionic
+dist: focal
+
+branches:
+  only:
+    - "master"
 
 os: linux
 
@@ -22,10 +26,14 @@ env:
     - LUA_CMODULE_DIR=/lib
     - JOBS=3
     - NGX_BUILD_JOBS=$JOBS
+    - LIBDRIZZLE_PREFIX=/opt/drizzle
+    - LIBDRIZZLE_INC=$LIBDRIZZLE_PREFIX/include/libdrizzle-1.0
+    - LIBDRIZZLE_LIB=$LIBDRIZZLE_PREFIX/lib
   matrix:
-    - NGINX_VERSION=1.17.8
-    - NGINX_VERSION=1.19.9
-    - NGINX_VERSION=1.23.0
+    - NGINX_VERSION=1.25.3
+
+addons:
+  postgresql: "13"
 
 services:
  - memcache
@@ -39,10 +47,11 @@ before_install:
 install:
   - echo $HOME
   - if [ ! -d download-cache ]; then mkdir download-cache; fi
-  - if [ ! -f download-cache/ngx_http_redis-0.3.7.tar.gz ]; then wget -O download-cache/ngx_http_redis-0.3.7.tar.gz http://people.freebsd.org/~osa/ngx_http_redis-0.3.7.tar.gz; fi
-  - if [ ! -f download-cache/drizzle7-2011.07.21.tar.gz ]; then wget -O download-cache/drizzle7-2011.07.21.tar.gz http://openresty.org/download/drizzle7-2011.07.21.tar.gz; fi
-  - mkdir -p ~/work/nginx && cp download-cache/ngx_http_redis-0.3.7.tar.gz ~/work/nginx/
-  - git clone https://github.com/openresty/nginx-devel-utils.git
+  - rm -fr download-cache/drizzle7-2011.07.21.tar.gz
+  - if [ ! -f download-cache/drizzle7-2011.07.21.tar.gz ]; then wget -P download-cache https://github.com/openresty/openresty-deps-prebuild/releases/download/v20230902/drizzle7-2011.07.21.tar.gz; fi
+  - mkdir -p ~/work/nginx
+  - git clone https://github.com/openresty/ngx_http_redis ~/work/nginx/ngx_http_redis
+  - git clone https://github.com/openresty/openresty-devel-utils.git
   - git clone https://github.com/openresty/openresty.git ../openresty
   - git clone https://github.com/openresty/no-pool-nginx.git ../no-pool-nginx
   - git clone https://github.com/simpl/ngx_devel_kit.git ../ndk-nginx-module
@@ -64,14 +73,14 @@ install:
   - git clone https://github.com/openresty/openresty.git ../ngx_openresty
 
 before_script:
-  - mysql -uroot -e 'create database ngx_test; grant all on ngx_test.* to "ngx_test"@"%" identified by "ngx_test"; flush privileges;'
+  - mysql -uroot -e "create database ngx_test; CREATE USER 'ngx_test'@'%' IDENTIFIED WITH mysql_native_password BY 'ngx_test'; grant all on ngx_test.* to 'ngx_test'@'%'; flush privileges;"
   - psql -c "create database ngx_test;" -U postgres
   - psql -c "create user ngx_test with password 'ngx_test';" -U postgres
   - psql -c "grant all privileges on database ngx_test to ngx_test;" -U postgres
 
 script:
   - tar xzf download-cache/drizzle7-2011.07.21.tar.gz && cd drizzle7-2011.07.21
-  - ./configure --prefix=/usr --without-server > build.log 2>&1 || (cat build.log && exit 1)
+  - ./configure --prefix=$LIBDRIZZLE_PREFIX --without-server > build.log 2>&1 || (cat build.log && exit 1)
   - sudo PATH=$PATH make libdrizzle-1.0 install-libdrizzle-1.0 > build.log 2>&1 || (cat build.log && exit 1)
   - cd ..
   - cd luajit2
@@ -79,7 +88,7 @@ script:
   - sudo make install PREFIX=$LUAJIT_PREFIX > build.log 2>&1 || (cat build.log && exit 1)
   - cd ..
   - cd test-nginx && sudo cpanm . && cd ..
-  - export PATH=$PWD/work/nginx/sbin:$PWD/nginx-devel-utils:$PATH
+  - export PATH=$PWD/work/nginx/sbin:$PWD/openresty-devel-utils:$PATH
   - export NGX_BUILD_CC=$CC
   - sh util/build.sh $NGINX_VERSION > build.log 2>&1 || (cat build.log && exit 1)
   - nginx -V
