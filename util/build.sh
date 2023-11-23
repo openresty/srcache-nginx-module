@@ -7,23 +7,22 @@ version=$1
 home=~
 force=$2
 
-cd $home/work/nginx/ || exit 1
 ngx_redis_path=$home/work/nginx/ngx_http_redis
 
 ngx-build $force $version \
-            --with-cc-opt="-O0" \
-            --with-ld-opt="-Wl,-rpath,/opt/postgres/lib:/opt/drizzle/lib:/usr/local/lib:/home/lz/lib" \
-            --without-mail_pop3_module \
-            --without-mail_imap_module \
-            --without-mail_smtp_module \
-            --without-http_upstream_ip_hash_module \
-            --without-http_empty_gif_module \
-            --without-http_referer_module \
-            --without-http_autoindex_module \
-            --without-http_auth_basic_module \
-            --without-http_userid_module \
-            --add-module=$root/../ndk-nginx-module \
-            --add-module=$root/../set-misc-nginx-module \
+          --with-cc-opt="-O0" \
+          --with-ld-opt="-Wl,-rpath,/opt/postgres/lib:/opt/drizzle/lib:/usr/local/lib:/home/lz/lib" \
+          --without-mail_pop3_module \
+          --without-mail_imap_module \
+          --without-mail_smtp_module \
+          --without-http_upstream_ip_hash_module \
+          --without-http_empty_gif_module \
+          --without-http_referer_module \
+          --without-http_autoindex_module \
+          --without-http_auth_basic_module \
+          --without-http_userid_module \
+          --add-module=$root/../ndk-nginx-module \
+          --add-module=$root/../set-misc-nginx-module \
           --add-module=$ngx_redis_path \
           --add-module=$root/../xss-nginx-module \
           --add-module=$root/../redis2-nginx-module \
@@ -36,7 +35,7 @@ ngx-build $force $version \
           --add-module=$root/../drizzle-nginx-module \
           --add-module=$root/../postgres-nginx-module \
           --add-module=$root/../memc-nginx-module \
-            --add-module=$home/work/nginx/ngx_http_upstream_keepalive-0.7 \
+          --add-module=$home/work/nginx/ngx_http_upstream_keepalive-0.7 \
           --with-select_module \
           --with-poll_module \
           --without-http_ssi_module \

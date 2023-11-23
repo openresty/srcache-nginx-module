@@ -26,6 +26,9 @@ env:
     - LUA_CMODULE_DIR=/lib
     - JOBS=3
     - NGX_BUILD_JOBS=$JOBS
+    - LIBDRIZZLE_PREFIX=/opt/drizzle
+    - LIBDRIZZLE_INC=$LIBDRIZZLE_PREFIX/include/libdrizzle-1.0
+    - LIBDRIZZLE_LIB=$LIBDRIZZLE_PREFIX/lib
   matrix:
     - NGINX_VERSION=1.25.3
 
@@ -48,7 +51,7 @@ install:
   - if [ ! -f download-cache/drizzle7-2011.07.21.tar.gz ]; then wget -P download-cache https://github.com/openresty/openresty-deps-prebuild/releases/download/v20230902/drizzle7-2011.07.21.tar.gz; fi
   - mkdir -p ~/work/nginx
   - git clone https://github.com/openresty/ngx_http_redis ~/work/nginx/ngx_http_redis
-  - git clone https://github.com/openresty/nginx-devel-utils.git
+  - git clone https://github.com/openresty/openresty-devel-utils.git
   - git clone https://github.com/openresty/openresty.git ../openresty
   - git clone https://github.com/openresty/no-pool-nginx.git ../no-pool-nginx
   - git clone https://github.com/simpl/ngx_devel_kit.git ../ndk-nginx-module
@@ -85,7 +88,7 @@ script:
   - sudo make install PREFIX=$LUAJIT_PREFIX > build.log 2>&1 || (cat build.log && exit 1)
   - cd ..
   - cd test-nginx && sudo cpanm . && cd ..
-  - export PATH=$PWD/work/nginx/sbin:$PWD/nginx-devel-utils:$PATH
+  - export PATH=$PWD/work/nginx/sbin:$PWD/openresty-devel-utils:$PATH
   - export NGX_BUILD_CC=$CC
   - sh util/build.sh $NGINX_VERSION > build.log 2>&1 || (cat build.log && exit 1)
   - nginx -V
