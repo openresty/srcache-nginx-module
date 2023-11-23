@@ -1,5 +1,9 @@
 sudo: required
-dist: bionic
+dist: focal
+
+branches:
+  only:
+    - "master"
 
 os: linux
 
@@ -23,9 +27,7 @@ env:
     - JOBS=3
     - NGX_BUILD_JOBS=$JOBS
   matrix:
-    - NGINX_VERSION=1.17.8
-    - NGINX_VERSION=1.19.9
-    - NGINX_VERSION=1.23.0
+    - NGINX_VERSION=1.25.3
 
 services:
  - memcache
@@ -64,7 +66,7 @@ install:
   - git clone https://github.com/openresty/openresty.git ../ngx_openresty
 
 before_script:
-  - mysql -uroot -e 'create database ngx_test; grant all on ngx_test.* to "ngx_test"@"%" identified by "ngx_test"; flush privileges;'
+  - mysql -uroot -e "create database ngx_test; CREATE USER 'ngx_test'@'%' IDENTIFIED WITH mysql_native_password BY 'ngx_test'; grant all on ngx_test.* to 'ngx_test'@'%'; flush privileges;"
   - psql -c "create database ngx_test;" -U postgres
   - psql -c "create user ngx_test with password 'ngx_test';" -U postgres
   - psql -c "grant all privileges on database ngx_test to ngx_test;" -U postgres
