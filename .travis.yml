@@ -80,7 +80,7 @@ before_script:
 
 script:
   - tar xzf download-cache/drizzle7-2011.07.21.tar.gz && cd drizzle7-2011.07.21
-  - ./configure --prefix=/usr --without-server > build.log 2>&1 || (cat build.log && exit 1)
+  - ./configure --prefix=$LIBDRIZZLE_PREFIX --without-server > build.log 2>&1 || (cat build.log && exit 1)
   - sudo PATH=$PATH make libdrizzle-1.0 install-libdrizzle-1.0 > build.log 2>&1 || (cat build.log && exit 1)
   - cd ..
   - cd luajit2
