@@ -168,7 +168,7 @@ GET /flush
 
         set_md5 $redis_key $args;
         # set $backend foo;
-        # FIXME: 'redis_pass' does not support variables at this time
+        # FIXME: 'redis_pass' does not support variables at this time (ngx_http_redis-0.3.9)
         redis_pass foo;
     }
 
@@ -219,7 +219,7 @@ hiya
 
         set_md5 $redis_key $args;
         # set $backend foo;
-        # FIXME: 'redis_pass' does not support variables at this time
+        # FIXME: 'redis_pass' does not support variables at this time (ngx_http_redis-0.3.9)
         redis_pass foo;
     }
 
