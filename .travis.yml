@@ -24,7 +24,7 @@ env:
     - LUAJIT_INC=$LUAJIT_PREFIX/include/luajit-2.1
     - LUA_INCLUDE_DIR=$LUAJIT_INC
     - LUA_CMODULE_DIR=/lib
-    - JOBS=3
+    - JOBS=2
     - NGX_BUILD_JOBS=$JOBS
     - LIBDRIZZLE_PREFIX=/opt/drizzle
     - LIBDRIZZLE_INC=$LIBDRIZZLE_PREFIX/include/libdrizzle-1.0
