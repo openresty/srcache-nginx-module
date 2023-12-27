@@ -167,8 +167,9 @@ GET /flush
         internal;
 
         set_md5 $redis_key $args;
-        set $backend foo;
-        redis_pass $backend;
+        # set $backend foo;
+        # FIXME: 'redis_pass' does not support variables at this time
+        redis_pass foo;
     }
 
     location = /redis2 {
@@ -217,8 +218,9 @@ hiya
         #internal;
 
         set_md5 $redis_key $args;
-        set $backend foo;
-        redis_pass $backend;
+        # set $backend foo;
+        # FIXME: 'redis_pass' does not support variables at this time
+        redis_pass foo;
     }
 
     location = /redis2 {
