@@ -30,7 +30,7 @@ env:
     - LIBDRIZZLE_INC=$LIBDRIZZLE_PREFIX/include/libdrizzle-1.0
     - LIBDRIZZLE_LIB=$LIBDRIZZLE_PREFIX/lib
   matrix:
-    - NGINX_VERSION=1.25.3
+    - NGINX_VERSION=1.29.2
 
 addons:
   postgresql: "13"
