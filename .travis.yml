@@ -30,7 +30,7 @@ env:
     - LIBDRIZZLE_INC=$LIBDRIZZLE_PREFIX/include/libdrizzle-1.0
     - LIBDRIZZLE_LIB=$LIBDRIZZLE_PREFIX/lib
   matrix:
-    - NGINX_VERSION=1.29.4
+    - NGINX_VERSION=1.29.8
 
 addons:
   postgresql: "13"
@@ -50,8 +50,8 @@ install:
   - rm -fr download-cache/drizzle7-2011.07.21.tar.gz
   - if [ ! -f download-cache/drizzle7-2011.07.21.tar.gz ]; then wget -P download-cache https://github.com/openresty/openresty-deps-prebuild/releases/download/v20230902/drizzle7-2011.07.21.tar.gz; fi
   - mkdir -p ~/work/nginx
-  - git clone https://github.com/openresty/ngx_http_redis ~/work/nginx/ngx_http_redis
-  - git clone https://github.com/openresty/openresty-devel-utils.git
+  - git clone https://github.com/openresty/ngx_http_redis ../ngx_http_redis
+  - git clone https://github.com/openresty/openresty-devel-utils.git ../openresty-devel-utils
   - git clone https://github.com/openresty/openresty.git ../openresty
   - git clone https://github.com/openresty/no-pool-nginx.git ../no-pool-nginx
   - git clone https://github.com/simpl/ngx_devel_kit.git ../ndk-nginx-module
@@ -87,8 +87,9 @@ script:
   - make -j$JOBS CCDEBUG=-g Q= PREFIX=$LUAJIT_PREFIX CC=$CC XCFLAGS='-DLUA_USE_APICHECK -DLUA_USE_ASSERT' > build.log 2>&1 || (cat build.log && exit 1)
   - sudo make install PREFIX=$LUAJIT_PREFIX > build.log 2>&1 || (cat build.log && exit 1)
   - cd ..
+  - cpanm --sudo --notest Test::Nginx IPC::Run Test2::Util > build.log 2>&1 || (cat build.log && exit 1)
   - cd test-nginx && sudo cpanm . && cd ..
-  - export PATH=$PWD/work/nginx/sbin:$PWD/openresty-devel-utils:$PATH
+  - export PATH=$PWD/work/nginx/sbin:$PWD/../openresty-devel-utils:$PATH
   - export NGX_BUILD_CC=$CC
   - sh util/build.sh $NGINX_VERSION > build.log 2>&1 || (cat build.log && exit 1)
   - nginx -V

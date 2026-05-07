@@ -7,8 +7,6 @@ version=$1
 home=~
 force=$2
 
-ngx_redis_path=$home/work/nginx/ngx_http_redis
-
 ngx-build $force $version \
           --with-cc-opt="-O0" \
           --with-ld-opt="-Wl,-rpath,/opt/postgres/lib:/opt/drizzle/lib:/usr/local/lib:/home/lz/lib" \
@@ -23,7 +21,7 @@ ngx-build $force $version \
           --without-http_userid_module \
           --add-module=$root/../ndk-nginx-module \
           --add-module=$root/../set-misc-nginx-module \
-          --add-module=$ngx_redis_path \
+          --add-module=$root/../ngx_http_redis \
           --add-module=$root/../xss-nginx-module \
           --add-module=$root/../redis2-nginx-module \
           --add-module=$root/../eval-nginx-module \
@@ -45,4 +43,3 @@ ngx-build $force $version \
           #--with-rtsig_module
           #--with-cc-opt="-g3 -O0"
           #--add-module=$root/../echo-nginx-module \
-

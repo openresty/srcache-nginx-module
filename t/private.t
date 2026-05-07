@@ -322,6 +322,26 @@ GET /flush
 
 
 === TEST 14: basic fetch (cache miss), and not stored due to Cache-Control: private, proxy_pass
+# IMPORTANT: nginx 1.29.6 changed the default of "proxy_http_version" from
+# "1.0" to "1.1" (CHANGES, 10 Mar 2026: "now ngx_http_proxy_module supports
+# keepalive by default; the default value for proxy_http_version is 1.1").
+# This test runs under that new default (branch ngx-1.29.8).
+#
+# Consequence for this test: proxy_pass now talks HTTP/1.1 to the upstream
+# /bar location, whose body is produced by ngx.say() in content_by_lua.
+# Lua streams the body without knowing its final length, so under HTTP/1.1
+# the upstream uses Transfer-Encoding: chunked instead of Content-Length.
+# nginx's proxy module forwards the chunked encoding downstream rather
+# than buffering+adding Content-Length, so the response has NO
+# Content-Length header. Under the old HTTP/1.0 default, the upstream
+# would have buffered and emitted Content-Length: 6, which is what the
+# original assertion expected.
+#
+# Match the new behavior with an empty "Content-Length:" expectation
+# (same pattern as TEST 8 / TEST 11, which exercise the same
+# Cache-Control: private scenario via content_by_lua directly). The
+# test's real assertion is that the private response is not stored on
+# the cache miss path.
 --- config
     location /foo {
         default_type text/css;
@@ -350,7 +370,7 @@ GET /flush
 GET /foo
 --- response_headers
 Content-Type: text/css
-Content-Length: 6
+Content-Length:
 --- response_body
 hello
 
