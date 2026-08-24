@@ -82,7 +82,7 @@ jobs:
           git clone https://github.com/openresty/memc-nginx-module.git ../memc-nginx-module
           git clone https://github.com/openresty/ngx_postgres.git ../postgres-nginx-module
           git clone https://github.com/openresty/openresty.git ../ngx_openresty
-          sudo mysql -uroot -e "create database ngx_test; CREATE USER 'ngx_test'@'%' IDENTIFIED WITH mysql_native_password BY 'ngx_test'; grant all on ngx_test.* to 'ngx_test'@'%'; flush privileges;"
+          mysql -uroot -proot -e "create database ngx_test; CREATE USER 'ngx_test'@'%' IDENTIFIED WITH mysql_native_password BY 'ngx_test'; grant all on ngx_test.* to 'ngx_test'@'%'; flush privileges;"
           sudo -u postgres psql -c "create database ngx_test;" -U postgres
           sudo -u postgres psql -c "create user ngx_test with password 'ngx_test';" -U postgres
           sudo -u postgres psql -c "grant all privileges on database ngx_test to ngx_test;" -U postgres
