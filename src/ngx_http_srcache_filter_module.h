@@ -53,7 +53,7 @@ typedef struct {
     ngx_http_srcache_request_t      *fetch;
     ngx_http_srcache_request_t      *store;
     size_t                           buf_size;
-    size_t                           store_max_size;
+    ngx_http_complex_value_t         *store_max_size;
     size_t                           header_buf_size;
 
     ngx_http_complex_value_t        *fetch_skip;
@@ -105,6 +105,7 @@ struct ngx_http_srcache_ctx_s {
     ngx_chain_t                     *body_to_cache;
     size_t                           response_length;
     size_t                           response_body_length;
+    size_t                           store_max_size;
     void                            *store_wev_handler_ctx;
 
     ngx_int_t                      (*process_header)(ngx_http_request_t *r,
